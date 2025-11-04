@@ -166,7 +166,7 @@ TEST(TestCustomRulesIntegration, PriorityCustomRulesPrecedence)
 
         EXPECT_ACTIONS(
             res, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
-                                        {"type", "auto"}, {"block_id", "*"}}}});
+                                        {"type", "auto"}, {"security_response_id", "*"}}}});
 
         ddwaf_object_destroy(&res, alloc);
     }
@@ -211,7 +211,7 @@ TEST(TestCustomRulesIntegration, CustomRulesPrecedence)
                                    .args = {{.value = "custom_rule"sv, .address = "value34"}}}}});
         EXPECT_ACTIONS(
             res, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
-                                        {"type", "auto"}, {"block_id", "*"}}}});
+                                        {"type", "auto"}, {"security_response_id", "*"}}}});
 
         ddwaf_object_destroy(&res, alloc);
     }
@@ -275,7 +275,7 @@ TEST(TestCustomRulesIntegration, UpdateFromBaseRules)
                                    .args = {{.value = "custom_rule"sv, .address = "value34"}}}}});
         EXPECT_ACTIONS(
             res, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
-                                        {"type", "auto"}, {"block_id", "*"}}}});
+                                        {"type", "auto"}, {"security_response_id", "*"}}}});
 
         ddwaf_object_destroy(&res, alloc);
     }
@@ -300,7 +300,7 @@ TEST(TestCustomRulesIntegration, UpdateFromBaseRules)
                                    .args = {{.value = "custom_rule"sv, .address = "value34"}}}}});
         EXPECT_ACTIONS(
             res, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
-                                        {"type", "auto"}, {"block_id", "*"}}}});
+                                        {"type", "auto"}, {"security_response_id", "*"}}}});
 
         ddwaf_object_destroy(&res, alloc);
     }
@@ -368,7 +368,7 @@ TEST(TestCustomRulesIntegration, UpdateFromCustomRules)
                                    .args = {{.value = "custom_rule"sv, .address = "value34"}}}}});
         EXPECT_ACTIONS(
             res, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
-                                        {"type", "auto"}, {"block_id", "*"}}}});
+                                        {"type", "auto"}, {"security_response_id", "*"}}}});
 
         ddwaf_object_destroy(&res, alloc);
     }
@@ -480,7 +480,7 @@ TEST(TestCustomRulesIntegration, UpdateRemoveAllCustomRules)
                                    .args = {{.value = "custom_rule"sv, .address = "value34"}}}}});
         EXPECT_ACTIONS(
             res, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
-                                        {"type", "auto"}, {"block_id", "*"}}}});
+                                        {"type", "auto"}, {"security_response_id", "*"}}}});
 
         ddwaf_object_destroy(&res, alloc);
     }
@@ -505,7 +505,7 @@ TEST(TestCustomRulesIntegration, UpdateRemoveAllCustomRules)
                                    .args = {{.value = "custom_rule"sv, .address = "value34"}}}}});
         EXPECT_ACTIONS(
             res, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
-                                        {"type", "auto"}, {"block_id", "*"}}}});
+                                        {"type", "auto"}, {"security_response_id", "*"}}}});
 
         ddwaf_object_destroy(&res, alloc);
     }
@@ -573,7 +573,7 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverrides)
                                    .args = {{.value = "custom_rule"sv, .address = "value34"}}}}});
         EXPECT_ACTIONS(
             res, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
-                                        {"type", "auto"}, {"block_id", "*"}}}});
+                                        {"type", "auto"}, {"security_response_id", "*"}}}});
 
         ddwaf_object_destroy(&res, alloc);
     }
@@ -598,7 +598,7 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverrides)
                                    .args = {{.value = "custom_rule"sv, .address = "value34"}}}}});
         EXPECT_ACTIONS(
             res, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
-                                        {"type", "auto"}, {"block_id", "*"}}}});
+                                        {"type", "auto"}, {"security_response_id", "*"}}}});
 
         ddwaf_object_destroy(&res, alloc);
     }
@@ -680,7 +680,7 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverridesAfterUpdate)
                                    .args = {{.value = "custom_rule"sv, .address = "value4"}}}}});
         EXPECT_ACTIONS(
             res, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
-                                        {"type", "auto"}, {"block_id", "*"}}}});
+                                        {"type", "auto"}, {"security_response_id", "*"}}}});
 
         ddwaf_object_destroy(&res, alloc);
     }
@@ -714,7 +714,7 @@ TEST(TestCustomRulesIntegration, CustomRulesUnaffectedByOverridesAfterUpdate)
                                    .args = {{.value = "custom_rule"sv, .address = "value4"}}}}});
         EXPECT_ACTIONS(
             res, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
-                                        {"type", "auto"}, {"block_id", "*"}}}});
+                                        {"type", "auto"}, {"security_response_id", "*"}}}});
 
         ddwaf_object_destroy(&res, alloc);
     }
@@ -783,7 +783,7 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusions)
                                    .args = {{.value = "custom_rule"sv, .address = "value34"}}}}});
         EXPECT_ACTIONS(
             res, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
-                                        {"type", "auto"}, {"block_id", "*"}}}});
+                                        {"type", "auto"}, {"security_response_id", "*"}}}});
 
         ddwaf_object_destroy(&res, alloc);
     }
@@ -808,7 +808,7 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusions)
                                    .args = {{.value = "custom_rule"sv, .address = "value34"}}}}});
         EXPECT_ACTIONS(
             res, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
-                                        {"type", "auto"}, {"block_id", "*"}}}});
+                                        {"type", "auto"}, {"security_response_id", "*"}}}});
 
         ddwaf_object_destroy(&res, alloc);
     }
@@ -893,7 +893,7 @@ TEST(TestCustomRulesIntegration, CustomRulesAffectedByExclusionsAfterUpdate)
                                    }}}}});
         EXPECT_ACTIONS(
             res, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
-                                        {"type", "auto"}, {"block_id", "*"}}}});
+                                        {"type", "auto"}, {"security_response_id", "*"}}}});
 
         ddwaf_object_destroy(&res, alloc);
     }

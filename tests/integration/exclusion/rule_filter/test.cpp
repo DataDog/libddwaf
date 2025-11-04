@@ -763,7 +763,7 @@ TEST(TestRuleFilterIntegration, UnconditionalCustomFilterMode)
                                    .address = "http.client_ip",
                                }}}}});
     EXPECT_ACTIONS(out, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
-                                               {"type", "auto"}, {"block_id", "*"}}}})
+                                               {"type", "auto"}, {"security_response_id", "*"}}}})
 
     ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
@@ -805,7 +805,7 @@ TEST(TestRuleFilterIntegration, ConditionalCustomFilterMode)
                                    }}}}});
         EXPECT_ACTIONS(
             out, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
-                                        {"type", "auto"}, {"block_id", "*"}}}})
+                                        {"type", "auto"}, {"security_response_id", "*"}}}})
 
         ddwaf_object_destroy(&out, alloc);
         ddwaf_context_destroy(context);
@@ -917,7 +917,7 @@ TEST(TestRuleFilterIntegration, CustomFilterModeUnknownAction)
                                    }}}}});
         EXPECT_ACTIONS(
             out, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
-                                        {"type", "auto"}, {"block_id", "*"}}}})
+                                        {"type", "auto"}, {"security_response_id", "*"}}}})
 
         ddwaf_object_destroy(&out, alloc);
         ddwaf_context_destroy(context);
@@ -963,7 +963,7 @@ TEST(TestRuleFilterIntegration, CustomFilterModeNonblockingAction)
                                    .address = "http.client_ip",
                                }}}}});
     EXPECT_ACTIONS(out, {{"block_request", {{"status_code", 403ULL}, {"grpc_status_code", 10ULL},
-                                               {"type", "auto"}, {"block_id", "*"}}}})
+                                               {"type", "auto"}, {"security_response_id", "*"}}}})
 
     ddwaf_object_destroy(&out, alloc);
     ddwaf_context_destroy(context);
