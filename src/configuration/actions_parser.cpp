@@ -142,7 +142,7 @@ void validate_and_add_redirect(auto &cfg, auto id, auto &type, auto &parameters)
 void remove_reserved_parameters(std::unordered_map<std::string, scalar_type> &params)
 {
     // Remove any parameters considered "reserved" to avoid potential injections
-    const std::array<std::string, 2> reserved{"block_id", "stack_id"};
+    const std::array<std::string, 2> reserved{"security_response_id", "stack_id"};
 
     for (const auto &key : reserved) {
         auto it = params.find(key);

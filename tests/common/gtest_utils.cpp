@@ -292,12 +292,12 @@ bool WafResultActionMatcher::MatchAndExplain(
             obtained_params.erase("stack_id");
         }
 
-        if (expected_params.contains("block_id")) {
-            if (!obtained_params.contains("block_id")) {
+        if (expected_params.contains("security_response_id")) {
+            if (!obtained_params.contains("security_response_id")) {
                 return false;
             }
-            expected_params.erase("block_id");
-            obtained_params.erase("block_id");
+            expected_params.erase("security_response_id");
+            obtained_params.erase("security_response_id");
         }
 
         if (expected_params != obtained_params) {
@@ -481,7 +481,7 @@ event as_if<event, void>::operator()() const
     e.actions = as<std::vector<std::string>>(rule, "on_match");
     e.matches = as<std::vector<match>>(node, "rule_matches");
     e.stack_id = as<std::string>(node, "stack_id");
-    e.block_id = as<std::string>(node, "block_id");
+    e.block_id = as<std::string>(node, "security_response_id");
 
     return e;
 }

@@ -17,7 +17,7 @@
         "grpc_status_code": {
           "type": "number"
         },
-        "block_id": {
+        "security_response_id": {
           "type": "string"
         }
       },
@@ -25,7 +25,7 @@
         "status_code",
         "type",
         "grpc_status_code",
-        "block_id"
+        "security_response_id"
       ],
       "additionalProperties": true
     },

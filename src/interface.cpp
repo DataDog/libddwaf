@@ -612,7 +612,7 @@ ddwaf_object *ddwaf_object_null(ddwaf_object *object) { return ddwaf_object_set_
 ddwaf_object *ddwaf_object_set_string(
     ddwaf_object *object, const char *string, uint32_t length, ddwaf_allocator alloc)
 {
-    if (object == nullptr || string == nullptr || alloc == nullptr) {
+    if (object == nullptr || (string == nullptr && length != 0) || alloc == nullptr) {
         return nullptr;
     }
     to_borrowed(object) = owned_object{string, length, to_alloc_ptr(alloc)};

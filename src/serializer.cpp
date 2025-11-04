@@ -251,7 +251,7 @@ void serialize_event(rule_event &event, const match_obfuscator *obfuscator,
     }
 
     if (requires_block_id) {
-        root_map.emplace("block_id", actions.block_id);
+        root_map.emplace("security_response_id", actions.block_id);
     }
 }
 
@@ -286,7 +286,7 @@ void serialize_action(
             }
         }
         if (is_blocking_action(type)) {
-            param_map.emplace("block_id", actions.block_id);
+            param_map.emplace("security_response_id", actions.block_id);
         }
     } else {
         auto param_map =
