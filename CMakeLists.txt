@@ -6,7 +6,7 @@ string(STRIP "${version}" version)
 string(REGEX REPLACE "-(alpha|beta)[0-9]*$" "" mmp_version ${version})
 
 if (APPLE)
-    set(CMAKE_OSX_DEPLOYMENT_TARGET "12.7" CACHE STRING "Minimum OS X deployment version")
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "14.2.1" CACHE STRING "Minimum OS X deployment version")
 endif()
 
 project(libddwaf VERSION "${mmp_version}")
