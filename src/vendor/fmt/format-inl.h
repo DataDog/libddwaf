@@ -71,7 +71,7 @@ template <typename Locale> auto locale_ref::get() const -> Locale {
 namespace detail {
 
 FMT_FUNC void format_error_code(detail::buffer<char>& out, int error_code,
-                                string_view message) noexcept {
+                                std::string_view message) noexcept {
   // Report error code making sure that the output fits into
   // inline_buffer_size to avoid dynamic memory allocation and potential
   // bad_alloc.
@@ -162,7 +162,7 @@ FMT_API FMT_FUNC auto format_facet<std::locale>::do_put(
 }
 #endif
 
-FMT_FUNC auto vsystem_error(int error_code, string_view fmt, format_args args)
+FMT_FUNC auto vsystem_error(int error_code, std::string_view fmt, format_args args)
     -> std::system_error {
   auto ec = std::error_code(error_code, std::generic_category());
   return std::system_error(ec, vformat(fmt, args));
@@ -1407,8 +1407,8 @@ template <> struct formatter<detail::bigint> {
   }
 };
 
-FMT_FUNC detail::utf8_to_utf16::utf8_to_utf16(string_view s) {
-  for_each_codepoint(s, [this](uint32_t cp, string_view) {
+FMT_FUNC detail::utf8_to_utf16::utf8_to_utf16(std::string_view s) {
+  for_each_codepoint(s, [this](uint32_t cp, std::string_view) {
     if (cp == invalid_code_point) FMT_THROW(std::runtime_error("invalid utf8"));
     if (cp <= 0xFFFF) {
       buffer_.push_back(static_cast<wchar_t>(cp));
@@ -1438,7 +1438,7 @@ FMT_FUNC void report_system_error(int error_code,
   do_report_error(format_system_error, error_code, message);
 }
 
-FMT_FUNC auto vformat(string_view fmt, format_args args) -> std::string {
+FMT_FUNC auto vformat(std::string_view fmt, format_args args) -> std::string {
   // Don't optimize the "{}" case to keep the binary size small and because it
   // can be better optimized in fmt::format anyway.
   auto buffer = memory_buffer();
@@ -1448,7 +1448,7 @@ FMT_FUNC auto vformat(string_view fmt, format_args args) -> std::string {
 
 namespace detail {
 
-FMT_FUNC void vformat_to(buffer<char>& buf, string_view fmt, format_args args,
+FMT_FUNC void vformat_to(buffer<char>& buf, std::string_view fmt, format_args args,
                          locale_ref loc) {
   auto out = appender(buf);
   if (fmt.size() == 2 && equal2(fmt.data(), "{}"))
@@ -1692,13 +1692,13 @@ class file_print_buffer<F, enable_if_t<has_flockfile<F>::value>>
 };
 
 #if !defined(_WIN32) || defined(FMT_USE_WRITE_CONSOLE)
-FMT_FUNC auto write_console(int, string_view) -> bool { return false; }
+FMT_FUNC auto write_console(int, std::string_view) -> bool { return false; }
 #else
 using dword = conditional_t<sizeof(long) == 4, unsigned long, unsigned>;
 extern "C" __declspec(dllimport) int __stdcall WriteConsoleW(  //
     void*, const void*, dword, dword*, void*);
 
-FMT_FUNC bool write_console(int fd, string_view text) {
+FMT_FUNC bool write_console(int fd, std::string_view text) {
   auto u16 = utf8_to_utf16(text);
   return WriteConsoleW(reinterpret_cast<void*>(_get_osfhandle(fd)), u16.c_str(),
                        static_cast<dword>(u16.size()), nullptr, nullptr) != 0;
@@ -1707,7 +1707,7 @@ FMT_FUNC bool write_console(int fd, string_view text) {
 
 #ifdef _WIN32
 // Print assuming legacy (non-Unicode) encoding.
-FMT_FUNC void vprint_mojibake(std::FILE* f, string_view fmt, format_args args,
+FMT_FUNC void vprint_mojibake(std::FILE* f, std::string_view fmt, format_args args,
                               bool newline) {
   auto buffer = memory_buffer();
   detail::vformat_to(buffer, fmt, args);
@@ -1716,7 +1716,7 @@ FMT_FUNC void vprint_mojibake(std::FILE* f, string_view fmt, format_args args,
 }
 #endif
 
-FMT_FUNC void print(std::FILE* f, string_view text) {
+FMT_FUNC void print(std::FILE* f, std::string_view text) {
 #if defined(_WIN32) && !defined(FMT_USE_WRITE_CONSOLE)
   int fd = _fileno(f);
   if (_isatty(fd)) {
@@ -1728,27 +1728,27 @@ FMT_FUNC void print(std::FILE* f, string_view text) {
 }
 }  // namespace detail
 
-FMT_FUNC void vprint_buffered(std::FILE* f, string_view fmt, format_args args) {
+FMT_FUNC void vprint_buffered(std::FILE* f, std::string_view fmt, format_args args) {
   auto buffer = memory_buffer();
   detail::vformat_to(buffer, fmt, args);
   detail::print(f, {buffer.data(), buffer.size()});
 }
 
-FMT_FUNC void vprint(std::FILE* f, string_view fmt, format_args args) {
+FMT_FUNC void vprint(std::FILE* f, std::string_view fmt, format_args args) {
   if (!detail::file_ref(f).is_buffered() || !detail::has_flockfile<>())
     return vprint_buffered(f, fmt, args);
   auto&& buffer = detail::file_print_buffer<>(f);
   return detail::vformat_to(buffer, fmt, args);
 }
 
-FMT_FUNC void vprintln(std::FILE* f, string_view fmt, format_args args) {
+FMT_FUNC void vprintln(std::FILE* f, std::string_view fmt, format_args args) {
   auto buffer = memory_buffer();
   detail::vformat_to(buffer, fmt, args);
   buffer.push_back('\n');
   detail::print(f, {buffer.data(), buffer.size()});
 }
 
-FMT_FUNC void vprint(string_view fmt, format_args args) {
+FMT_FUNC void vprint(std::string_view fmt, format_args args) {
   vprint(stdout, fmt, args);
 }
 
