@@ -1,0 +1,22 @@
+{
+  name: "Run with negated match_regex operator and numeric ket path",
+  runs: [
+    {
+      input: {
+        rule5-input: [ "something else or other" ]
+      },
+      rules: [
+        {
+          5: [
+            {
+              address: rule5-input,
+              key_path: [ -1 ],
+              value: "something else or other"
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}

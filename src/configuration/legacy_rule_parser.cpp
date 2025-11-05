@@ -12,6 +12,7 @@
 #include <string_view>
 #include <unordered_map>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "condition/base.hpp"
@@ -102,7 +103,7 @@ std::shared_ptr<expression> parse_expression(
             }
 
             std::string root;
-            std::vector<std::string> key_path;
+            std::vector<std::variant<std::string, int64_t>> key_path;
             const size_t pos = input.find(':', 0);
             if (pos == std::string::npos || pos + 1 >= input.size()) {
                 root = input;

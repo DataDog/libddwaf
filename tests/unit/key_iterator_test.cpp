@@ -135,11 +135,11 @@ TEST(TestKeyIterator, TestMapSingleItem)
     object_set_ref exclude;
     ddwaf::key_iterator it(object, {}, exclude);
     EXPECT_TRUE((bool)it);
-    EXPECT_STREQ((*it).as<const char *>(), "key");
+    EXPECT_STR((*it).as<std::string_view>(), "key");
 
     auto path = it.get_current_path();
     EXPECT_EQ(path.size(), 1);
-    EXPECT_STREQ(path[0].c_str(), "key");
+    EXPECT_STR(std::get<std::string_view>(path[0]), "key");
 
     EXPECT_FALSE(++it);
 }
@@ -161,11 +161,11 @@ TEST(TestKeyIterator, TestMapMultipleItems)
         std::string key = "key" + index;
 
         EXPECT_TRUE((bool)it);
-        EXPECT_STREQ((*it).as<const char *>(), key.c_str());
+        EXPECT_STR((*it).as<std::string_view>(), key);
 
         auto path = it.get_current_path();
         EXPECT_EQ(path.size(), 1);
-        EXPECT_STREQ(path[0].c_str(), key.c_str());
+        EXPECT_STR(std::get<std::string_view>(path[0]), key);
         ++it;
     }
 
@@ -202,11 +202,11 @@ TEST(TestKeyIterator, TestMapMultipleNullAndInvalid)
             std::string key = "key" + index;
 
             EXPECT_TRUE((bool)it);
-            EXPECT_STREQ((*it).as<const char *>(), key.c_str());
+            EXPECT_STR((*it).as<std::string_view>(), key);
 
             auto path = it.get_current_path();
             EXPECT_EQ(path.size(), 1);
-            EXPECT_STREQ(path[0].c_str(), key.c_str());
+            EXPECT_STR(std::get<std::string_view>(path[0]), key);
         }
 
         ++it;
@@ -219,7 +219,7 @@ TEST(TestKeyIterator, TestMapMultipleNullAndInvalid)
 
             auto path = it.get_current_path();
             EXPECT_EQ(path.size(), 1);
-            EXPECT_STREQ(path[0].c_str(), key.c_str());
+            EXPECT_STR(std::get<std::string_view>(path[0]), key);
         }
 
         ++it;
@@ -232,7 +232,7 @@ TEST(TestKeyIterator, TestMapMultipleNullAndInvalid)
 
             auto path = it.get_current_path();
             EXPECT_EQ(path.size(), 1);
-            EXPECT_STREQ(path[0].c_str(), key.c_str());
+            EXPECT_STR(std::get<std::string_view>(path[0]), key);
         }
         ++it;
     }
@@ -257,27 +257,27 @@ TEST(TestKeyIterator, TestDeepMap)
     for (unsigned i = 0; i < 10; i++) {
         auto index = std::to_string(i);
 
-        EXPECT_STREQ((*it).as<const char *>(), ("str" + index).c_str());
+        EXPECT_STR((*it).as<std::string_view>(), ("str" + index));
 
         {
             auto path = it.get_current_path();
             EXPECT_EQ(path.size(), i + 1);
             for (unsigned j = 0; j < i; j++) {
                 auto key = "map" + std::to_string(j);
-                EXPECT_STREQ(path[j].c_str(), key.c_str());
+                EXPECT_STR(std::get<std::string_view>(path[j]), key);
             }
-            EXPECT_STREQ(path.back().c_str(), ("str" + index).c_str());
+            EXPECT_STR(std::get<std::string_view>(path.back()), ("str" + index));
         }
 
         EXPECT_TRUE(++it);
-        EXPECT_STREQ((*it).as<const char *>(), ("map" + index).c_str());
+        EXPECT_STR((*it).as<std::string_view>(), ("map" + index));
 
         {
             auto path = it.get_current_path();
             EXPECT_EQ(path.size(), i + 1);
             for (unsigned j = 0; j < i + 1; j++) {
                 auto key = "map" + std::to_string(j);
-                EXPECT_STREQ(path[j].c_str(), key.c_str());
+                EXPECT_STR(std::get<std::string_view>(path[j]), key);
             }
         }
 
@@ -298,11 +298,11 @@ TEST(TestKeyIterator, TestNoRootKey)
     object_set_ref exclude;
     ddwaf::key_iterator it(object.at(0), {}, exclude);
     EXPECT_TRUE((bool)it);
-    EXPECT_STREQ((*it).as<const char *>(), "key");
+    EXPECT_STR((*it).as<std::string_view>(), "key");
 
     auto path = it.get_current_path();
     EXPECT_EQ(path.size(), 1);
-    EXPECT_STREQ(path[0].c_str(), "key");
+    EXPECT_STR(std::get<std::string_view>(path[0]), "key");
 
     EXPECT_FALSE(++it);
 }
@@ -329,19 +329,20 @@ TEST(TestKeyIterator, TestContainerMix)
         object_set_ref exclude;
         ddwaf::key_iterator it(object, {}, exclude);
 
-        std::vector<std::pair<std::string, std::vector<std::string>>> values = {
-            {"root", {"root"}},
-            {"key0", {"root", "key0"}},
-            {"key0_0", {"root", "key0", "2", "key0_0"}},
-            {"key1", {"root", "key1"}},
-            {"key2", {"root", "key2"}},
-            {"key2_0", {"root", "key2", "key2_0"}},
-            {"key2_1", {"root", "key2", "key2_1"}},
-            {"key2_2", {"root", "key2", "key2_2"}},
-        };
+        std::vector<std::pair<std::string, std::vector<std::variant<std::string_view, int64_t>>>>
+            values = {
+                {"root", {"root"}},
+                {"key0", {"root", "key0"}},
+                {"key0_0", {"root", "key0", 2, "key0_0"}},
+                {"key1", {"root", "key1"}},
+                {"key2", {"root", "key2"}},
+                {"key2_0", {"root", "key2", "key2_0"}},
+                {"key2_1", {"root", "key2", "key2_1"}},
+                {"key2_2", {"root", "key2", "key2_2"}},
+            };
 
         for (auto &[value, path] : values) {
-            EXPECT_STREQ((*it).as<const char *>(), value.c_str());
+            EXPECT_STR((*it).as<std::string_view>(), value);
 
             auto it_path = it.get_current_path();
             EXPECT_EQ(path, it_path);
@@ -362,11 +363,11 @@ TEST(TestKeyIterator, TestMapNoScalars)
 
     for (unsigned i = 0; i < 50; i++) {
         EXPECT_TRUE((bool)it);
-        EXPECT_STREQ((*it).as<const char *>(), "key");
+        EXPECT_STR((*it).as<std::string_view>(), "key");
 
         auto path = it.get_current_path();
         EXPECT_EQ(path.size(), 1);
-        EXPECT_STREQ(path[0].c_str(), "key");
+        EXPECT_STR(std::get<std::string_view>(path[0]), "key");
         ++it;
     }
 
@@ -378,7 +379,7 @@ TEST(TestKeyIterator, TestInvalidObjectPath)
     owned_object object;
 
     object_set_ref exclude;
-    std::vector<std::string> key_path{"key", "0", "value"};
+    std::vector<std::variant<std::string, int64_t>> key_path{"key", "0", "value"};
     ddwaf::key_iterator it(object, key_path, exclude);
     EXPECT_FALSE((bool)it);
 
@@ -393,14 +394,14 @@ TEST(TestKeyIterator, TestSimplePath)
     auto object = object_builder::map({{"key", "value"}, {"key1", "value"}, {"key2", "value"}});
 
     {
-        std::vector<std::string> key_path{"key"};
+        std::vector<std::variant<std::string, int64_t>> key_path{"key"};
         ddwaf::key_iterator it(object, key_path, {});
         EXPECT_FALSE((bool)it);
         EXPECT_FALSE(++it);
     }
 
     {
-        std::vector<std::string> key_path{"key", "0"};
+        std::vector<std::variant<std::string, int64_t>> key_path{"key", "0"};
         ddwaf::key_iterator it(object, key_path, {});
         EXPECT_FALSE((bool)it);
 
@@ -411,7 +412,7 @@ TEST(TestKeyIterator, TestSimplePath)
     }
 
     {
-        std::vector<std::string> key_path{"key", "0", "value"};
+        std::vector<std::variant<std::string, int64_t>> key_path{"key", "0", "value"};
         ddwaf::key_iterator it(object, key_path, {});
         EXPECT_FALSE((bool)it);
 
@@ -432,18 +433,19 @@ TEST(TestKeyIterator, TestMultiPath)
 
     object_set_ref exclude;
     {
-        std::vector<std::pair<std::string, std::vector<std::string>>> values = {
-            {"second", {"first", "second"}},
-            {"third", {"first", "second", "third"}},
-            {"value", {"first", "second", "value"}},
-            {"value", {"first", "value"}},
-        };
+        std::vector<std::pair<std::string, std::vector<std::variant<std::string_view, int64_t>>>>
+            values = {
+                {"second", {"first", "second"}},
+                {"third", {"first", "second", "third"}},
+                {"value", {"first", "second", "value"}},
+                {"value", {"first", "value"}},
+            };
 
-        std::vector<std::string> key_path{"first"};
+        std::vector<std::variant<std::string, int64_t>> key_path{"first"};
         ddwaf::key_iterator it(object, key_path, exclude);
 
         for (auto &[value, path] : values) {
-            EXPECT_STREQ((*it).as<const char *>(), value.c_str());
+            EXPECT_STR((*it).as<std::string_view>(), value);
 
             auto it_path = it.get_current_path();
             EXPECT_EQ(path, it_path);
@@ -454,16 +456,17 @@ TEST(TestKeyIterator, TestMultiPath)
     }
 
     {
-        std::vector<std::pair<std::string, std::vector<std::string>>> values = {
-            {"third", {"first", "second", "third"}},
-            {"value", {"first", "second", "value"}},
-        };
+        std::vector<std::pair<std::string, std::vector<std::variant<std::string_view, int64_t>>>>
+            values = {
+                {"third", {"first", "second", "third"}},
+                {"value", {"first", "second", "value"}},
+            };
 
-        std::vector<std::string> key_path{"first", "second"};
+        std::vector<std::variant<std::string, int64_t>> key_path{"first", "second"};
         ddwaf::key_iterator it(object, key_path, exclude);
 
         for (auto &[value, path] : values) {
-            EXPECT_STREQ((*it).as<const char *>(), value.c_str());
+            EXPECT_STR((*it).as<std::string_view>(), value);
 
             auto it_path = it.get_current_path();
             EXPECT_EQ(path, it_path);
@@ -474,7 +477,7 @@ TEST(TestKeyIterator, TestMultiPath)
     }
 
     {
-        std::vector<std::string> key_path{"first", "second", "third"};
+        std::vector<std::variant<std::string, int64_t>> key_path{"first", "second", "third"};
         ddwaf::key_iterator it(object, key_path, exclude);
         EXPECT_FALSE((bool)it);
     }
@@ -500,13 +503,13 @@ TEST(TestKeyIterator, TestContainerMixPath)
 
     object_set_ref exclude;
     {
-        std::vector<std::string> key_path{"root", "key0"};
+        std::vector<std::variant<std::string, int64_t>> key_path{"root", "key0"};
         ddwaf::key_iterator it(object, key_path, exclude);
         EXPECT_TRUE((bool)it);
-        EXPECT_STREQ((*it).as<const char *>(), "key0_0");
+        EXPECT_STR((*it).as<std::string_view>(), "key0_0");
 
         auto it_path = it.get_current_path();
-        std::vector<std::string> path = {"root", "key0", "2", "key0_0"};
+        std::vector<std::variant<std::string_view, int64_t>> path = {"root", "key0", 2, "key0_0"};
         EXPECT_EQ(it_path, path);
 
         EXPECT_FALSE(++it);
@@ -514,24 +517,25 @@ TEST(TestKeyIterator, TestContainerMixPath)
     }
 
     {
-        std::vector<std::string> key_path{"root", "key1"};
+        std::vector<std::variant<std::string, int64_t>> key_path{"root", "key1"};
         ddwaf::key_iterator it(object, key_path, exclude);
         EXPECT_FALSE((bool)it);
         EXPECT_FALSE(++it);
     }
 
     {
-        std::vector<std::pair<std::string, std::vector<std::string>>> values = {
-            {"key2_0", {"root", "key2", "key2_0"}},
-            {"key2_1", {"root", "key2", "key2_1"}},
-            {"key2_2", {"root", "key2", "key2_2"}},
-        };
+        std::vector<std::pair<std::string, std::vector<std::variant<std::string_view, int64_t>>>>
+            values = {
+                {"key2_0", {"root", "key2", "key2_0"}},
+                {"key2_1", {"root", "key2", "key2_1"}},
+                {"key2_2", {"root", "key2", "key2_2"}},
+            };
 
-        std::vector<std::string> key_path{"root", "key2"};
+        std::vector<std::variant<std::string, int64_t>> key_path{"root", "key2"};
         ddwaf::key_iterator it(object, key_path, exclude);
 
         for (auto &[value, path] : values) {
-            EXPECT_STREQ((*it).as<const char *>(), value.c_str());
+            EXPECT_STR((*it).as<std::string_view>(), value);
 
             auto it_path = it.get_current_path();
             EXPECT_EQ(path, it_path);
@@ -562,22 +566,67 @@ TEST(TestKeyIterator, TestContainerMixInvalidPath)
 
     object_set_ref exclude;
     {
-        std::vector<std::string> key_path{"rat"};
+        std::vector<std::variant<std::string, int64_t>> key_path{"rat"};
         ddwaf::key_iterator it(object, key_path, exclude);
         EXPECT_FALSE((bool)it);
     }
 
     {
-        std::vector<std::string> key_path{"root", "cat"};
+        std::vector<std::variant<std::string, int64_t>> key_path{"root", "cat"};
         ddwaf::key_iterator it(object, key_path, exclude);
         EXPECT_FALSE((bool)it);
     }
 
     {
-        std::vector<std::string> key_path{"root", "key2", "key2_2", "0", "1", "2", "3"};
+        std::vector<std::variant<std::string, int64_t>> key_path{
+            "root", "key2", "key2_2", 0, 1, 2, 3};
         ddwaf::key_iterator it(object, key_path, exclude);
         EXPECT_FALSE((bool)it);
     }
+}
+
+TEST(TestKeyIterator, TestNegativeIndexInPath)
+{
+    auto object = yaml_to_object<owned_object>(R"(
+        {
+            root: {
+                key0: [value0_0, value0_1, { key0_0: value0_2 }, value0_3],
+                key1: value1_0,
+                key2: {
+                    key2_0: value2_0,
+                    key2_1: value2_1,
+                    key2_2: [value2_2, value2_3]
+                }
+            }
+        }
+    )");
+
+    object_set_ref exclude;
+    std::vector<std::variant<std::string, int64_t>> key_path{"root", "key2", "key2_2", -1};
+    ddwaf::key_iterator it(object, key_path, exclude);
+    EXPECT_FALSE((bool)it);
+}
+
+TEST(TestKeyIterator, TestIntInPathSucceeds)
+{
+    auto object = yaml_to_object<owned_object>(R"(
+        {
+            root: {
+                key0: [value0_0, value0_1, { key0_0: value0_2 }, value0_3 ]
+            }
+        }
+    )");
+
+    object_set_ref exclude;
+    std::vector<std::variant<std::string, int64_t>> key_path{"root", "key0", 2};
+    ddwaf::key_iterator it(object, key_path, exclude);
+    EXPECT_TRUE((bool)it);
+    EXPECT_STR((*it).as<std::string_view>(), "key0_0");
+
+    auto it_path = it.get_current_path();
+    std::vector<std::variant<std::string_view, int64_t>> expected_path = {
+        "root", "key0", 2, "key0_0"};
+    EXPECT_EQ(it_path, expected_path);
 }
 
 TEST(TestKeyIterator, TestExcludeSingleObject)
@@ -604,21 +653,21 @@ TEST(TestKeyIterator, TestExcludeMultipleObjects)
     ddwaf::key_iterator it(root, {}, exclude);
 
     EXPECT_TRUE(it);
-    EXPECT_STREQ((*it).as<const char *>(), "other");
+    EXPECT_STR((*it).as<std::string_view>(), "other");
 
     auto path = it.get_current_path();
     EXPECT_EQ(path.size(), 1);
-    EXPECT_STREQ(path[0].c_str(), "other");
+    EXPECT_STR(std::get<std::string_view>(path[0]), "other");
 
-    EXPECT_STREQ((*it).as<const char *>(), "other");
+    EXPECT_STR((*it).as<std::string_view>(), "other");
 
     EXPECT_TRUE(++it);
-    EXPECT_STREQ((*it).as<const char *>(), "hello_key");
+    EXPECT_STR((*it).as<std::string_view>(), "hello_key");
 
     path = it.get_current_path();
     EXPECT_EQ(path.size(), 2);
-    EXPECT_STREQ(path[0].c_str(), "other");
-    EXPECT_STREQ(path[1].c_str(), "hello_key");
+    EXPECT_STR(std::get<std::string_view>(path[0]), "other");
+    EXPECT_STR(std::get<std::string_view>(path[1]), "hello_key");
 
     EXPECT_FALSE(++it);
 }
@@ -630,8 +679,10 @@ TEST(TestKeyIterator, TestExcludeObjectInKeyPath)
     child.emplace("child", "value");
 
     std::unordered_set<object_cache_key> persistent{child.at(0)};
+
     object_set_ref exclude{persistent};
-    std::vector<std::string> key_path{"parent", "child"};
+    std::vector<std::variant<std::string, int64_t>> key_path{"parent", "child"};
+
     ddwaf::key_iterator it(root, key_path, exclude);
 
     EXPECT_FALSE(it);
@@ -643,7 +694,8 @@ TEST(TestKeyIterator, TestExcludeRootOfKeyPath)
 
     std::unordered_set<object_cache_key> persistent{root.at(0)};
     object_set_ref exclude{persistent};
-    std::vector<std::string> key_path{"parent", "child"};
+    std::vector<std::variant<std::string, int64_t>> key_path{"parent", "child"};
+
     ddwaf::key_iterator it(root, key_path, exclude);
 
     EXPECT_FALSE(it);

@@ -1,0 +1,15 @@
+{
+  name: "Exists operator on mixed key path, no match",
+  runs: [
+    {
+      input: {
+        rule7-input: {
+          path: {
+            to: [ 0, 1, 2, 3, 4, 5, 6 7]
+          }
+        }
+      },
+      code: ok
+    }
+  ]
+}

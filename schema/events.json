@@ -59,39 +59,73 @@
             "parameters": {
               "type": "array",
               "items": {
-                "type": "object",
-                "properties": {
-                  "address": {
-                    "type": "string",
-                    "description": "The address containing the value that triggered the rule. For example ``http.server.query``."
-                  },
-                  "key_path": {
-                    "type": "array",
-                    "description": "The path of the value that triggered the rule. For example ``[\"query\", 0]`` to refer to the value in ``{\"query\": [\"triggering value\"]}``.",
-                    "items": {
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "integer"
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "address": {
+                        "type": "string",
+                        "description": "The address containing the value that triggered the rule. For example ``http.server.query``."
+                      },
+                      "key_path": {
+                        "type": "array",
+                        "description": "The path of the value that triggered the rule. For example ``[\"query\", 0]`` to refer to the value in ``{\"query\": [\"triggering value\"]}``.",
+                        "items": {
+                          "anyOf": [
+                            { "type": "string" },
+                            { "type": "integer" }
+                          ]
                         }
-                      ]
-                    }
+                      },
+                      "value": {
+                        "type": "string",
+                        "description": "The value that triggered the rule."
+                      },
+                      "highlight": {
+                        "type": "array",
+                        "description": "The part of the value that triggered the rule.",
+                        "items": { "type": "string" }
+                      }
+                    },
+                    "required": ["address", "key_path", "value", "highlight"],
+                    "additionalProperties": false
                   },
-                  "value": {
-                    "type": "string",
-                    "description": "The value that triggered the rule."
-                  },
-                  "highlight": {
-                    "type": "array",
-                    "description": "The part of the value that triggered the rule.",
-                    "items": {
-                      "type": "string"
+                  {
+                    "type": "object",
+                    "properties": {
+                      "highlight": {
+                        "type": "array",
+                        "description": "The part of the value that triggered the rule.",
+                        "items": { "type": "string" }
+                      }
+                    },
+                    "additionalProperties": {
+                      "type": "object",
+                      "properties": {
+                        "address": {
+                          "type": "string",
+                          "description": "The address containing the value that triggered the rule. For example ``http.server.query``."
+                        },
+                        "key_path": {
+                          "type": "array",
+                          "description": "The path of the value that triggered the rule. For example ``[\"query\", 0]`` to refer to the value in ``{\"query\": [\"triggering value\"]}``.",
+                          "items": {
+                            "anyOf": [
+                              { "type": "string" },
+                              { "type": "integer" }
+                            ]
+                          }
+                        },
+                        "value": {
+                          "type": "string",
+                          "description": "The value that triggered the rule."
+                        }
+                      },
+                      "required": ["value", "address", "key_path"],
+                      "additionalProperties": false
                     }
                   }
-                },
-                "required": ["address", "key_path", "value", "highlight"]
+                ]
               }
             }
           },

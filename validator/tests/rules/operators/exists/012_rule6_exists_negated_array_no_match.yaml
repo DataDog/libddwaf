@@ -1,0 +1,11 @@
+{
+  name: "!Exists operator on array key path",
+  runs: [
+    {
+      input: {
+        rule6-input: [ 0, 20 ]
+      },
+      code: ok
+    }
+  ]
+}

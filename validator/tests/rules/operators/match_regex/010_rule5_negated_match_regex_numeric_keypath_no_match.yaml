@@ -1,0 +1,11 @@
+{
+  name: "Run with negated match_regex operator, negated operator and no match",
+  runs: [
+    {
+      input: {
+        rule5-input: "ARACHNI"
+      },
+      code: ok
+    }
+  ]
+}

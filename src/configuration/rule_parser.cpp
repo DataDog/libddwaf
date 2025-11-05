@@ -9,6 +9,7 @@
 #include <string_view>
 #include <unordered_map>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "condition/base.hpp"
@@ -108,7 +109,8 @@ rule_spec parse_rule(raw_configuration::map &rule, core_rule::source_type source
             auto address = at<std::string_view>(value_or_target_map, "address");
             attr_spec.value_or_target = rule_attribute::input_target{.name = std::string{address},
                 .index = get_target_index(address),
-                .key_path = at<std::vector<std::string>>(value_or_target_map, "key_path", {})};
+                .key_path = at<std::vector<std::variant<std::string, int64_t>>>(
+                    value_or_target_map, "key_path", {})};
         }
         attributes.emplace_back(std::move(attr_spec));
     }

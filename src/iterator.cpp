@@ -5,17 +5,18 @@
 // Copyright 2021 Datadog, Inc.
 
 #include <cstddef>
+#include <cstdint>
 #include <span>
 #include <string>
 #include <string_view>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "exclusion/common.hpp"
 #include "iterator.hpp"
 #include "object.hpp"
 #include "object_type.hpp"
-#include "utils.hpp"
 
 namespace ddwaf {
 
@@ -34,14 +35,14 @@ template <typename T> bool iterator_base<T>::operator++()
     return current_.second.has_value();
 }
 
-// TODO: return string_view as this will be immediately copied after
-template <typename T> std::vector<std::string> iterator_base<T>::get_current_path() const
+template <typename T>
+std::vector<std::variant<std::string_view, int64_t>> iterator_base<T>::get_current_path() const
 {
     if (!current_.second.has_value()) {
         return {};
     }
 
-    std::vector<std::string> keys;
+    std::vector<std::variant<std::string_view, int64_t>> keys;
     keys.reserve(path_.size() + stack_.size());
     for (const auto &key : path_) { keys.emplace_back(key); }
 
@@ -58,7 +59,7 @@ template <typename T> std::vector<std::string> iterator_base<T>::get_current_pat
         if (parent.type() == object_type::map) {
             keys.emplace_back(key.template as<std::string_view>());
         } else {
-            keys.emplace_back(to_string<std::string>(parent_index - 1));
+            keys.emplace_back(static_cast<int64_t>(parent_index - 1));
         }
         parent = stack_[i].first;
         parent_index = stack_[i].second;
@@ -67,20 +68,21 @@ template <typename T> std::vector<std::string> iterator_base<T>::get_current_pat
     if (parent.type() == object_type::map) {
         keys.emplace_back(current_.first.as<std::string_view>());
     } else {
-        keys.emplace_back(to_string<std::string>(parent_index - 1));
+        keys.emplace_back(static_cast<int64_t>(parent_index - 1));
     }
 
     return keys;
 }
 
-value_iterator::value_iterator(
-    object_view obj, std::span<const std::string> path, const object_set_ref &exclude)
+value_iterator::value_iterator(object_view obj,
+    std::span<const std::variant<std::string, int64_t>> path, const object_set_ref &exclude)
     : iterator_base(exclude)
 {
     initialise_cursor(obj, path);
 }
 
-void value_iterator::initialise_cursor(object_view obj, std::span<const std::string> path)
+void value_iterator::initialise_cursor(
+    object_view obj, std::span<const std::variant<std::string, int64_t>> path)
 {
     if (excluded_.contains(obj.ptr())) {
         return;
@@ -105,7 +107,8 @@ void value_iterator::initialise_cursor(object_view obj, std::span<const std::str
     }
 }
 
-void value_iterator::initialise_cursor_with_path(object_view obj, std::span<const std::string> path)
+void value_iterator::initialise_cursor_with_path(
+    object_view obj, std::span<const std::variant<std::string, int64_t>> path)
 {
     // An object with a path should always start with a container
     if (!obj.is_container()) {
@@ -116,11 +119,12 @@ void value_iterator::initialise_cursor_with_path(object_view obj, std::span<cons
     stack_.emplace_back(obj, 0);
 
     for (std::size_t i = 0; i < path.size(); i++) {
-        const std::string_view key = path[i];
+        const auto &key = path[i];
         auto &[parent, index] = stack_.back();
 
         std::pair<object_view, object_view> child;
-        if (parent.type() == object_type::map) {
+        if (parent.is_map() && std::holds_alternative<std::string>(key)) {
+            const auto &expected_key = std::get<std::string>(key);
             for (std::size_t j = 0; j < parent.size(); j++) {
                 auto possible_child = parent.at(j);
                 if (!possible_child.first.has_value()) {
@@ -131,11 +135,20 @@ void value_iterator::initialise_cursor_with_path(object_view obj, std::span<cons
                     continue;
                 }
 
-                if (possible_child.first == key) {
+                if (possible_child.first == expected_key) {
                     child = possible_child;
                     index = j + 1;
                     break;
                 }
+            }
+        } else if (parent.is_array() && std::holds_alternative<int64_t>(key)) {
+            const auto expected_index = std::get<int64_t>(key);
+            if (expected_index >= 0 && parent.size<int64_t>() > expected_index) {
+                child = parent.at(expected_index);
+                index = expected_index;
+            } else if (expected_index < 0 && (parent.size<int64_t>() + expected_index) >= 0) {
+                index = parent.size<int64_t>() + expected_index;
+                child = parent.at(index);
             }
         }
 
@@ -169,7 +182,13 @@ void value_iterator::initialise_cursor_with_path(object_view obj, std::span<cons
 
     // Once we reach this point, if current_is valid, we found the key path
     if (current_.second.has_value()) {
-        for (const auto &p : path) { path_.emplace_back(p); }
+        for (const auto &p : path) {
+            if (std::holds_alternative<std::string>(p)) {
+                path_.emplace_back(std::get<std::string>(p));
+            } else {
+                path_.emplace_back(std::get<int64_t>(p));
+            }
+        }
     }
 }
 
@@ -210,14 +229,15 @@ void value_iterator::set_cursor_to_next_object()
     }
 }
 
-key_iterator::key_iterator(
-    object_view obj, std::span<const std::string> path, const object_set_ref &exclude)
+key_iterator::key_iterator(object_view obj,
+    std::span<const std::variant<std::string, int64_t>> path, const object_set_ref &exclude)
     : iterator_base(exclude)
 {
     initialise_cursor(obj, path);
 }
 
-void key_iterator::initialise_cursor(object_view obj, std::span<const std::string> path)
+void key_iterator::initialise_cursor(
+    object_view obj, std::span<const std::variant<std::string, int64_t>> path)
 {
     if (excluded_.contains(obj.ptr())) {
         return;
@@ -236,17 +256,19 @@ void key_iterator::initialise_cursor(object_view obj, std::span<const std::strin
     }
 }
 
-void key_iterator::initialise_cursor_with_path(object_view obj, std::span<const std::string> path)
+void key_iterator::initialise_cursor_with_path(
+    object_view obj, std::span<const std::variant<std::string, int64_t>> path)
 {
     // Add container to stack and find next scalar within the given path
     stack_.emplace_back(obj, 0);
 
     for (std::size_t i = 0; i < path.size(); i++) {
-        const std::string_view key = path[i];
+        const auto &key = path[i];
         auto &[parent, index] = stack_.back();
 
         std::pair<object_view, object_view> child;
-        if (parent.type() == object_type::map) {
+        if (parent.is_map() && std::holds_alternative<std::string>(key)) {
+            const auto &expected_key = std::get<std::string>(key);
             for (std::size_t j = 0; j < parent.size(); j++) {
                 auto possible_child = parent.at(j);
                 ;
@@ -258,10 +280,17 @@ void key_iterator::initialise_cursor_with_path(object_view obj, std::span<const 
                     continue;
                 }
 
-                if (possible_child.first == key) {
+                if (possible_child.first == expected_key) {
                     child = possible_child;
                     break;
                 }
+            }
+        } else if (parent.is_array() && std::holds_alternative<int64_t>(key)) {
+            const auto expected_index = std::get<int64_t>(key);
+            if (expected_index >= 0 && parent.size<int64_t>() > expected_index) {
+                child = parent.at(expected_index);
+            } else if (expected_index < 0 && (parent.size<int64_t>() + expected_index) >= 0) {
+                child = parent.at(parent.size<int64_t>() + expected_index);
             }
         }
 
@@ -284,7 +313,13 @@ void key_iterator::initialise_cursor_with_path(object_view obj, std::span<const 
 
     // Once we reach this point, if current_ is valid, we found the key path
     if (current_.second.has_value()) {
-        for (const auto &p : path) { path_.emplace_back(p); }
+        for (const auto &p : path) {
+            if (std::holds_alternative<std::string>(p)) {
+                path_.emplace_back(std::get<std::string>(p));
+            } else {
+                path_.emplace_back(std::get<int64_t>(p));
+            }
+        }
     }
 }
 
@@ -333,14 +368,15 @@ void key_iterator::set_cursor_to_next_object()
     }
 }
 
-kv_iterator::kv_iterator(
-    object_view obj, std::span<const std::string> path, const object_set_ref &exclude)
+kv_iterator::kv_iterator(object_view obj, std::span<const std::variant<std::string, int64_t>> path,
+    const object_set_ref &exclude)
     : iterator_base(exclude)
 {
     initialise_cursor(obj, path);
 }
 
-void kv_iterator::initialise_cursor(object_view obj, std::span<const std::string> path)
+void kv_iterator::initialise_cursor(
+    object_view obj, std::span<const std::variant<std::string, int64_t>> path)
 {
     if (excluded_.contains(obj.ptr())) {
         return;
@@ -366,17 +402,19 @@ void kv_iterator::initialise_cursor(object_view obj, std::span<const std::string
     }
 }
 
-void kv_iterator::initialise_cursor_with_path(object_view obj, std::span<const std::string> path)
+void kv_iterator::initialise_cursor_with_path(
+    object_view obj, std::span<const std::variant<std::string, int64_t>> path)
 {
     // Add container to stack and find next scalar within the given path
     stack_.emplace_back(obj, 0);
 
     for (std::size_t i = 0; i < path.size(); i++) {
-        const std::string_view key = path[i];
+        const auto &key = path[i];
         auto &[parent, index] = stack_.back();
 
         std::pair<object_view, object_view> child;
-        if (parent.type() == object_type::map) {
+        if (parent.is_map() && std::holds_alternative<std::string>(key)) {
+            const auto &expected_key = std::get<std::string>(key);
             for (std::size_t j = 0; j < parent.size(); j++) {
                 auto possible_child = parent.at(j);
                 if (!possible_child.first.has_value()) {
@@ -387,10 +425,17 @@ void kv_iterator::initialise_cursor_with_path(object_view obj, std::span<const s
                     continue;
                 }
 
-                if (possible_child.first == key) {
+                if (possible_child.first == expected_key) {
                     child = possible_child;
                     break;
                 }
+            }
+        } else if (parent.is_array() && std::holds_alternative<int64_t>(key)) {
+            const auto expected_index = std::get<int64_t>(key);
+            if (expected_index >= 0 && parent.size<int64_t>() > expected_index) {
+                child = parent.at(expected_index);
+            } else if (expected_index < 0 && (parent.size<int64_t>() + expected_index) >= 0) {
+                child = parent.at(parent.size<int64_t>() + expected_index);
             }
         }
 
@@ -424,7 +469,13 @@ void kv_iterator::initialise_cursor_with_path(object_view obj, std::span<const s
 
     // Once we reach this point, if current_ is valid, we found the key path
     if (current_.second.has_value()) {
-        for (const auto &p : path) { path_.emplace_back(p); }
+        for (const auto &p : path) {
+            if (std::holds_alternative<std::string>(p)) {
+                path_.emplace_back(std::get<std::string>(p));
+            } else {
+                path_.emplace_back(std::get<int64_t>(p));
+            }
+        }
     }
 }
 

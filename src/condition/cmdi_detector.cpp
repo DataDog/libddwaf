@@ -13,6 +13,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "argument_retriever.hpp"
@@ -31,6 +32,7 @@
 #include "platform.hpp"
 #include "tokenizer/shell.hpp"
 #include "transformer/lowercase.hpp"
+#include "utils.hpp"
 
 using namespace std::literals;
 
@@ -61,7 +63,10 @@ public:
         return false;
     }
     [[nodiscard]] explicit operator bool() const { return current_.has_value(); }
-    [[nodiscard]] static std::vector<std::string> get_current_path() { return {}; }
+    [[nodiscard]] static std::vector<std::variant<std::string_view, int64_t>> get_current_path()
+    {
+        return {};
+    }
 
 protected:
     object_view current_;
@@ -445,9 +450,6 @@ bool cmdi_detector::eval_impl(const unary_argument<object_view> &resource,
         auto res =
             cmdi_impl(resource.value, resource_tokens, param.value, objects_excluded, deadline);
         if (res.has_value()) {
-            const std::vector<std::string> resource_kp{
-                resource.key_path.begin(), resource.key_path.end()};
-
             auto &[highlight, param_kp] = res.value();
 
             DDWAF_TRACE("Target {} matched parameter value {}", param.address, highlight);
@@ -456,7 +458,7 @@ bool cmdi_detector::eval_impl(const unary_argument<object_view> &resource,
                 condition_match{.args = {{.name = "resource"sv,
                                              .resolved = generate_string_resource(resource.value),
                                              .address = resource.address,
-                                             .key_path = resource_kp},
+                                             .key_path = convert_key_path(resource.key_path)},
                                     {.name = "params"sv,
                                         .resolved = highlight,
                                         .address = param.address,

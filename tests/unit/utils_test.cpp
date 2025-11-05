@@ -175,4 +175,12 @@ TEST(TestUtils, Split)
     EXPECT_VEC(ddwaf::split("a,b,c,d,e,f,g", ','), "a", "b", "c", "d", "e", "f", "g");
 }
 
+TEST(TestUtils, ConvertKeyPath)
+{
+    std::vector<std::variant<std::string, int64_t>> input{"root", "key", 0, -1, "leaf"};
+    auto converted = convert_key_path(input);
+    std::vector<std::variant<std::string_view, int64_t>> expected{"root", "key", 0, -1, "leaf"};
+    EXPECT_EQ(converted, expected);
+}
+
 } // namespace

@@ -18,11 +18,13 @@
 #include "utils.hpp"
 
 #include <cstddef>
+#include <cstdint>
 #include <span>
 #include <string>
 #include <string_view>
 #include <tuple>
 #include <utility>
+#include <variant>
 
 using namespace std::literals;
 
@@ -76,7 +78,8 @@ owned_object decode_and_parse(std::string_view source, nonnull_ptr<memory::memor
     return json_to_object(static_cast<std::string_view>(cstr), alloc);
 }
 
-std::string_view find_token(object_view root, std::span<const std::string> key_path)
+std::string_view find_token(
+    object_view root, std::span<const std::variant<std::string, int64_t>> key_path)
 {
     object_view object = root;
     if (!key_path.empty()) {

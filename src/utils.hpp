@@ -17,6 +17,7 @@
 #include <limits>
 #include <optional>
 #include <ostream>
+#include <span>
 #include <sstream>
 #include <string>
 #include <string_view>
@@ -227,4 +228,17 @@ inline bool string_iequals(std::string_view left, std::string_view right)
            std::equal(left.begin(), left.end(), right.begin(),
                [](char l, char r) { return tolower(l) == tolower(r); });
 }
+
+inline std::vector<std::variant<std::string_view, int64_t>> convert_key_path(
+    std::span<const std::variant<std::string, int64_t>> key_path)
+{
+    std::vector<std::variant<std::string_view, int64_t>> result;
+    result.reserve(key_path.size());
+
+    for (const auto &key : key_path) {
+        std::visit([&result](auto &&k) { result.emplace_back(k); }, key);
+    }
+    return result;
+}
+
 } // namespace ddwaf

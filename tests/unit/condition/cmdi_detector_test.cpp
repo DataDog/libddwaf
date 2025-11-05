@@ -682,7 +682,7 @@ TEST(TestCmdiDetector, ExecutableInjectionMultipleArguments)
 
     EXPECT_STRV(cache.match->args[1].address, "server.request.query");
     EXPECT_STR(cache.match->args[1].resolved, "/usr/bin/halt");
-    EXPECT_STR(cache.match->args[1].key_path[0], "executable");
+    EXPECT_STR(std::get<std::string_view>(cache.match->args[1].key_path[0]), "executable");
 
     EXPECT_STR(cache.match->highlights[0], "/usr/bin/halt");
 }
@@ -743,7 +743,7 @@ TEST(TestCmdiDetector, ShellInjectionMultipleArguments)
 
     EXPECT_STRV(cache.match->args[1].address, "server.request.query");
     EXPECT_STR(cache.match->args[1].resolved, "; $(cat /etc/passwd)");
-    EXPECT_STR(cache.match->args[1].key_path[0], "shell");
+    EXPECT_STR(std::get<std::string_view>(cache.match->args[1].key_path[0]), "shell");
 
     EXPECT_STR(cache.match->highlights[0], "; $(cat /etc/passwd)");
 }

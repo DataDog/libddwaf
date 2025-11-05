@@ -374,6 +374,14 @@ TEST(TestParameter, ToStringViewSet)
     }
 }
 
+TEST(TestParameter, ToKeyPathVectorEmpty)
+{
+    auto root = owned_object::make_array();
+    auto vec =
+        static_cast<std::vector<std::variant<std::string, int64_t>>>(raw_configuration(root));
+    EXPECT_TRUE(vec.empty());
+}
+
 TEST(TestParameter, ToSemanticVersion)
 {
     {
