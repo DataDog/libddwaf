@@ -222,7 +222,7 @@ protected:
 
 template <> struct fmt::formatter<dynamic_string> : fmt::formatter<std::string_view> {
     // Use the parse method from the base class formatter
-    template <typename FormatContext> auto format(const dynamic_string &d, FormatContext &ctx)
+    template <typename FormatContext> auto format(const dynamic_string &d, FormatContext &ctx) const
     {
         return fmt::formatter<std::string_view>::format(std::string_view{d.data(), d.size()}, ctx);
     }

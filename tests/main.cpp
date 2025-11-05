@@ -10,6 +10,7 @@
 #include "common/gtest_utils.hpp"
 #include "memory_resource.hpp"
 
+#include <fmt/core.h>
 #include <string_view>
 
 using namespace std::literals;

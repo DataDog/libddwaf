@@ -117,7 +117,7 @@ protected:
 
 template <> struct fmt::formatter<semantic_version> : fmt::formatter<std::string_view> {
     // Use the parse method from the base class formatter
-    template <typename FormatContext> auto format(semantic_version &v, FormatContext &ctx)
+    template <typename FormatContext> auto format(semantic_version &v, FormatContext &ctx) const
     {
         return fmt::formatter<std::string_view>::format(v.string(), ctx);
     }

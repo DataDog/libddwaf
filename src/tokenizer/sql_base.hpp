@@ -56,7 +56,7 @@ std::ostream &operator<<(std::ostream &os, sql_dialect dialect);
 
 template <> struct fmt::formatter<sql_dialect> : fmt::formatter<std::string_view> {
     // Use the parse method from the base class formatter
-    template <typename FormatContext> auto format(sql_dialect d, FormatContext &ctx)
+    template <typename FormatContext> auto format(sql_dialect d, FormatContext &ctx) const
     {
         return fmt::formatter<std::string_view>::format(sql_dialect_to_string(d), ctx);
     }
