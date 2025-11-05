@@ -55,6 +55,7 @@ else()
         add_compile_options(/MT)
     endif()
 
+    add_compile_options(/utf-8)
     add_compile_definitions(-D_CRT_SECURE_NO_WARNINGS=1 -Dstrdup=_strdup -Dputenv=_putenv)
 endif()
 
