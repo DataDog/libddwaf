@@ -1,0 +1,22 @@
+{
+  name: "Run with match_regex operator using negative key path",
+  runs: [
+    {
+      input: {
+        rule4-input: [ "something", "arachni/v1" ]
+      },
+      rules: [
+        {
+          4: [
+            {
+              address: rule4-input,
+              key_path: [ -1 ],
+              value: "arachni/v1"
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}

@@ -33,7 +33,7 @@ struct condition_match {
         std::string_view name;
         dynamic_string resolved;
         std::string_view address{};
-        std::vector<std::string> key_path{};
+        std::vector<std::variant<std::string_view, int64_t>> key_path{};
     };
 
     std::vector<argument> args;
@@ -63,7 +63,7 @@ struct parameter_specification {
 struct condition_target {
     std::string name;
     target_index index{};
-    std::vector<std::string> key_path{};
+    std::vector<std::variant<std::string, int64_t>> key_path{};
     std::vector<transformer_id> transformers{};
     data_source source{data_source::values};
 };

@@ -33,7 +33,7 @@ struct event {
             std::string name{"input"};
             dynamic_string value{};
             std::string address{};
-            std::vector<std::string> path{};
+            std::vector<std::variant<std::string, int64_t>> path{};
         };
         std::string op{};
         std::string op_value{};
@@ -89,6 +89,14 @@ template <> struct as_if<ddwaf::test::event, void> {
 template <> struct as_if<std::map<std::string, ddwaf::test::scalar_type>, void> {
     explicit as_if(const Node &node_) : node(node_) {}
     std::map<std::string, ddwaf::test::scalar_type> operator()() const;
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
+    const Node &node;
+};
+
+template <> struct as_if<std::vector<std::variant<std::string, int64_t>>, void> {
+    explicit as_if(const Node &node_) : node(node_) {}
+    std::vector<std::variant<std::string, int64_t>> operator()() const;
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
     const Node &node;
 };
 

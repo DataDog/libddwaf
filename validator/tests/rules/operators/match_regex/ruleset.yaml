@@ -43,3 +43,33 @@ rules:
           options:
             min_length: 7
             case_sensitive: false
+  - id: "4"
+    name: rule4-rule-with-numeric-kp
+    tags:
+      type: flow4
+      category: category
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: rule4-input
+              key_path: [-1]
+          regex: "arachni"
+          options:
+            min_length: 7
+            case_sensitive: false
+  - id: "5"
+    name: rule5--not-match-regex-rule-with-numeric-kp
+    tags:
+      type: flow5
+      category: category
+    conditions:
+      - operator: "!match_regex"
+        parameters:
+          inputs:
+            - address: rule5-input
+              key_path: [-1]
+          regex: "arachni"
+          options:
+            min_length: 7
+            case_sensitive: false

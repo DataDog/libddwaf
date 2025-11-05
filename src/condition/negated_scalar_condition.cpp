@@ -25,6 +25,7 @@
 #include "object_store.hpp"
 #include "transformer/base.hpp"
 #include "transformer/manager.hpp"
+#include "utils.hpp"
 
 using namespace std::literals;
 
@@ -165,7 +166,7 @@ bool negated_scalar_condition::eval(condition_cache &cache, const object_store &
             cache.match = {{.args = {{.name = "input"sv,
                                 .resolved = {},
                                 .address = target_.name,
-                                .key_path = {target_.key_path.begin(), target_.key_path.end()}}},
+                                .key_path = convert_key_path(target_.key_path)}},
                 .highlights = {},
                 .operator_name = matcher->negated_name(),
                 .operator_value = matcher->to_string()}};
@@ -193,7 +194,7 @@ bool negated_scalar_condition::eval(condition_cache &cache, const object_store &
             cache.match = {{.args = {{.name = "input"sv,
                                 .resolved = std::move(resolved),
                                 .address = target_.name,
-                                .key_path = {target_.key_path.begin(), target_.key_path.end()}}},
+                                .key_path = convert_key_path(target_.key_path)}},
                 .highlights = std::move(highlights),
                 .operator_name = matcher->negated_name(),
                 .operator_value = matcher->to_string()}};

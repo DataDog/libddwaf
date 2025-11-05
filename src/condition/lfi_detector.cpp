@@ -4,10 +4,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 #include <cstddef>
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <string_view>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "argument_retriever.hpp"
@@ -30,7 +32,8 @@ namespace {
 
 constexpr const auto &npos = std::string_view::npos;
 
-using lfi_result = std::optional<std::pair<std::string, std::vector<std::string>>>;
+using lfi_result =
+    std::optional<std::pair<std::string, std::vector<std::variant<std::string_view, int64_t>>>>;
 
 bool find_directory_escape(std::string_view value, std::string_view sep)
 {
@@ -129,7 +132,6 @@ bool lfi_detector::eval_impl(const unary_argument<std::string_view> &path,
     for (const auto &param : params) {
         auto res = lfi_impl(path.value, param.value, objects_excluded, deadline);
         if (res.has_value()) {
-            const std::vector<std::string> path_kp{path.key_path.begin(), path.key_path.end()};
 
             auto &[highlight, param_kp] = res.value();
 
@@ -138,7 +140,7 @@ bool lfi_detector::eval_impl(const unary_argument<std::string_view> &path,
             cache.match = condition_match{.args = {{.name = "resource"sv,
                                                        .resolved = path.value,
                                                        .address = path.address,
-                                                       .key_path = path_kp},
+                                                       .key_path = convert_key_path(path.key_path)},
                                               {.name = "params"sv,
                                                   .resolved = highlight,
                                                   .address = param.address,

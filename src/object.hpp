@@ -27,6 +27,7 @@
 #include <string>
 #include <string_view>
 #include <type_traits>
+#include <unordered_set>
 #include <utility>
 #include <variant>
 
@@ -225,18 +226,20 @@ public:
     //   - When using at, the accessed indexed is within bounds (using size*())
     //   - When using as, the accessed field matches the underlying object type (using is*())
 
-    [[nodiscard]] std::size_t size() const noexcept
+    template <typename SizeType = std::size_t>
+    [[nodiscard]] SizeType size() const noexcept
+        requires std::is_integral_v<SizeType> && (sizeof(SizeType) >= 4)
     {
         const auto t = type();
         if (t == object_type::small_string) {
-            return static_cast<std::size_t>(object_ref().via.sstr.size);
+            return static_cast<SizeType>(object_ref().via.sstr.size);
         }
 
         if (t == object_type::string || t == object_type::literal_string) {
-            return static_cast<std::size_t>(object_ref().via.str.size);
+            return static_cast<SizeType>(object_ref().via.str.size);
         }
         // NOLINTNEXTLINE(clang-analyzer-core.uninitialized.UndefReturn)
-        return static_cast<std::size_t>(object_ref().via.array.size);
+        return static_cast<SizeType>(object_ref().via.array.size);
     }
 
     [[nodiscard]] bool empty() const noexcept { return size() == 0; }
@@ -433,7 +436,7 @@ public:
     {
         if constexpr (std::is_same_v<std::decay_t<T>, object_view>) {
             return ptr() == other.ptr();
-        } else if constexpr (std::is_same_v<std::decay_t<T>, std::string_view>) {
+        } else if constexpr (is_type_in_set_v<std::decay_t<T>, std::string_view, std::string>) {
             return has_value() && is_string() && as<std::string_view>() == other;
         } else {
             static_assert(!std::is_same_v<T, T>, "unsupported type for object_view::operator==");
@@ -443,7 +446,7 @@ public:
     {
         if constexpr (std::is_same_v<std::decay_t<T>, object_view>) {
             return ptr() != other.ptr();
-        } else if constexpr (std::is_same_v<std::decay_t<T>, std::string_view>) {
+        } else if constexpr (is_type_in_set_v<std::decay_t<T>, std::string_view, std::string>) {
             return has_value() && (!is_string() || as<std::string_view>() != other);
         } else {
             static_assert(!std::is_same_v<T, T>, "unsupported type for object_view::operator!=");
@@ -504,54 +507,55 @@ public:
         return {};
     }
 
-    object_view find_key_path(std::span<const std::string> key_path)
+    template <typename T = std::unordered_set<object_cache_key>>
+    object_view find_key_path(
+        std::span<const std::variant<std::string, int64_t>> key_path, const T &exclusion = {})
     {
         auto root = *this;
-        auto current = root;
-        for (auto it = key_path.begin(); current.has_value() && it != key_path.end(); ++it) {
-            root = current;
-            if (!root.is_map()) {
+
+        if (!root.has_value() || exclusion.contains(root)) {
+            return {};
+        }
+
+        for (auto it = key_path.begin(); it != key_path.end(); ++it) {
+            root = std::visit(
+                [root](auto &&expected_key) -> object_view {
+                    using U = std::decay_t<decltype(expected_key)>;
+                    if constexpr (std::is_same_v<U, std::string>) {
+                        if (!root.is_map()) {
+                            return {};
+                        }
+
+                        for (std::size_t i = 0; i < root.size(); ++i) {
+                            const auto &[key, child] = root.at(i);
+
+                            auto child_key = key.as<std::string_view>();
+                            if (expected_key == child_key) {
+                                return child;
+                            }
+                        }
+                    } else if constexpr (std::is_same_v<U, int64_t>) {
+                        if (!root.is_array()) {
+                            return {};
+                        }
+
+                        if (expected_key >= 0 && root.size<int64_t>() > expected_key) {
+                            return root.at_value(expected_key);
+                        }
+
+                        if (expected_key < 0 && (root.size<int64_t>() + expected_key) >= 0) {
+                            return root.at_value(root.size<int64_t>() + expected_key);
+                        }
+                    }
+                    return {};
+                },
+                *it);
+
+            if (!root.has_value() || exclusion.contains(root)) {
                 return {};
             }
-
-            current = {};
-            for (std::size_t i = 0; i < root.size(); ++i) {
-                const auto &[key, child] = root.at(i);
-
-                auto child_key = key.as<std::string_view>();
-                if (*it == child_key) {
-                    current = child;
-                    break;
-                }
-            }
         }
-        return current;
-    }
-
-    template <typename T>
-    object_view find_key_path(std::span<const std::string> key_path, const T &exclusion)
-    {
-        auto root = *this;
-        auto current = root;
-        for (auto it = key_path.begin(); current.has_value() && it != key_path.end(); ++it) {
-            root = current;
-
-            if (exclusion.contains(root) || !root.is_map()) {
-                return {};
-            }
-
-            current = {};
-            for (std::size_t i = 0; i < root.size(); ++i) {
-                const auto &[key, child] = root.at(i);
-
-                auto child_key = key.as<std::string_view>();
-                if (*it == child_key) {
-                    current = child;
-                    break;
-                }
-            }
-        }
-        return current;
+        return root;
     }
 
 protected:
@@ -712,24 +716,6 @@ public:
             if (expected_key == key.as<std::string_view>()) {
                 return value;
             }
-        }
-        return {};
-    }
-
-    object_view find_key_path(std::span<const std::string> key_path)
-    {
-        auto root = *this;
-        for (auto it = key_path.begin(); it != key_path.end(); ++it) {
-            object_view child = root.find(*it);
-            if ((it + 1) == key_path.end()) {
-                return child;
-            }
-
-            if (!child.has_value() || !child.is_map()) {
-                break;
-            }
-
-            root = child;
         }
         return {};
     }

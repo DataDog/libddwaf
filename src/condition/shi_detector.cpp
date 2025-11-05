@@ -20,6 +20,7 @@
 #include "object.hpp"
 #include "object_type.hpp"
 #include "tokenizer/shell.hpp"
+#include "utils.hpp"
 
 using namespace std::literals;
 
@@ -40,24 +41,22 @@ bool shi_detector::eval_string(const unary_argument<object_view> &resource,
         auto res = find_shi_from_params(
             resource_sv, resource_tokens, param.value, objects_excluded, deadline);
         if (res.has_value()) {
-            const std::vector<std::string> resource_kp{
-                resource.key_path.begin(), resource.key_path.end()};
-
             auto &[highlight, param_kp] = res.value();
 
             DDWAF_TRACE("Target {} matched parameter value {}", param.address, highlight);
 
-            cache.match = condition_match{.args = {{.name = "resource"sv,
-                                                       .resolved = std::string{resource_sv},
-                                                       .address = resource.address,
-                                                       .key_path = resource_kp},
-                                              {.name = "params"sv,
-                                                  .resolved = highlight,
-                                                  .address = param.address,
-                                                  .key_path = param_kp}},
-                .highlights = {std::move(highlight)},
-                .operator_name = "shi_detector",
-                .operator_value = {}};
+            cache.match =
+                condition_match{.args = {{.name = "resource"sv,
+                                             .resolved = std::string{resource_sv},
+                                             .address = resource.address,
+                                             .key_path = convert_key_path(resource.key_path)},
+                                    {.name = "params"sv,
+                                        .resolved = highlight,
+                                        .address = param.address,
+                                        .key_path = param_kp}},
+                    .highlights = {std::move(highlight)},
+                    .operator_name = "shi_detector",
+                    .operator_value = {}};
 
             return true;
         }
@@ -80,24 +79,22 @@ bool shi_detector::eval_array(const unary_argument<object_view> &resource,
         auto res = find_shi_from_params(
             arguments, resource_tokens, param.value, objects_excluded, deadline);
         if (res.has_value()) {
-            const std::vector<std::string> resource_kp{
-                resource.key_path.begin(), resource.key_path.end()};
-
             auto &[highlight, param_kp] = res.value();
 
             DDWAF_TRACE("Target {} matched parameter value {}", param.address, highlight);
 
-            cache.match = condition_match{.args = {{.name = "resource"sv,
-                                                       .resolved = std::move(arguments.resource),
-                                                       .address = resource.address,
-                                                       .key_path = resource_kp},
-                                              {.name = "params"sv,
-                                                  .resolved = highlight,
-                                                  .address = param.address,
-                                                  .key_path = param_kp}},
-                .highlights = {std::move(highlight)},
-                .operator_name = "shi_detector",
-                .operator_value = {}};
+            cache.match =
+                condition_match{.args = {{.name = "resource"sv,
+                                             .resolved = std::move(arguments.resource),
+                                             .address = resource.address,
+                                             .key_path = convert_key_path(resource.key_path)},
+                                    {.name = "params"sv,
+                                        .resolved = highlight,
+                                        .address = param.address,
+                                        .key_path = param_kp}},
+                    .highlights = {std::move(highlight)},
+                    .operator_name = "shi_detector",
+                    .operator_value = {}};
 
             return true;
         }

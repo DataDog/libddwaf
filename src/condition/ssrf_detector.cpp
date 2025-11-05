@@ -5,12 +5,14 @@
 // Copyright 2021 Datadog, Inc.
 #include <array>
 #include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <optional>
 #include <string>
 #include <string_view>
 #include <unordered_set>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "argument_retriever.hpp"
@@ -26,6 +28,7 @@
 #include "matcher/ip_match.hpp"
 #include "object.hpp"
 #include "uri_utils.hpp"
+#include "utils.hpp"
 
 using namespace std::literals;
 
@@ -35,7 +38,8 @@ namespace {
 
 constexpr const auto &npos = std::string_view::npos;
 
-using ssrf_result = std::optional<std::pair<std::string, std::vector<std::string>>>;
+using ssrf_result =
+    std::optional<std::pair<std::string, std::vector<std::variant<std::string_view, int64_t>>>>;
 
 bool detect_parameter_injection(const ssrf_opts &opts, const uri_decomposed &uri,
     std::string_view param, std::size_t param_index)
@@ -300,7 +304,6 @@ bool ssrf_detector::eval_impl(const unary_argument<std::string_view> &uri,
     if (opts_.enforce_policy_without_injection &&
         is_forbidden_uri(
             *decomposed, *forbidden_ip_matcher_, allowed_schemes_, forbidden_domains_)) {
-        const std::vector<std::string> uri_kp{uri.key_path.begin(), uri.key_path.end()};
 
         DDWAF_TRACE("Resource {} matched policy", uri.value);
 
@@ -308,7 +311,7 @@ bool ssrf_detector::eval_impl(const unary_argument<std::string_view> &uri,
             .args = {{.name = "resource"sv,
                          .resolved = std::string{uri.value},
                          .address = uri.address,
-                         .key_path = uri_kp},
+                         .key_path = convert_key_path(uri.key_path)},
                 {.name = "params"sv, .resolved = {}, .address = {}, .key_path = {}}},
             .highlights = {decomposed->scheme_and_authority},
             .operator_name = "ssrf_detector",
@@ -321,8 +324,6 @@ bool ssrf_detector::eval_impl(const unary_argument<std::string_view> &uri,
         auto res = ssrf_impl(*decomposed, param.value, objects_excluded, opts_,
             *forbidden_ip_matcher_, allowed_schemes_, forbidden_domains_, deadline);
         if (res.has_value()) {
-            const std::vector<std::string> uri_kp{uri.key_path.begin(), uri.key_path.end()};
-
             auto &[highlight, param_kp] = res.value();
 
             DDWAF_TRACE("Target {} matched parameter value {}", param.address, highlight);
@@ -330,7 +331,7 @@ bool ssrf_detector::eval_impl(const unary_argument<std::string_view> &uri,
             cache.match = condition_match{.args = {{.name = "resource"sv,
                                                        .resolved = std::string{uri.value},
                                                        .address = uri.address,
-                                                       .key_path = uri_kp},
+                                                       .key_path = convert_key_path(uri.key_path)},
                                               {.name = "params"sv,
                                                   .resolved = highlight,
                                                   .address = param.address,
