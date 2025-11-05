@@ -10,17 +10,11 @@
 
 #define FMT_HEADER_ONLY
 
-#if defined(FMT_IMPORT_STD) && !defined(FMT_MODULE)
-#  define FMT_MODULE
-#endif
+#include <limits.h>  // CHAR_BIT
+#include <stdio.h>   // FILE
+#include <string.h>  // memcmp
 
-#ifndef FMT_MODULE
-#  include <limits.h>  // CHAR_BIT
-#  include <stdio.h>   // FILE
-#  include <string.h>  // memcmp
-
-#  include <type_traits>  // std::enable_if
-#endif
+#include <type_traits>  // std::enable_if
 
 // The fmt library version in the form major * 10000 + minor * 100 + patch.
 #define FMT_VERSION 120100
@@ -233,7 +227,7 @@
 
 // Enable minimal optimizations for more compact code in debug mode.
 FMT_PRAGMA_GCC(push_options)
-#if !defined(__OPTIMIZE__) && !defined(__CUDACC__) && !defined(FMT_MODULE)
+#if !defined(__OPTIMIZE__) && !defined(__CUDACC__) 
 FMT_PRAGMA_GCC(optimize("Og"))
 #endif
 FMT_PRAGMA_CLANG(diagnostic push)
@@ -276,27 +270,14 @@ FMT_PRAGMA_GCC(diagnostic push)
 #  define FMT_WIN32 0
 #endif
 
-#if !defined(FMT_HEADER_ONLY) && FMT_WIN32
-#  if defined(FMT_LIB_EXPORT)
-#    define FMT_API __declspec(dllexport)
-#  elif defined(FMT_SHARED)
-#    define FMT_API __declspec(dllimport)
-#  endif
-#elif defined(FMT_LIB_EXPORT) || defined(FMT_SHARED)
-#  define FMT_API FMT_VISIBILITY("default")
-#endif
-#ifndef FMT_API
-#  define FMT_API
-#endif
-
 #ifndef FMT_OPTIMIZE_SIZE
-#  define FMT_OPTIMIZE_SIZE 0
+#  define FMT_OPTIMIZE_SIZE 2
 #endif
 
 // FMT_BUILTIN_TYPE=0 may result in smaller library size at the cost of higher
 // per-call binary size by passing built-in types through the extension API.
 #ifndef FMT_BUILTIN_TYPES
-#  define FMT_BUILTIN_TYPES 1
+#  define FMT_BUILTIN_TYPES 0
 #endif
 
 #define FMT_APPLY_VARIADIC(expr) \
@@ -354,7 +335,7 @@ template <typename T> constexpr auto max_of(T a, T b) -> T {
   return a > b ? a : b;
 }
 
-FMT_NORETURN FMT_API void assert_fail(const char* file, int line,
+FMT_NORETURN void assert_fail(const char* file, int line,
                                       const char* message);
 
 namespace detail {
@@ -384,7 +365,7 @@ template <typename T> FMT_ALWAYS_INLINE constexpr auto const_check(T val) -> T {
   return val;
 }
 
-FMT_NORETURN FMT_API void assert_fail(const char* file, int line,
+FMT_NORETURN void assert_fail(const char* file, int line,
                                       const char* message);
 
 #if defined(FMT_ASSERT)
@@ -663,7 +644,7 @@ struct formatter {
 /// Reports a format error at compile time or, via a `format_error` exception,
 /// at runtime.
 // This function is intentionally not constexpr to give a compile-time error.
-FMT_NORETURN FMT_API void report_error(const char* message);
+FMT_NORETURN void report_error(const char* message);
 
 enum class presentation_type : unsigned char {
   // Common specifiers:
@@ -2451,11 +2432,11 @@ FMT_CONSTEXPR inline auto is_locking() -> bool {
   return locking<T1>::value || is_locking<T2, Tail...>();
 }
 
-FMT_API void vformat_to(buffer<char>& buf, string_view fmt, format_args args,
+void vformat_to(buffer<char>& buf, string_view fmt, format_args args,
                         locale_ref loc = {});
 
 #if FMT_WIN32
-FMT_API void vprint_mojibake(FILE*, string_view, format_args, bool);
+void vprint_mojibake(FILE*, string_view, format_args, bool);
 #else  // format_args is passed by reference since it is defined later.
 inline void vprint_mojibake(FILE*, string_view, const format_args&, bool) {}
 #endif
@@ -2947,10 +2928,10 @@ FMT_NODISCARD FMT_INLINE auto formatted_size(format_string<T...> fmt,
   return buf.count();
 }
 
-FMT_API void vprint(string_view fmt, format_args args);
-FMT_API void vprint(FILE* f, string_view fmt, format_args args);
-FMT_API void vprintln(FILE* f, string_view fmt, format_args args);
-FMT_API void vprint_buffered(FILE* f, string_view fmt, format_args args);
+void vprint(string_view fmt, format_args args);
+void vprint(FILE* f, string_view fmt, format_args args);
+void vprintln(FILE* f, string_view fmt, format_args args);
+void vprint_buffered(FILE* f, string_view fmt, format_args args);
 
 /**
  * Formats `args` according to specifications in `fmt` and writes the output
