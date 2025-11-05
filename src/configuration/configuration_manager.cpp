@@ -27,7 +27,7 @@
 #include "configuration/rule_override_parser.hpp"
 #include "configuration/rule_parser.hpp"
 #include "configuration/scanner_parser.hpp"
-#include "fmt/core.h"
+#include "fmt/format.h"
 #include "log.hpp"
 #include "obfuscator.hpp"
 #include "ruleset_info.hpp"
