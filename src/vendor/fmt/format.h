@@ -40,34 +40,32 @@
 
 #include "base.h"
 
-#ifndef FMT_MODULE
-#  include <stdlib.h>  // malloc, free
+#include <stdlib.h>  // malloc, free
 
-#  include <cmath>    // std::signbit
-#  include <cstddef>  // std::byte
-#  include <cstdint>  // uint32_t
-#  include <cstring>  // std::memcpy
-#  include <limits>   // std::numeric_limits
-#  include <new>      // std::bad_alloc
-#  if defined(__GLIBCXX__) && !defined(_GLIBCXX_USE_DUAL_ABI)
+#include <cmath>    // std::signbit
+#include <cstddef>  // std::byte
+#include <cstdint>  // uint32_t
+#include <cstring>  // std::memcpy
+#include <limits>   // std::numeric_limits
+#include <new>      // std::bad_alloc
+#if defined(__GLIBCXX__) && !defined(_GLIBCXX_USE_DUAL_ABI)
 // Workaround for pre gcc 5 libstdc++.
-#    include <memory>  // std::allocator_traits
-#  endif
-#  include <stdexcept>     // std::runtime_error
-#  include <string>        // std::string
-#  include <system_error>  // std::system_error
+#  include <memory>  // std::allocator_traits
+#endif
+#include <stdexcept>     // std::runtime_error
+#include <string>        // std::string
+#include <system_error>  // std::system_error
 
 // Check FMT_CPLUSPLUS to avoid a warning in MSVC.
-#  if FMT_HAS_INCLUDE(<bit>) && FMT_CPLUSPLUS > 201703L
-#    include <bit>  // std::bit_cast
-#  endif
+#if FMT_HAS_INCLUDE(<bit>) && FMT_CPLUSPLUS > 201703L
+#  include <bit>  // std::bit_cast
+#endif
 
 #include <string_view>
 
-#  if FMT_MSC_VERSION
-#    include <intrin.h>  // _BitScanReverse[64], _umul128
-#  endif
-#endif  // FMT_MODULE
+#if FMT_MSC_VERSION
+#  include <intrin.h>  // _BitScanReverse[64], _umul128
+#endif
 
 #if defined(FMT_USE_NONTYPE_TEMPLATE_ARGS)
 // Use the provided definition.
@@ -1751,7 +1749,7 @@ inline auto find_escape(const char* begin, const char* end)
   for_each_codepoint(std::string_view(begin, to_unsigned(end - begin)),
                      [&](uint32_t cp, std::string_view sv) {
                        if (needs_escape(cp)) {
-                         result = {sv.begin(), sv.end(), cp};
+                         result = find_escape_result<char>{sv.begin(), sv.end(), cp};
                          return false;
                        }
                        return true;

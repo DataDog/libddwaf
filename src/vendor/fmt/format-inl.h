@@ -8,13 +8,11 @@
 #ifndef FMT_FORMAT_INL_H_
 #define FMT_FORMAT_INL_H_
 
-#ifndef FMT_MODULE
-#  include <algorithm>
-#  include <cerrno>  // errno
-#  include <climits>
-#  include <cmath>
-#  include <exception>
-#endif
+#include <algorithm>
+#include <cerrno>  // errno
+#include <climits>
+#include <cmath>
+#include <exception>
 
 #if defined(_WIN32) && !defined(FMT_USE_WRITE_CONSOLE)
 #  include <io.h>  // _isatty
@@ -22,7 +20,7 @@
 
 #include "format.h"
 
-#if FMT_USE_LOCALE && !defined(FMT_MODULE)
+#if FMT_USE_LOCALE
 #  include <locale>
 #endif
 
