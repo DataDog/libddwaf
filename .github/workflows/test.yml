@@ -98,6 +98,7 @@ jobs:
         run: |
           cmake .. \
             -DCMAKE_BUILD_TYPE=Debug \
+            -DLIBDDWAF_ON_VALGRIND=ON \
             -DLIBDDWAF_VECTORIZED_TRANSFORMERS=$([ "${{ matrix.suffix }}" != "none" ] && echo "ON" || echo "OFF")
         working-directory: Debug
 
