@@ -277,7 +277,7 @@ FMT_PRAGMA_GCC(diagnostic push)
 // FMT_BUILTIN_TYPE=0 may result in smaller library size at the cost of higher
 // per-call binary size by passing built-in types through the extension API.
 #ifndef FMT_BUILTIN_TYPES
-#  define FMT_BUILTIN_TYPES 0
+#  define FMT_BUILTIN_TYPES 1
 #endif
 
 #define FMT_APPLY_VARIADIC(expr) \
