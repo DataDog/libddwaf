@@ -9,6 +9,7 @@
 
 #include "common/gtest_utils.hpp"
 
+#include <fmt/core.h>
 #include <string_view>
 
 using namespace std::literals;
