@@ -79,7 +79,7 @@ jobs:
       - name: Create Build Directory
         run: cmake -E make_directory ${{ github.workspace }}/build ${{ github.workspace }}/packages
       - name: Generating Build Scripts
-        run: cmake -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }} -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=${{ github.workspace }} -DCPACK_PACKAGE_DIRECTORY=${{ github.workspace }}/packages ${{ github.workspace }}
+        run: cmake -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }} -DCMAKE_BUILD_TYPE=RelWithDebInfo -DLIBDDWAF_ENABLE_LTO=ON -DCMAKE_INSTALL_PREFIX=${{ github.workspace }} -DCPACK_PACKAGE_DIRECTORY=${{ github.workspace }}/packages ${{ github.workspace }}
         working-directory: ${{ github.workspace }}/build
       - name: Build Binaries
         run: cmake --build . --config RelWithDebInfo --verbose --target all --target waf_test -j $(getconf _NPROCESSORS_ONLN)
