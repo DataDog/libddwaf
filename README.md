@@ -352,4 +352,4 @@ applied to the `http.server.query` value `http://localhost/?q=<script>alert() he
 
 ## Binding implementation notes
 
-See [`BINDING_IMPL_NOTES.md`](./BINDING_IMPL_NOTES.md).
+See [`docs/c-api/binding-integration-guide.md`](docs/c-api/binding-integration-guide.md).

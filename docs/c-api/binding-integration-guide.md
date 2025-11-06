@@ -1,22 +1,19 @@
-# Implementation notes for bindings
+# libddwaf binding integration guide
 
+This guide complements the API reference in `docs/c-api/api.md`. It focuses on
+the concurrency and lifecycle concerns that most native bindings must handle to
+provide a safe libddwaf integration.
 
-## `ddwaf_handle`
+## `ddwaf_handle` lifecycle
 
-`ddwaf_handle` represents a rule set, with associated rule data, exclusions,
-and so on. It is created through `ddwaf_init` and `ddwaf_update`.
+`ddwaf_handle` represents the compiled ruleset, related data providers, and
+exclusions. Handles are built through `ddwaf_init` and updated in place through
+`ddwaf_update`. Only one instance is typically kept by a tracer or agent.
 
-A tracer will want to keep only one live `ddwaf_handle`. The first one will be
-created through `ddwaf_init`, and then it will replace it through
-`ddwaf_update` as it gets new configurations through remote config.
-
-The two relevant operations on `ddwaf_handle` are `ddwaf_context_init` and
-`ddwaf_update`. Neither of these operations changes the `ddwaf_handle`. So, at
-this point, it is sufficient to ensure that threads calling
-`ddwaf_context_init` and `ddwaf_update` see a fully constructed `ddwaf_handle`
-— put in other words, it is sufficient that the write to the pointer/reference
-happens after `ddwaf_init/update` is called (as seen by other threads). For
-this, a release-acquire operation suffices:
+The two operations that observe a handle are `ddwaf_context_init` and
+`ddwaf_update`. Neither mutates the handle content, but callers must ensure that
+other threads only observe a fully initialised pointer. A release/acquire pair
+is enough for this requirement:
 
 ```c++
 std::atomic<ddwaf_handle> cur_ddwaf_handle; // global variable; the live handle
@@ -70,25 +67,21 @@ through `ddwaf_update`, though that is less of a problem because generally the
 tracers will not want to update the global `ddwaf_handle` from several threads
 simultaneously).
 
-There are many possible strategies to deal with this memory reclamation
-problem, but the most straightforward are:
+There are many ways to guarantee safe reclamation. Two common strategies are
+outlined below.
 
-* If the runtime uses garbage collection, we can delay the call to
-  `ddwaf_destroy` until the garbage collector determines the object wrapping
-  the native `ddwaf_handle` has no more references. This is relatively easy to
-  do and doesn't involve extra usage of locks, but the memory used by the
-  `ddwaf_handle` will not be available until the garbage collector decides
-  to reclaim the wrapped object. Because the garbage collector does not see
-  the memory being used by the `ddwaf_handle`, if garbage collection never
-  happens, there is a risk that memory consumption gets too high. This is a
-  rather unlikely scenario though.
+* Delay `ddwaf_destroy` until your runtime can prove that no other code keeps a
+  reference. Garbage-collected environments can let the wrapper object finalise
+  the native handle, but keep in mind that the collector is blind to the native
+  memory usage.
 
-* You can use read-write locks:
+* Protect access with reader/writer locks so that `ddwaf_destroy` only executes
+  after new contexts can no longer be created:
 
 ```c++
 // global variables
 std::shared_mutex mutex;
-ddwaf_handle cur_ddwaf_handle;
+ddwaf_handle cur_ddwaf_handle = nullptr;
 
 // Initialization thread
 void initialize_handle(
@@ -106,7 +99,7 @@ void initialize_handle(
 void update_handle(const ddwaf_object *ruleset, ddwaf_object *diagnostics)
 {
     std::unique_lock lock{mutex}; // acquire write lock
-    ddwaf_handle old_handle = cur_ddwaf_handle.load(std::memory_order_acquire);
+    ddwaf_handle old_handle = cur_ddwaf_handle;
     ddwaf_handle new_handle = ddwaf_update(old_handle, ruleset, diagnostics);
     cur_ddwaf_handle = new_handle;
     ddwaf_destroy(old_handle);
@@ -122,16 +115,18 @@ ddwaf_context create_context() {
 }
 ```
 
-## `ddwaf_context`
+## `ddwaf_context` and `ddwaf_subcontext`
 
-On the other hand, `ddwaf_context` is not thread-safe. If a `ddwaf_context` is
-used by multiple threads (in web servers where the processing of the request
-can move between several threads, or happen in several threads simultaneously),
-you need to use locks so that calls to `ddwaf_context_eval/destroy` are not run
-concurrently, and that changes made to the `ddwaf_context` in one thread through
-`ddwaf_context_eval/destroy` are visible to the other threads subsequently run
-`ddwaf_context_eval/destroy` on the same context. You also need to ensure that no calls
-to `ddwaf_context_eval/destroy` happen after `ddwaf_destroy` is called.
+`ddwaf_context` is not thread-safe. If a context can be touched by multiple
+threads (for example, when the web server hands off the same request to another
+thread), guard calls to `ddwaf_context_eval` and `ddwaf_context_destroy`. You
+must also prevent any evaluation after the owning handle has been destroyed.
+
+When you only need isolated evaluation state but still share the same handle,
+prefer `ddwaf_context_init` per request. `ddwaf_subcontext_init` (documented in
+the API reference) can provide a cheaper clone when your binding benefits from
+sharing captures between stages. Subcontexts inherit the parent lifetime, so
+they must never outlive the original context.
 
 ```c++
 // each request will have one of these associated with it
@@ -156,3 +151,16 @@ void destroy_ctx(ctx_wrapper &wrapper) {
     wrapper.ctx = nullptr;
 }
 ```
+
+## Custom allocators and diagnostics
+
+Consult `docs/c-api/api.md` for the exact signatures of allocator hooks. Any
+binding that offers native memory tracking should expose `ddwaf_user_allocator_init`
+wrappers and document the ownership of `ddwaf_object`. The documented helpers in
+the header (`ddwaf_object_*`) ensure that objects stay consistent with their
+type tag.
+
+libddwaf can emit logs through `ddwaf_set_log_cb`. Bindings should translate
+the `DDWAF_LOG_LEVEL` levels into their host logging facilities and pay
+attention to thread-safety inside the callback. The callback can run from hot
+paths, so limit the amount of work performed there.
