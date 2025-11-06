@@ -8,23 +8,16 @@
 
 #include <algorithm>
 #include <array>
-#include <charconv>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
-#include <iostream>
 #include <optional>
-#include <ostream>
 #include <span>
-#include <sstream>
 #include <string>
 #include <string_view>
-#include <system_error>
 #include <utility>
 #include <variant>
 #include <vector>
-
-#include <fmt/format.h>
 
 // NOLINTBEGIN(cppcoreguidelines-macro-usage)
 // Convert numbers to strings
@@ -73,52 +66,10 @@ protected:
     Fn fn_;
 };
 
-template <typename T>
-concept has_to_chars = requires(T v) { std::to_chars(nullptr, nullptr, std::declval<T>()); };
-
-template <typename T>
-concept has_from_chars = requires(T v) { std::from_chars(nullptr, nullptr, std::declval<T>()); };
-
 template <typename T> std::string to_string(T value);
-
-template <typename T> std::pair<bool, T> from_string(std::string_view str)
-{
-    T result;
-    if constexpr (has_from_chars<T>) {
-        const auto *end = str.data() + str.size();
-        auto [endConv, err] = std::from_chars(str.data(), end, result);
-        if (err == std::errc{} && endConv == end) {
-            return {true, result};
-        }
-    } else {
-        // NOLINTNEXTLINE(misc-const-correctness)
-        std::istringstream iss(std::string{str});
-        iss >> result;
-        if (!iss.fail() && iss.eof()) {
-            return {true, result};
-        }
-    }
-
-    return {false, {}};
-}
+template <typename T> std::pair<bool, T> from_string(std::string_view str);
 
 std::vector<std::string_view> split(std::string_view str, char sep);
-
-// NOLINTNEXTLINE(fuchsia-multiple-inheritance)
-class null_ostream : public std::ostream {
-public:
-    null_ostream() = default;
-    ~null_ostream() override = default;
-    null_ostream(const null_ostream & /*unused*/) = delete;
-    null_ostream(null_ostream && /*unused*/) = delete;
-    null_ostream &operator=(const null_ostream & /*unused*/) = delete;
-    null_ostream &operator=(null_ostream && /*unused*/) = delete;
-};
-
-template <class T> const null_ostream &operator<<(null_ostream &os, const T & /*unused*/)
-{
-    return os;
-}
 
 template <std::size_t N, std::size_t... I>
 // NOLINTNEXTLINE(modernize-avoid-c-arrays,readability-named-parameter)

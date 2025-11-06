@@ -4,17 +4,30 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2025 Datadog, Inc.
 
-#include "utils.hpp"
 #include <algorithm>
+#include <charconv>
 #include <cstddef>
 #include <cstdint>
 #include <span>
+#include <sstream>
 #include <string>
 #include <string_view>
+#include <system_error>
+#include <utility>
 #include <variant>
 #include <vector>
 
+#include <fmt/format.h>
+
+#include "utils.hpp"
+
 namespace ddwaf {
+namespace {
+
+template <typename T>
+concept has_from_chars = requires(T v) { std::from_chars(nullptr, nullptr, std::declval<T>()); };
+
+} // namespace
 
 std::vector<std::string_view> split(std::string_view str, char sep)
 {
@@ -64,10 +77,37 @@ bool string_iequals(std::string_view left, std::string_view right)
 
 template <typename T> std::string to_string(T value) { return ddwaf::fmt::format("{}", value); }
 
+template <typename T> std::pair<bool, T> from_string(std::string_view str)
+{
+    T result;
+    if constexpr (has_from_chars<T>) {
+        const auto *end = str.data() + str.size();
+        auto [endConv, err] = std::from_chars(str.data(), end, result);
+        if (err == std::errc{} && endConv == end) {
+            return {true, result};
+        }
+    } else {
+        // NOLINTNEXTLINE(misc-const-correctness)
+        std::istringstream iss(std::string{str});
+        iss >> result;
+        if (!iss.fail() && iss.eof()) {
+            return {true, result};
+        }
+    }
+
+    return {false, {}};
+}
+
 template std::string to_string<bool>(bool value);
 template std::string to_string<int64_t>(int64_t value);
 template std::string to_string<uint64_t>(uint64_t value);
 template std::string to_string<unsigned>(unsigned value);
 template std::string to_string<double>(double value);
+
+template std::pair<bool, uint16_t> from_string<uint16_t>(std::string_view str);
+template std::pair<bool, unsigned> from_string<unsigned>(std::string_view str);
+template std::pair<bool, int64_t> from_string<int64_t>(std::string_view str);
+template std::pair<bool, uint64_t> from_string<uint64_t>(std::string_view str);
+template std::pair<bool, double> from_string<double>(std::string_view str);
 
 } // namespace ddwaf
