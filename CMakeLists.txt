@@ -42,6 +42,7 @@ option(LIBDDWAF_VECTORIZED_TRANSFORMERS "Enable vectorization for transformers" 
 option(LIBDDWAF_ENABLE_LTO "Enable link-time optimisation" OFF)
 option(LIBDDWAF_BENCHMARK_PGO_STAGE1 "Stage 1 profile-optimized benchmark enables instrumentation" OFF)
 option(LIBDDWAF_BENCHMARK_BOLT_STAGE3 "Stage 3 profile-optimized benchmark enables relocations" OFF)
+option(LIBDDWAF_ON_VALGRIND "Hides some RE2 optimisations on valgrind" OFF)
 
 if(NOT MSVC)
     add_compile_options(-Wall -Wextra -Wno-narrowing)

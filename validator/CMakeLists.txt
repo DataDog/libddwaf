@@ -1,6 +1,10 @@
 file(GLOB_RECURSE LIBDDWAF_VALIDATOR_SOURCE *.cpp)
 add_executable(waf_validator ${LIBDDWAF_VALIDATOR_SOURCE})
 
+if (LIBDDWAF_TESTING AND LIBDDWAF_ON_VALGRIND)
+        target_compile_definitions(waf_validator PRIVATE RE2_ON_VALGRIND)
+endif()
+
 target_include_directories(waf_validator PRIVATE ${libddwaf_SOURCE_DIR}/include)
 target_link_libraries(waf_validator PRIVATE  libddwaf_objects lib_yamlcpp)
 

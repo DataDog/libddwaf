@@ -14,6 +14,10 @@ if (LIBDDWAF_VECTORIZED_TRANSFORMERS)
     target_compile_definitions(waf_test PRIVATE LIBDDWAF_VECTORIZED_TRANSFORMERS)
 endif()
 
+if (LIBDDWAF_TESTING AND LIBDDWAF_ON_VALGRIND)
+        target_compile_definitions(waf_test PRIVATE RE2_ON_VALGRIND)
+endif()
+
 set(LIBDDWAF_TEST_LIBRARIES lib_gtest lib_gmock libddwaf_objects lib_yamlcpp lib_rapidjson)
 if(NOT MSVC AND LIBDDWAF_TEST_COVERAGE)
     target_compile_options(waf_test PRIVATE -ggdb --coverage)

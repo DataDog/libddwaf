@@ -177,6 +177,10 @@ if (NOT MSVC AND LIBDDWAF_TESTING AND LIBDDWAF_TEST_COVERAGE)
     target_compile_options(libddwaf_objects PRIVATE --coverage)
 endif()
 
+if (LIBDDWAF_TESTING AND LIBDDWAF_ON_VALGRIND)
+        target_compile_definitions(libddwaf_objects PRIVATE RE2_ON_VALGRIND)
+endif()
+
 if (NOT MSVC AND LIBDDWAF_TESTING)
     if (LIBDDWAF_BENCHMARK_PGO_STAGE1)
         target_compile_options(libddwaf_objects PRIVATE -fprofile-instr-generate)
