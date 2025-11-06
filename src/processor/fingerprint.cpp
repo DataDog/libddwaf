@@ -178,7 +178,7 @@ template <typename T>
 struct unsigned_field : field_generator<unsigned_field<T>> {
     explicit unsigned_field(T input) : value(input) {}
 
-    [[nodiscard]] dynamic_string generate() { return ddwaf::to_string<std::string>(value); }
+    [[nodiscard]] dynamic_string generate() { return ddwaf::to_string(value); }
 
     T value;
 };

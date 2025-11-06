@@ -21,6 +21,8 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/dynamic_string.cpp
     ${libddwaf_SOURCE_DIR}/src/attribute_collector.cpp
     ${libddwaf_SOURCE_DIR}/src/rule.cpp
+    ${libddwaf_SOURCE_DIR}/src/semver.cpp
+    ${libddwaf_SOURCE_DIR}/src/utils.cpp
     ${libddwaf_SOURCE_DIR}/src/utf8.cpp
     ${libddwaf_SOURCE_DIR}/src/builder/action_mapper_builder.cpp
     ${libddwaf_SOURCE_DIR}/src/builder/matcher_builder.cpp

@@ -1136,13 +1136,13 @@ template <> struct object_converter<std::string> {
         case object_type::small_string:
             return view.as<std::string>();
         case object_type::boolean:
-            return ddwaf::to_string<std::string>(view.as<bool>());
+            return ddwaf::to_string(view.as<bool>());
         case object_type::uint64:
-            return ddwaf::to_string<std::string>(view.as<uint64_t>());
+            return ddwaf::to_string(view.as<uint64_t>());
         case object_type::int64:
-            return ddwaf::to_string<std::string>(view.as<int64_t>());
+            return ddwaf::to_string(view.as<int64_t>());
         case object_type::float64:
-            return ddwaf::to_string<std::string>(view.as<double>());
+            return ddwaf::to_string(view.as<double>());
         default:
             break;
         }
