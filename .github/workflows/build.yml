@@ -394,6 +394,8 @@ jobs:
         uses: softprops/action-gh-release@c062e08bd532815e2082a85e87e3ef29c3e6d191 # v2.0.8
         with:
           draft: true
+          name: v${{ github.ref_name }}
+          body_path: ${{ github.workspace }}/docs/changelog/CHANGELOG-latest.md
           files: |
             ./artifacts/**/*.tar.gz
             ./artifacts/**/*.sha256
