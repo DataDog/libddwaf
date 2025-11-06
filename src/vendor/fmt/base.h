@@ -8,8 +8,6 @@
 #ifndef FMT_BASE_H_
 #define FMT_BASE_H_
 
-#define FMT_HEADER_ONLY
-
 #include <limits.h>  // CHAR_BIT
 #include <stdio.h>   // FILE
 #include <string.h>  // memcmp

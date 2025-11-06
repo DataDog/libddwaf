@@ -93,6 +93,7 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/transformer/css_decode.cpp
     ${libddwaf_SOURCE_DIR}/src/transformer/html_entity_decode.cpp
     ${libddwaf_SOURCE_DIR}/src/transformer/js_decode.cpp
+    ${libddwaf_SOURCE_DIR}/src/vendor/fmt/format.cc
     ${libddwaf_SOURCE_DIR}/src/vendor/radixlib/radixlib.c
     ${libddwaf_SOURCE_DIR}/src/vendor/lua-aho-corasick/ac_fast.cxx
     ${libddwaf_SOURCE_DIR}/src/vendor/lua-aho-corasick/ac_slow.cxx
