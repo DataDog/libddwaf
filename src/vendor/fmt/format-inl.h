@@ -153,7 +153,7 @@ template <typename Locale> format_facet<Locale>::format_facet(Locale& loc) {
 
 #if FMT_USE_LOCALE
 template <>
-FMT_API FMT_FUNC auto format_facet<std::locale>::do_put(
+FMT_FUNC auto format_facet<std::locale>::do_put(
     appender out, loc_value val, const format_specs& specs) const -> bool {
   return val.visit(
       detail::loc_writer<>{out, specs, separator_, grouping_, decimal_point_});
