@@ -150,7 +150,7 @@ function(gen_objects target_name)
     target_include_directories(${target_name} PUBLIC ${LIBDDWAF_PUBLIC_INCLUDES})
     target_include_directories(${target_name} PRIVATE ${LIBDDWAF_PRIVATE_INCLUDES})
 
-    target_compile_definitions(${target_name} PRIVATE UTF8PROC_STATIC=1)
+    target_compile_definitions(${target_name} PRIVATE UTF8PROC_STATIC=1 FMT_OPTIMIZE_SIZE=2)
     if (MSVC)
         target_compile_definitions(${target_name} PRIVATE NOMINMAX)
     endif()

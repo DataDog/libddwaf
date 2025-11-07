@@ -8,11 +8,17 @@
 #ifndef FMT_BASE_H_
 #define FMT_BASE_H_
 
-#include <limits.h>  // CHAR_BIT
-#include <stdio.h>   // FILE
-#include <string.h>  // memcmp
+#if defined(FMT_IMPORT_STD) && !defined(FMT_MODULE)
+#  define FMT_MODULE
+#endif
 
-#include <type_traits>  // std::enable_if
+#ifndef FMT_MODULE
+#  include <limits.h>  // CHAR_BIT
+#  include <stdio.h>   // FILE
+#  include <string.h>  // memcmp
+
+#  include <type_traits>  // std::enable_if
+#endif
 
 // The fmt library version in the form major * 10000 + minor * 100 + patch.
 #define FMT_VERSION 120100
@@ -225,7 +231,7 @@
 
 // Enable minimal optimizations for more compact code in debug mode.
 FMT_PRAGMA_GCC(push_options)
-#if !defined(__OPTIMIZE__) && !defined(__CUDACC__) 
+#if !defined(__OPTIMIZE__) && !defined(__CUDACC__) && !defined(FMT_MODULE)
 FMT_PRAGMA_GCC(optimize("Og"))
 #endif
 FMT_PRAGMA_CLANG(diagnostic push)
@@ -268,8 +274,21 @@ FMT_PRAGMA_GCC(diagnostic push)
 #  define FMT_WIN32 0
 #endif
 
+#if !defined(FMT_HEADER_ONLY) && FMT_WIN32
+#  if defined(FMT_LIB_EXPORT)
+#    define FMT_API __declspec(dllexport)
+#  elif defined(FMT_SHARED)
+#    define FMT_API __declspec(dllimport)
+#  endif
+#elif defined(FMT_LIB_EXPORT) || defined(FMT_SHARED)
+#  define FMT_API FMT_VISIBILITY("default")
+#endif
+#ifndef FMT_API
+#  define FMT_API
+#endif
+
 #ifndef FMT_OPTIMIZE_SIZE
-#  define FMT_OPTIMIZE_SIZE 2
+#  define FMT_OPTIMIZE_SIZE 0
 #endif
 
 // FMT_BUILTIN_TYPE=0 may result in smaller library size at the cost of higher

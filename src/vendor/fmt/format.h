@@ -978,8 +978,8 @@ class loc_value;
 
 FMT_END_EXPORT
 namespace detail {
-auto write_console(int fd, string_view text) -> bool;
-void print(FILE*, string_view);
+FMT_API auto write_console(int fd, string_view text) -> bool;
+FMT_API void print(FILE*, string_view);
 }  // namespace detail
 
 namespace detail {
@@ -1162,7 +1162,7 @@ template <typename Char> struct thousands_sep_result {
 };
 
 template <typename Char>
-auto thousands_sep_impl(locale_ref loc) -> thousands_sep_result<Char>;
+FMT_API auto thousands_sep_impl(locale_ref loc) -> thousands_sep_result<Char>;
 template <typename Char>
 inline auto thousands_sep(locale_ref loc) -> thousands_sep_result<Char> {
   auto result = thousands_sep_impl<char>(loc);
@@ -1174,7 +1174,7 @@ inline auto thousands_sep(locale_ref loc) -> thousands_sep_result<wchar_t> {
 }
 
 template <typename Char>
-auto decimal_point_impl(locale_ref loc) -> Char;
+FMT_API auto decimal_point_impl(locale_ref loc) -> Char;
 template <typename Char> inline auto decimal_point(locale_ref loc) -> Char {
   return Char(decimal_point_impl<char>(loc));
 }
@@ -1184,12 +1184,12 @@ template <> inline auto decimal_point(locale_ref loc) -> wchar_t {
 
 #ifndef FMT_HEADER_ONLY
 FMT_BEGIN_EXPORT
-extern template auto thousands_sep_impl<char>(locale_ref)
+extern template FMT_API auto thousands_sep_impl<char>(locale_ref)
     -> thousands_sep_result<char>;
-extern template auto thousands_sep_impl<wchar_t>(locale_ref)
+extern template FMT_API auto thousands_sep_impl<wchar_t>(locale_ref)
     -> thousands_sep_result<wchar_t>;
-extern template auto decimal_point_impl(locale_ref) -> char;
-extern template auto decimal_point_impl(locale_ref) -> wchar_t;
+extern template FMT_API auto decimal_point_impl(locale_ref) -> char;
+extern template FMT_API auto decimal_point_impl(locale_ref) -> wchar_t;
 FMT_END_EXPORT
 #endif  // FMT_HEADER_ONLY
 
@@ -1302,7 +1302,7 @@ class utf8_to_utf16 {
   basic_memory_buffer<wchar_t> buffer_;
 
  public:
-  explicit utf8_to_utf16(string_view s);
+  FMT_API explicit utf8_to_utf16(string_view s);
   inline operator basic_string_view<wchar_t>() const {
     return {&buffer_[0], size()};
   }
@@ -1446,7 +1446,7 @@ inline auto umul192_upper128(uint64_t x, uint128_fallback y) noexcept
   return r;
 }
 
-auto get_cached_power(int k) noexcept -> uint128_fallback;
+FMT_API auto get_cached_power(int k) noexcept -> uint128_fallback;
 
 // Type-specific information that Dragonbox uses.
 template <typename T, typename Enable = void> struct float_info;
@@ -1496,7 +1496,7 @@ template <typename T> struct decimal_fp {
   int exponent;
 };
 
-template <typename T> auto to_decimal(T x) noexcept -> decimal_fp<T>;
+template <typename T> FMT_API auto to_decimal(T x) noexcept -> decimal_fp<T>;
 }  // namespace dragonbox
 
 // Returns true iff Float has the implicit bit which is not stored.
@@ -1735,7 +1735,7 @@ auto write_ptr(OutputIt out, UIntPtr value, const format_specs* specs)
 }
 
 // Returns true iff the code point cp is printable.
-auto is_printable(uint32_t cp) -> bool;
+FMT_API auto is_printable(uint32_t cp) -> bool;
 
 inline auto needs_escape(uint32_t cp) -> bool {
   if (cp < 0x20 || cp == 0x7f || cp == '"' || cp == '\\') return true;
@@ -1985,7 +1985,7 @@ auto write_int(OutputIt out, UInt value, unsigned prefix,
 
 #if FMT_USE_LOCALE
 // Writes a localized value.
-auto write_loc(appender out, loc_value value, const format_specs& specs,
+FMT_API auto write_loc(appender out, loc_value value, const format_specs& specs,
                        locale_ref loc) -> bool;
 auto write_loc(basic_appender<wchar_t> out, loc_value value,
                const format_specs& specs, locale_ref loc) -> bool;
@@ -3806,10 +3806,10 @@ template <typename Char = char> struct format_handler {
 
 // It is used in format-inl.h and os.cc.
 using format_func = void (*)(detail::buffer<char>&, int, const char*);
-void do_report_error(format_func func, int error_code,
+FMT_API void do_report_error(format_func func, int error_code,
                              const char* message) noexcept;
 
-void format_error_code(buffer<char>& out, int error_code,
+FMT_API void format_error_code(buffer<char>& out, int error_code,
                                string_view message) noexcept;
 
 template <typename T, typename Char, type TYPE>
@@ -3900,7 +3900,7 @@ template <typename Locale> class format_facet : public Locale::facet {
                       const format_specs& specs) const -> bool;
 
  public:
-  static typename Locale::id id;
+  static FMT_API typename Locale::id id;
 
   explicit format_facet(Locale& loc);
   explicit format_facet(string_view sep = "", std::string grouping = "\3",
@@ -4250,7 +4250,7 @@ class format_int {
  */
 #define FMT_STRING(s) FMT_STRING_IMPL(s, fmt::detail::compile_string)
 
-auto vsystem_error(int error_code, string_view fmt, format_args args)
+FMT_API auto vsystem_error(int error_code, string_view fmt, format_args args)
     -> std::system_error;
 
 /**
@@ -4287,12 +4287,12 @@ auto system_error(int error_code, format_string<T...> fmt, T&&... args)
  * message corresponding to the error code.
  * `error_code` is a system error code as given by `errno`.
  */
-void format_system_error(detail::buffer<char>& out, int error_code,
+FMT_API void format_system_error(detail::buffer<char>& out, int error_code,
                                  const char* message) noexcept;
 
 // Reports a system error without throwing an exception.
 // Can be used to report errors from destructors.
-void report_system_error(int error_code, const char* message) noexcept;
+FMT_API void report_system_error(int error_code, const char* message) noexcept;
 
 inline auto vformat(locale_ref loc, string_view fmt, format_args args)
     -> std::string {
@@ -4332,7 +4332,7 @@ FMT_NODISCARD FMT_INLINE auto formatted_size(locale_ref loc,
   return buf.count();
 }
 
-auto vformat(string_view fmt, format_args args) -> std::string;
+FMT_API auto vformat(string_view fmt, format_args args) -> std::string;
 
 /**
  * Formats `args` according to specifications in `fmt` and returns the result
