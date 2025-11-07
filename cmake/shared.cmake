@@ -70,14 +70,4 @@ elseif (MSVC)
         PUBLIC ${LIBDDWAF_INTERFACE_LIBRARIES})
 
     install(FILES $<TARGET_PDB_FILE:libddwaf_shared> DESTINATION lib OPTIONAL)
-elseif (MINGW)
-    target_link_libraries(libddwaf_shared PUBLIC ${LIBDDWAF_INTERFACE_LIBRARIES})
-    target_link_libraries(libddwaf_shared PRIVATE
-        $<$<BOOL:${LIBDDWAF_ENABLE_LTO}>:-flto>
-        -Wl,--no-undefined
-        -Wl,-version-script=${libddwaf_SOURCE_DIR}/libddwaf.version
-        -Wl,--build-id=0x${BUILD_ID}
-        ${LIBDDWAF_PRIVATE_LIBRARIES}
-        -static-libstdc++
-        glibc_compat_time64 glibc_compat_math)
 endif()

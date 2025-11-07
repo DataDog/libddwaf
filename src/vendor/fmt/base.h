@@ -8,8 +8,6 @@
 #ifndef FMT_BASE_H_
 #define FMT_BASE_H_
 
-#define FMT_HEADER_ONLY
-
 #if defined(FMT_IMPORT_STD) && !defined(FMT_MODULE)
 #  define FMT_MODULE
 #endif
@@ -354,7 +352,7 @@ template <typename T> constexpr auto max_of(T a, T b) -> T {
   return a > b ? a : b;
 }
 
-FMT_NORETURN FMT_API void assert_fail(const char* file, int line,
+FMT_NORETURN void assert_fail(const char* file, int line,
                                       const char* message);
 
 namespace detail {
@@ -384,7 +382,7 @@ template <typename T> FMT_ALWAYS_INLINE constexpr auto const_check(T val) -> T {
   return val;
 }
 
-FMT_NORETURN FMT_API void assert_fail(const char* file, int line,
+FMT_NORETURN void assert_fail(const char* file, int line,
                                       const char* message);
 
 #if defined(FMT_ASSERT)
@@ -663,7 +661,7 @@ struct formatter {
 /// Reports a format error at compile time or, via a `format_error` exception,
 /// at runtime.
 // This function is intentionally not constexpr to give a compile-time error.
-FMT_NORETURN FMT_API void report_error(const char* message);
+FMT_NORETURN void report_error(const char* message);
 
 enum class presentation_type : unsigned char {
   // Common specifiers:
@@ -2451,11 +2449,11 @@ FMT_CONSTEXPR inline auto is_locking() -> bool {
   return locking<T1>::value || is_locking<T2, Tail...>();
 }
 
-FMT_API void vformat_to(buffer<char>& buf, string_view fmt, format_args args,
+void vformat_to(buffer<char>& buf, string_view fmt, format_args args,
                         locale_ref loc = {});
 
 #if FMT_WIN32
-FMT_API void vprint_mojibake(FILE*, string_view, format_args, bool);
+void vprint_mojibake(FILE*, string_view, format_args, bool);
 #else  // format_args is passed by reference since it is defined later.
 inline void vprint_mojibake(FILE*, string_view, const format_args&, bool) {}
 #endif
@@ -2947,10 +2945,10 @@ FMT_NODISCARD FMT_INLINE auto formatted_size(format_string<T...> fmt,
   return buf.count();
 }
 
-FMT_API void vprint(string_view fmt, format_args args);
-FMT_API void vprint(FILE* f, string_view fmt, format_args args);
-FMT_API void vprintln(FILE* f, string_view fmt, format_args args);
-FMT_API void vprint_buffered(FILE* f, string_view fmt, format_args args);
+void vprint(string_view fmt, format_args args);
+void vprint(FILE* f, string_view fmt, format_args args);
+void vprintln(FILE* f, string_view fmt, format_args args);
+void vprint_buffered(FILE* f, string_view fmt, format_args args);
 
 /**
  * Formats `args` according to specifications in `fmt` and writes the output

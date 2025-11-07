@@ -19,7 +19,7 @@
 
 namespace ddwaf {
 
-inline std::string index_to_id(unsigned idx) { return "index:" + to_string<std::string>(idx); }
+inline std::string index_to_id(unsigned idx) { return "index:" + to_string(idx); }
 
 enum class ruleset_info_state : uint8_t { empty, invalid, valid };
 

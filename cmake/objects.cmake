@@ -21,6 +21,8 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/dynamic_string.cpp
     ${libddwaf_SOURCE_DIR}/src/attribute_collector.cpp
     ${libddwaf_SOURCE_DIR}/src/rule.cpp
+    ${libddwaf_SOURCE_DIR}/src/semver.cpp
+    ${libddwaf_SOURCE_DIR}/src/utils.cpp
     ${libddwaf_SOURCE_DIR}/src/utf8.cpp
     ${libddwaf_SOURCE_DIR}/src/builder/action_mapper_builder.cpp
     ${libddwaf_SOURCE_DIR}/src/builder/matcher_builder.cpp
@@ -91,6 +93,7 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/transformer/css_decode.cpp
     ${libddwaf_SOURCE_DIR}/src/transformer/html_entity_decode.cpp
     ${libddwaf_SOURCE_DIR}/src/transformer/js_decode.cpp
+    ${libddwaf_SOURCE_DIR}/src/vendor/fmt/format.cc
     ${libddwaf_SOURCE_DIR}/src/vendor/radixlib/radixlib.c
     ${libddwaf_SOURCE_DIR}/src/vendor/lua-aho-corasick/ac_fast.cxx
     ${libddwaf_SOURCE_DIR}/src/vendor/lua-aho-corasick/ac_slow.cxx
@@ -147,7 +150,7 @@ function(gen_objects target_name)
     target_include_directories(${target_name} PUBLIC ${LIBDDWAF_PUBLIC_INCLUDES})
     target_include_directories(${target_name} PRIVATE ${LIBDDWAF_PRIVATE_INCLUDES})
 
-    target_compile_definitions(${target_name} PRIVATE UTF8PROC_STATIC=1)
+    target_compile_definitions(${target_name} PRIVATE UTF8PROC_STATIC=1 FMT_OPTIMIZE_SIZE=2)
     if (MSVC)
         target_compile_definitions(${target_name} PRIVATE NOMINMAX)
     endif()

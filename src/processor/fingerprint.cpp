@@ -178,7 +178,7 @@ template <typename T>
 struct unsigned_field : field_generator<unsigned_field<T>> {
     explicit unsigned_field(T input) : value(input) {}
 
-    [[nodiscard]] dynamic_string generate() { return ddwaf::to_string<std::string>(value); }
+    [[nodiscard]] dynamic_string generate() { return ddwaf::to_string(value); }
 
     T value;
 };
@@ -564,7 +564,7 @@ owned_object http_header_fingerprint::eval_impl(const unary_argument<map_view> &
     }
     std::sort(unknown_headers.begin(), unknown_headers.end());
 
-    auto unknown_header_size = unknown_headers.size();
+    const uint64_t unknown_header_size = unknown_headers.size();
     owned_object res;
     try {
         res = generate_fragment("hdr", alloc, string_field{known_header_bitset},
@@ -611,7 +611,7 @@ owned_object http_network_fingerprint::eval_impl(const unary_argument<map_view> 
         }
     }
 
-    unsigned ip_count = 0;
+    uint64_t ip_count = 0;
     if (!chosen_header_value.empty()) {
         // For now, count commas
         ++ip_count;
