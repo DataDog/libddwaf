@@ -17,7 +17,7 @@ Required fields:
 | `id` | string | Stable identifier. Must not collide with any other rule in the document set. |
 | `name` | string | Human-readable label for diagnostics. |
 | `tags` | object | Metadata emitted in events and used for grouping/overrides. Must include a `type` key; may include `module`, `category`, or any custom taxonomy. |
-| `conditions` | array | Expression evaluated against request data. See the [Condition schema](common/conditions.md). |
+| `conditions` | array | Expression evaluated against request data. See the [Condition schema](conditions.md). |
 
 Optional fields:
 
@@ -25,7 +25,7 @@ Optional fields:
 | --- | --- | --- | --- |
 | `enabled` | boolean | `true` | Disable the rule without removing it. |
 | `min_version`, `max_version` | semantic version | unrestricted | Load the rule only when the running libddwaf version falls within the range. |
-| `transformers` | array | `[]` | Up to 10 identifiers applied to every input in the rule. See the [Transformer Reference](common/transformers.md). |
+| `transformers` | array | `[]` | Up to 10 identifiers applied to every input in the rule. See the [Transformer Reference](transformers.md). |
 | `on_match` | array of strings | `[]` | Ordered list of action IDs to emit when the rule matches. See [Actions](actions.md) for the catalogue schema. |
 | `output` | object | `{ event: true, keep: true, attributes: {} }` | Shape the emitted event; see below. |
 
@@ -79,7 +79,7 @@ Example:
 
 ### Conditions and operators
 
-Conditions use the shared expression schema documented in [conditions.md](common/conditions.md) and can reference any operator from the [Operator Reference](common/operators.md). Rule-level transformers apply to every input unless an input overrides them with its own `transformers` list.
+Conditions use the shared expression schema documented in [conditions.md](conditions.md) and can reference any operator from the [Operator Reference](operators.md). Rule-level transformers apply to every input unless an input overrides them with its own `transformers` list.
 
 ### Evaluation notes
 

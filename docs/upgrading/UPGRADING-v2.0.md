@@ -3,14 +3,14 @@
 This guide helps you migrate call sites of the C API from libddwaf 1.30.x to 2.0.0. It captures the high-impact breaking changes and illustrates them with snippets lifted from the integration tests that ship with 2.0.
 
 ## Migration Overview
-- Evaluation limits, obfuscator regexes and the result free hook inside `ddwaf_config` have been removed. The core now enforces internal limits; only the obfuscator survives and must be supplied inside configuration documents when needed. All memory ownership should switch to the allocator API.
+- Evaluation limits, obfuscator regexes and the result free hook inside `ddwaf_config` have been removed. The core now enforces internal limits; only the obfuscator survives and must be supplied inside configurations when needed. All memory ownership should switch to the allocator API.
 - `ddwaf_run` has been replaced by `ddwaf_context_eval`. Persistent and ephemeral maps are merged into a single input object, and every evaluation needs an allocator handle.
 - `ddwaf_object_*` constructors now accept the allocator that owns the storage. Container insertion helpers were renamed, and getters migrated to a namespaced family (for example `ddwaf_object_get_type`).
 - Context cloning exposed through `ddwaf_subcontext` and the allocator factories enable safe parallel use. Builders no longer take a `ddwaf_config*` argument.
 
 ## 1. Remove legacy runtime configuration
 
-`ddwaf_config` and the macros `DDWAF_MAX_STRING_LENGTH`, `DDWAF_MAX_CONTAINER_DEPTH`, `DDWAF_MAX_CONTAINER_SIZE` and `DDWAF_RUN_TIMEOUT` disappeared. Evaluation limits are no longer user-configurable: libddwaf 2.0 ships with built-in safeguards and rejects oversized inputs internally. If you depended on the obfuscator settings, provide them through the configuration documents you load via `ddwaf_init` or `ddwaf_builder_add_or_update_config` (see `src/configuration/configuration_manager.cpp` for the supported `obfuscator` section). There is no replacement for the removed limits hooks.
+`ddwaf_config` and the macros `DDWAF_MAX_STRING_LENGTH`, `DDWAF_MAX_CONTAINER_DEPTH`, `DDWAF_MAX_CONTAINER_SIZE` and `DDWAF_RUN_TIMEOUT` disappeared. Evaluation limits are no longer user-configurable: libddwaf 2.0 ships with built-in safeguards and rejects oversized inputs internally. If you depended on the obfuscator settings, provide them through the configurations you load via `ddwaf_init` or `ddwaf_builder_add_or_update_config` (see `src/configuration/configuration_manager.cpp` for the supported `obfuscator` section). There is no replacement for the removed limits hooks.
 
 ## 2. Update initialization and evaluation
 
@@ -120,7 +120,7 @@ Additional tips:
 
 ## 5. Builder workflow updates
 
-`ddwaf_builder_init` no longer accepts a `ddwaf_config*`. Instantiate it without arguments and pass configuration documents that already carry optional obfuscator settings. Inputs still need to be destroyed with `ddwaf_object_destroy`. The integration test at `tests/integration/interface/builder/test.cpp` reflects the new pattern:
+`ddwaf_builder_init` no longer accepts a `ddwaf_config*`. Instantiate it without arguments and pass configurations that already carry optional obfuscator settings. Inputs still need to be destroyed with `ddwaf_object_destroy`. The integration test at `tests/integration/interface/builder/test.cpp` reflects the new pattern:
 
 ```c
 ddwaf_builder builder = ddwaf_builder_init();
@@ -162,7 +162,7 @@ ddwaf_builder_destroy(builder);
 ## Migration checklist
 
 - [ ] Drop any attempt to configure evaluation limits; they are no longer exposed.
-- [ ] If you rely on custom obfuscator patterns, embed them in the configuration documents you load.
+- [ ] If you rely on custom obfuscator patterns, embed them in the configurations you load.
 - [ ] Update every `ddwaf_context_init` call to pass an allocator and replace `ddwaf_run` with `ddwaf_context_eval`.
 - [ ] Swap out deprecated `ddwaf_object_*` constructors for the allocator-aware setters and ensure destruction happens through `ddwaf_object_destroy`.
 - [ ] Review result-handling code for the new getter helpers and the unified request payload.

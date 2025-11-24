@@ -1,6 +1,6 @@
 # Processors
 
-Processors are reusable transformations that derive new addresses from request data. They can run before rule evaluation (preprocessors) or after rule evaluation to enrich result attributes (postprocessors). Each processor lives in the `processors` array of a configuration document.
+Processors are reusable transformations that derive new addresses from request data. They can run before rule evaluation (preprocessors) or after rule evaluation to enrich result attributes (postprocessors). Each processor lives in the `processors` array of a configuration.
 
 ## Processor schema
 
@@ -15,7 +15,7 @@ Optional fields:
 
 | Field | Type | Default | Notes |
 | --- | --- | --- | --- |
-| `conditions` | array | `[]` | Simplified expression that must evaluate to `true` before the processor runs. See [conditions](common/conditions.md). |
+| `conditions` | array | `[]` | Simplified expression that must evaluate to `true` before the processor runs. See [conditions](conditions.md). |
 | `parameters.mappings` | array | `[]` | Input/output bindings; see below. |
 | `parameters.scanners` | array | `[]` | Scanner include/exclude filters (only for `extract_schema`). |
 | `min_version`, `max_version` | semantic version | unrestricted | Restrict the processor to specific libddwaf versions. |
