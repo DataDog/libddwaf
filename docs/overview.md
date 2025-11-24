@@ -1,6 +1,7 @@
+
 # Understanding libddwaf
 
-libddwaf is Datadog’s embeddable web application firewall engine. It ingests a declarative security configuration (rules, exclusions, processors, actions) and exposes a compact C API that any tracer or agent can use to evaluate inbound requests. At runtime the library:
+libddwaf is Datadog’s embeddable security engine. It ingests a declarative security configuration (rules, exclusions, processors, actions) and exposes a compact C API that any tracer or agent can use to evaluate inbound requests. At runtime the library:
 
 1. Parses one or more configuration documents into an immutable **WAF handle** (`ddwaf_handle`).
 2. Creates per-request **contexts** (`ddwaf_context`) bound to the handle and a memory allocator.
