@@ -108,7 +108,7 @@ Although postprocessors are defined alongside preprocessors, it is worth calling
 
 A minimal integration typically follows these steps:
 
-1. **Load configuration**: parse the JSON/YAML documents describing rules, processors, exclusions, and overrides into `ddwaf_object` instances, then call `ddwaf_init` (or drive the builder API for multi-document workflows).
+1. **Load configuration**: parse the JSON/YAML configurations describing rules, processors, exclusions, and overrides into `ddwaf_object` instances, then call `ddwaf_init` (or drive the builder API for multi-configuration workflows).
 2. **Create a context per request**: obtain an allocator (`ddwaf_get_default_allocator` or a custom one) and call `ddwaf_context_init`.
 3. **Populate addresses**: build a map of request data (`ddwaf_object_set_map` plus insertion helpers) covering the addresses referenced by your rules and preprocessors.
 4. **Evaluate**: call `ddwaf_context_eval` with the map, allocator, an optional result object, and a timeout. Inspect `DDWAF_MATCH` or `DDWAF_OK`, along with the populated `events`, `actions`, and `attributes`.

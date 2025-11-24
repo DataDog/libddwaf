@@ -1,12 +1,12 @@
 # Rules and Custom Rules
 
-Configuration documents declare detections under two top-level arrays:
+Configurations declare detections under two top-level arrays:
 
 - `rules`: Datadog-supplied content shipped with the ruleset.
 - `custom_rules`: Tenant- or agent-supplied additions.
 
 Both arrays share the same schema. Entries are merged by ID; IDs must be unique across both arrays or the duplicate is rejected.
-Rule actions referenced via `on_match` are resolved against the document’s action catalogue; see [Actions](actions.md).
+Rule actions referenced via `on_match` are resolved against the configuration’s action catalogue; see [Actions](actions.md).
 
 ## Rule schema
 
@@ -14,7 +14,7 @@ Required fields:
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `id` | string | Stable identifier. Must not collide with any other rule in the document set. |
+| `id` | string | Stable identifier. Must not collide with any other rule in the configuration set. |
 | `name` | string | Human-readable label for diagnostics. |
 | `tags` | object | Metadata emitted in events and used for grouping/overrides. Must include a `type` key; may include `module`, `category`, or any custom taxonomy. |
 | `conditions` | array | Expression evaluated against request data. See the [Condition schema](conditions.md). |
