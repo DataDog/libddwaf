@@ -10,6 +10,9 @@ The documents below describe libddwaf’s public API and internal primitives. Us
     - [Exclusion Filters](exclusions.md) – Configure rule and input exclusions in configurations.
     - [Actions](actions.md) – Top-level action catalogue referenced by rules.
     - [Scanners](scanners.md) – Include/exclude controls used by processors such as `extract_schema`.
+    - [Rule Overrides](rule_overrides.md) – Adjust rule behaviour without redefining rules.
+    - [Processor Overrides](processor_overrides.md) – Incrementally include/exclude scanners on processors.
+    - [Rules Data](rule_data.md) – External datasets referenced by operators.
     - [Conditions](conditions.md) – Shared expression syntax used by rules, processors, and exclusions.
     - [Addresses](addresses.md) – List of supported and / or commonly used addresses and their expected value types.
     - [Operators](operators.md) – Scalar and detector operators with parameters and version notes.
