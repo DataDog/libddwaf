@@ -1,8 +1,6 @@
 # Operator Reference
 
-libddwaf supports a mixture of low-level “scalar” match operators and higher-level detectors that encapsulate complex heuristics. This document enumerates every operator wired through `src/matcher` and `src/condition`, together with the arguments they expect in security rule definitions. Configuration examples follow the format consumed by the expression parser in `src/configuration/common/expression_parser.cpp`.
-
-Unless stated otherwise, operators consume data from the `inputs` argument (the list of addresses on which the condition runs). Each address can declare its own transformer chain; negated scalar operators accept at most one address.
+Libddwaf supports a mixture of low-level “scalar” match operators and higher-level detectors that encapsulate complex heuristics. This document enumerates each of the available operators, together with the arguments they expect.
 
 ---
 
@@ -13,11 +11,10 @@ These operators compare request data against literal values, numerical threshold
 ### `equals`
 - **Purpose:** Compare a value to a literal.
 - **Arguments:**  
-  - `inputs` (variadic list of addresses).  
   - `type`: `"string"`, `"boolean"`, `"unsigned"`, `"signed"`, or `"float"`.  
   - `value`: literal to compare against.  
   - `delta` (optional, floats only): tolerance when comparing floating point numbers.
-- **Notes:** Supports negation (`!equals`) which must be scoped to a single address.
+- **Notes:** Supports negation (`!equals`) which must be scoped to a single address and / or key path.
 
 ### `exact_match`
 - **Purpose:** Match against a list of exact strings.
@@ -32,7 +29,7 @@ These operators compare request data against literal values, numerical threshold
   - `inputs`.  
   - `type`: `"unsigned"`, `"signed"`, or `"float"`.  
   - `value`: comparison threshold.
-- **Notes:** Negated form `!greater_than` inverts the comparison.
+- **Notes:** No direct `!greater_than` variant exists; use `lower_than`/`equals` to express the complementary logic.
 
 ### `lower_than`
 - **Purpose:** Numeric less-than comparison.
@@ -40,7 +37,7 @@ These operators compare request data against literal values, numerical threshold
   - `inputs`.  
   - `type`: `"unsigned"`, `"signed"`, or `"float"`.  
   - `value`: comparison threshold.
-- **Notes:** Negated form `!lower_than` inverts the comparison.
+- **Notes:** No direct `!lower_than` matcher exists; use `greater_than`/`equals` to cover the opposite condition.
 
 ### `match_regex`
 - **Purpose:** Evaluate a RE2 regular expression.
@@ -80,22 +77,22 @@ These operators compare request data against literal values, numerical threshold
 ### `is_xss`
 - **Purpose:** Detect cross-site scripting payloads using libinjection.
 - **Arguments:** `inputs`.
-- **Notes:** Negated form `!is_xss` is supported.
+- **Notes:** Only the positive matcher is available; there is no `!is_xss`.
 
 ### `is_sqli`
 - **Purpose:** Detect SQL injection payloads using libinjection.
 - **Arguments:** `inputs`.
-- **Notes:** Negated form `!is_sqli` is supported.
+- **Notes:** Only the positive matcher is available; there is no `!is_sqli`.
 
 ### `hidden_ascii_match`
 - **Purpose:** Flag strings containing hidden or non-printable ASCII characters.
 - **Arguments:** `inputs`.
-- **Notes:** Negated form `!hidden_ascii_match` is supported.
+- **Notes:** Only the positive matcher is available; there is no `!hidden_ascii_match`.
 
 ### `exists` / `!exists`
 - **Purpose:** Assert the presence (`exists`) or absence (`!exists`) of addresses.
 - **Arguments:**  
-  - `exists`: `inputs` (variadic). Returns `true` as soon as any address resolves. Key paths are ignored.  
+  - `exists`: `inputs` (variadic). Returns `true` as soon as any address resolves; key paths are traversed so nested lookups honour the provided selectors.  
   - `!exists`: `inputs` (exactly one). Returns `true` only when the address cannot be resolved.
 - **Notes:** Implemented as scalar conditions; the negated form must target a single address.
 
@@ -155,6 +152,6 @@ Detector operators combine multiple signals and heuristics. They are versioned: 
 
 ## Operator negation
 
-Scalar match operators (the ones backed by `src/matcher`) automatically expose a negated variant prefixed with `!`—for example, `!match_regex` or `!ip_match`. Negated operators accept exactly one address and invert the underlying predicate. Detector operators (`*_detector`) do **not** provide negated forms; wrap them in logical NOT expressions if alternative behaviour is needed.
+Only the scalar match operators `equals`, `exact_match`, `match_regex`, `match_regex_with_checksum`, `phrase_match`, and `ip_match` expose a dedicated negated variant prefixed with `!`—for example, `!match_regex` or `!ip_match`. Those negated operators accept exactly one address and invert the underlying predicate. Detector operators (`*_detector`) and the remaining scalar matchers do **not** provide negated forms; use complementary positive operators if alternative behaviour is needed.
 
 When combining operators, remember that each address may declare transformers and that the global condition applies them in the order specified in the rule definition.

@@ -13,7 +13,7 @@ actions that should follow.
 | `id` | string | yes | Stable identifier. Must be unique across all rules (base and custom). |
 | `name` | string | yes | Human-readable label shown in diagnostics. |
 | `tags` | object | yes | Metadata used for grouping, routing, and overrides. Must include a `type` key (for example `"type": "lfi"`). Optionally include `category`, `module`, or any other taxonomy keys you rely on. |
-| `conditions` | array | yes | List of condition objects describing the match logic. See the [Operator Reference](operators.md) for supported operators and parameter schemas. |
+| `conditions` | array | yes | List of condition objects describing the match logic. See the [Operator Reference](configuration/common/operators.md) for supported operators and parameter schemas. |
 
 ## Optional common fields
 
@@ -21,7 +21,7 @@ actions that should follow.
 | --- | --- | --- | --- |
 | `enabled` | boolean | `true` | Disable a rule without removing it from the document. |
 | `min_version`, `max_version` | semantic version | unrestricted | Restrict the rule to specific libddwaf versions. |
-| `transformers` | array | empty | Sequence of transformer identifiers applied to all inputs referenced by the rule before conditions run. See the [Transformer Reference](transformers.md). At most 10 entries are accepted. |
+| `transformers` | array | empty | Sequence of transformer identifiers applied to all inputs referenced by the rule before conditions run. See the [Transformer Reference](configuration/common/transformers.md). At most 10 entries are accepted. |
 | `on_match` | array of strings | empty | Ordered list of action identifiers to emit when the rule matches. Actions are resolved at runtime through the ruleset's action catalogue. |
 | `output` | object | implicit event+keep | Fine-tune the generated event and attributes. Details below. |
 
