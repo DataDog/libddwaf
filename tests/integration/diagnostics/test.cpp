@@ -13,9 +13,9 @@
 using namespace ddwaf;
 
 namespace {
-constexpr std::string_view base_dir = "integration/diagnostics/v2/";
+constexpr std::string_view base_dir = "integration/diagnostics/";
 
-TEST(TestDiagnosticsV2Integration, InvalidConfigType)
+TEST(TestDiagnosticsIntegration, InvalidConfigType)
 {
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = yaml_to_object<ddwaf_object>(
@@ -41,7 +41,7 @@ TEST(TestDiagnosticsV2Integration, InvalidConfigType)
     ddwaf_destroy(handle);
 }
 
-TEST(TestDiagnosticsV2Integration, UnsupportedSchema)
+TEST(TestDiagnosticsIntegration, UnsupportedSchema)
 {
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = yaml_to_object<ddwaf_object>(
@@ -67,7 +67,7 @@ TEST(TestDiagnosticsV2Integration, UnsupportedSchema)
     ddwaf_destroy(handle);
 }
 
-TEST(TestDiagnosticsV2Integration, NoSchema)
+TEST(TestDiagnosticsIntegration, NoSchema)
 {
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = yaml_to_object<ddwaf_object>(
@@ -105,7 +105,7 @@ TEST(TestDiagnosticsV2Integration, NoSchema)
     ddwaf_destroy(handle);
 }
 
-TEST(TestDiagnosticsV2Integration, BasicRule)
+TEST(TestDiagnosticsIntegration, BasicRule)
 {
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = yaml_to_object<ddwaf_object>(
@@ -143,7 +143,7 @@ TEST(TestDiagnosticsV2Integration, BasicRule)
     ddwaf_destroy(handle);
 }
 
-TEST(TestDiagnosticsV2Integration, BasicRuleWithUpdate)
+TEST(TestDiagnosticsIntegration, BasicRuleWithUpdate)
 {
     auto *alloc = ddwaf_get_default_allocator();
     ddwaf_builder builder = ddwaf_builder_init();
@@ -209,7 +209,7 @@ TEST(TestDiagnosticsV2Integration, BasicRuleWithUpdate)
     ddwaf_builder_destroy(builder);
 }
 
-TEST(TestDiagnosticsV2Integration, NullRuleset)
+TEST(TestDiagnosticsIntegration, NullRuleset)
 {
     ddwaf_object diagnostics;
     ddwaf_object_set_invalid(&diagnostics);
@@ -219,7 +219,7 @@ TEST(TestDiagnosticsV2Integration, NullRuleset)
     EXPECT_EQ(diagnostics.type, DDWAF_OBJ_INVALID);
 }
 
-TEST(TestDiagnosticsV2Integration, InvalidRule)
+TEST(TestDiagnosticsIntegration, InvalidRule)
 {
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("invalid_single.yaml", base_dir);
@@ -258,7 +258,7 @@ TEST(TestDiagnosticsV2Integration, InvalidRule)
     ddwaf_object_destroy(&diagnostics, alloc);
 }
 
-TEST(TestDiagnosticsV2Integration, MultipleSameInvalidRules)
+TEST(TestDiagnosticsIntegration, MultipleSameInvalidRules)
 {
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("invalid_multiple_same.yaml", base_dir);
@@ -299,7 +299,7 @@ TEST(TestDiagnosticsV2Integration, MultipleSameInvalidRules)
     ddwaf_object_destroy(&diagnostics, alloc);
 }
 
-TEST(TestDiagnosticsV2Integration, MultipleDiffInvalidRules)
+TEST(TestDiagnosticsIntegration, MultipleDiffInvalidRules)
 {
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("invalid_multiple_diff.yaml", base_dir);
@@ -352,7 +352,7 @@ TEST(TestDiagnosticsV2Integration, MultipleDiffInvalidRules)
     ddwaf_object_destroy(&diagnostics, alloc);
 }
 
-TEST(TestDiagnosticsV2Integration, MultipleMixInvalidRules)
+TEST(TestDiagnosticsIntegration, MultipleMixInvalidRules)
 {
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("invalid_multiple_mix.yaml", base_dir);
@@ -419,7 +419,7 @@ TEST(TestDiagnosticsV2Integration, MultipleMixInvalidRules)
     ddwaf_destroy(handle);
 }
 
-TEST(TestDiagnosticsV2Integration, InvalidDuplicate)
+TEST(TestDiagnosticsIntegration, InvalidDuplicate)
 {
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("invalid_duplicate.yaml", base_dir);
@@ -461,7 +461,7 @@ TEST(TestDiagnosticsV2Integration, InvalidDuplicate)
     ddwaf_destroy(handle);
 }
 
-TEST(TestDiagnosticsV2Integration, InvalidRuleset)
+TEST(TestDiagnosticsIntegration, InvalidRuleset)
 {
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("invalid_ruleset.yaml", base_dir);
@@ -505,7 +505,7 @@ TEST(TestDiagnosticsV2Integration, InvalidRuleset)
     ddwaf_object_destroy(&diagnostics, alloc);
 }
 
-TEST(TestDiagnosticsV2Integration, MultipleRules)
+TEST(TestDiagnosticsIntegration, MultipleRules)
 {
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("rules.yaml", base_dir);
@@ -550,7 +550,7 @@ TEST(TestDiagnosticsV2Integration, MultipleRules)
     ddwaf_destroy(handle);
 }
 
-TEST(TestDiagnosticsV2Integration, RulesWithMinVersion)
+TEST(TestDiagnosticsIntegration, RulesWithMinVersion)
 {
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("rules_min_version.yaml", base_dir);
@@ -593,7 +593,7 @@ TEST(TestDiagnosticsV2Integration, RulesWithMinVersion)
     ddwaf_destroy(handle);
 }
 
-TEST(TestDiagnosticsV2Integration, RulesWithMaxVersion)
+TEST(TestDiagnosticsIntegration, RulesWithMaxVersion)
 {
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("rules_max_version.yaml", base_dir);
@@ -636,7 +636,7 @@ TEST(TestDiagnosticsV2Integration, RulesWithMaxVersion)
     ddwaf_destroy(handle);
 }
 
-TEST(TestDiagnosticsV2Integration, RulesWithMinMaxVersion)
+TEST(TestDiagnosticsIntegration, RulesWithMinMaxVersion)
 {
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("rules_min_max_version.yaml", base_dir);
@@ -680,7 +680,7 @@ TEST(TestDiagnosticsV2Integration, RulesWithMinMaxVersion)
     ddwaf_destroy(handle);
 }
 
-TEST(TestDiagnosticsV2Integration, RulesWithErrors)
+TEST(TestDiagnosticsIntegration, RulesWithErrors)
 {
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("rules_with_errors.yaml", base_dir);
@@ -764,7 +764,7 @@ TEST(TestDiagnosticsV2Integration, RulesWithErrors)
     ddwaf_destroy(handle);
 }
 
-TEST(TestDiagnosticsV2Integration, CustomRules)
+TEST(TestDiagnosticsIntegration, CustomRules)
 {
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("custom_rules.yaml", base_dir);
@@ -809,7 +809,7 @@ TEST(TestDiagnosticsV2Integration, CustomRules)
     ddwaf_destroy(handle);
 }
 
-TEST(TestDiagnosticsV2Integration, InputFilter)
+TEST(TestDiagnosticsIntegration, InputFilter)
 {
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("input_filter.yaml", base_dir);
@@ -848,7 +848,7 @@ TEST(TestDiagnosticsV2Integration, InputFilter)
     ddwaf_destroy(handle);
 }
 
-TEST(TestDiagnosticsV2Integration, RuleData)
+TEST(TestDiagnosticsIntegration, RuleData)
 {
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_file<ddwaf_object>("rule_data.yaml", base_dir);
@@ -888,7 +888,7 @@ TEST(TestDiagnosticsV2Integration, RuleData)
     ddwaf_destroy(handle);
 }
 
-TEST(TestDiagnosticsV2Integration, Processor)
+TEST(TestDiagnosticsIntegration, Processor)
 {
     auto *alloc = ddwaf_get_default_allocator();
     auto rule = read_json_file("processor.json", base_dir);
@@ -927,7 +927,7 @@ TEST(TestDiagnosticsV2Integration, Processor)
     ddwaf_destroy(handle);
 }
 
-TEST(TestDiagnosticsV2Integration, InvalidRulesContainer)
+TEST(TestDiagnosticsIntegration, InvalidRulesContainer)
 {
     auto *alloc = ddwaf_get_default_allocator();
     ddwaf_builder builder = ddwaf_builder_init();
@@ -960,7 +960,7 @@ TEST(TestDiagnosticsV2Integration, InvalidRulesContainer)
     ddwaf_builder_destroy(builder);
 }
 
-TEST(TestDiagnosticsV2Integration, InvalidCustomRulesContainer)
+TEST(TestDiagnosticsIntegration, InvalidCustomRulesContainer)
 {
     auto *alloc = ddwaf_get_default_allocator();
     ddwaf_builder builder = ddwaf_builder_init();
@@ -993,7 +993,7 @@ TEST(TestDiagnosticsV2Integration, InvalidCustomRulesContainer)
     ddwaf_builder_destroy(builder);
 }
 
-TEST(TestDiagnosticsV2Integration, InvalidExclusionsContainer)
+TEST(TestDiagnosticsIntegration, InvalidExclusionsContainer)
 {
     auto *alloc = ddwaf_get_default_allocator();
     ddwaf_builder builder = ddwaf_builder_init();
@@ -1026,7 +1026,7 @@ TEST(TestDiagnosticsV2Integration, InvalidExclusionsContainer)
     ddwaf_builder_destroy(builder);
 }
 
-TEST(TestDiagnosticsV2Integration, InvalidOverridesContainer)
+TEST(TestDiagnosticsIntegration, InvalidOverridesContainer)
 {
     auto *alloc = ddwaf_get_default_allocator();
     ddwaf_builder builder = ddwaf_builder_init();
@@ -1059,7 +1059,7 @@ TEST(TestDiagnosticsV2Integration, InvalidOverridesContainer)
     ddwaf_builder_destroy(builder);
 }
 
-TEST(TestDiagnosticsV2Integration, InvalidScannersContainer)
+TEST(TestDiagnosticsIntegration, InvalidScannersContainer)
 {
     auto *alloc = ddwaf_get_default_allocator();
     ddwaf_builder builder = ddwaf_builder_init();
@@ -1092,7 +1092,7 @@ TEST(TestDiagnosticsV2Integration, InvalidScannersContainer)
     ddwaf_builder_destroy(builder);
 }
 
-TEST(TestDiagnosticsV2Integration, InvalidProcessorsContainer)
+TEST(TestDiagnosticsIntegration, InvalidProcessorsContainer)
 {
     auto *alloc = ddwaf_get_default_allocator();
     ddwaf_builder builder = ddwaf_builder_init();
@@ -1125,7 +1125,7 @@ TEST(TestDiagnosticsV2Integration, InvalidProcessorsContainer)
     ddwaf_builder_destroy(builder);
 }
 
-TEST(TestDiagnosticsV2Integration, InvalidActionsContainer)
+TEST(TestDiagnosticsIntegration, InvalidActionsContainer)
 {
     auto *alloc = ddwaf_get_default_allocator();
     ddwaf_builder builder = ddwaf_builder_init();
@@ -1158,7 +1158,7 @@ TEST(TestDiagnosticsV2Integration, InvalidActionsContainer)
     ddwaf_builder_destroy(builder);
 }
 
-TEST(TestDiagnosticsV2Integration, InvalidRuleDataContainer)
+TEST(TestDiagnosticsIntegration, InvalidRuleDataContainer)
 {
     auto *alloc = ddwaf_get_default_allocator();
     ddwaf_builder builder = ddwaf_builder_init();
@@ -1191,7 +1191,7 @@ TEST(TestDiagnosticsV2Integration, InvalidRuleDataContainer)
     ddwaf_builder_destroy(builder);
 }
 
-TEST(TestDiagnosticsV2Integration, InvalidExclusionDataContainer)
+TEST(TestDiagnosticsIntegration, InvalidExclusionDataContainer)
 {
     auto *alloc = ddwaf_get_default_allocator();
     ddwaf_builder builder = ddwaf_builder_init();

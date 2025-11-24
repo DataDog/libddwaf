@@ -51,7 +51,6 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/configuration/processor_override_parser.cpp
     ${libddwaf_SOURCE_DIR}/src/configuration/rule_override_parser.cpp
     ${libddwaf_SOURCE_DIR}/src/configuration/rule_parser.cpp
-    ${libddwaf_SOURCE_DIR}/src/configuration/legacy_rule_parser.cpp
     ${libddwaf_SOURCE_DIR}/src/configuration/scanner_parser.cpp
     ${libddwaf_SOURCE_DIR}/src/configuration/configuration_manager.cpp
     ${libddwaf_SOURCE_DIR}/src/processor/extract_schema.cpp

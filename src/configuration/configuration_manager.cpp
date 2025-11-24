@@ -21,7 +21,6 @@
 #include "configuration/configuration_manager.hpp"
 #include "configuration/data_parser.hpp"
 #include "configuration/exclusion_parser.hpp"
-#include "configuration/legacy_rule_parser.hpp"
 #include "configuration/processor_override_parser.hpp"
 #include "configuration/processor_parser.hpp"
 #include "configuration/rule_override_parser.hpp"
@@ -44,29 +43,8 @@ bool configuration_manager::load(
     }
 
     auto schema_version = parse_schema_version(root);
-    if (schema_version > 2) {
+    if (schema_version != 2) {
         throw unsupported_schema_version(schema_version);
-    }
-
-    if (schema_version == 1) {
-        // Legacy configurations with schema version 1 will only provide rules
-        DDWAF_DEBUG("Parsing legacy configuration");
-
-        auto it = root.find("events");
-        if (it != root.end()) {
-            auto &section = info.add_section("rules");
-            try {
-                auto rules = static_cast<raw_configuration::vector>(it->second);
-                if (!rules.empty()) {
-                    parse_legacy_rules(rules, collector, section);
-                }
-            } catch (const std::exception &e) {
-                DDWAF_WARN("Failed to parse rules: {}", e.what());
-                section.set_error(e.what());
-            }
-        }
-
-        return info.state() != ruleset_info_state::invalid;
     }
 
     auto it = root.find("actions");
