@@ -5,7 +5,7 @@ Exclusions refine how rules respond to specific traffic without editing the rule
 - **Rule exclusions** change the verdict of matching rules.
 - **Input exclusions** remove request fields from rule evaluation while leaving the rule active.
 
-Both live in the `exclusions` array of a configuration document and share the same top-level shape.
+Both live in the `exclusions` array of a configuration and share the same top-level shape.
 
 ## Shared schema
 
@@ -13,7 +13,7 @@ Both live in the `exclusions` array of a configuration document and share the sa
 | --- | --- | --- | --- |
 | `id` | string | yes | Unique identifier for diagnostics and deduplication. |
 | `min_version`, `max_version` | semantic version | no | Restrict the exclusion to specific libddwaf versions. |
-| `conditions` | array | no | Expression evaluated against request data. See the [Condition schema](common/conditions.md). Omit for unconditional exclusions. |
+| `conditions` | array | no | Expression evaluated against request data. See the [Condition schema](conditions.md). Omit for unconditional exclusions. |
 | `rules_target` | array | no | List of rules to affect. Entries may include `rule_id`/`id` (exact match) or `tags` for tag-based selection. Omit to target all rules. |
 
 At least one of `conditions`, `rules_target`, or `inputs` (for input exclusions) must be provided; otherwise the entry is rejected.
