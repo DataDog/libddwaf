@@ -8,7 +8,7 @@ Each entry in `actions` uses this shape:
 
 | Field | Type | Required | Notes |
 | --- | --- | --- | --- |
-| `id` | string | yes | Identifier referenced by `on_match`. Must be unique across the document. |
+| `id` | string | yes | Identifier referenced by `on_match`. Must be unique across the configuration. |
 | `type` | string | yes | One of `block_request`, `redirect_request`, `monitor`, `generate_stack`, `generate_schema`, or a custom type understood by the host application. |
 | `parameters` | object | yes | Free-form parameters passed through to the action mapper and on to the host/caller. |
 
