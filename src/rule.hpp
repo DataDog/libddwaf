@@ -165,6 +165,13 @@ public:
     void get_addresses(std::unordered_map<target_index, std::string> &addresses) const
     {
         expr_->get_addresses(addresses);
+
+        for (const auto &attr : attributes_) {
+            if (std::holds_alternative<rule_attribute::input_target>(attr.value_or_target)) {
+                const auto &input = std::get<rule_attribute::input_target>(attr.value_or_target);
+                addresses.emplace(input.index, input.name);
+            }
+        }
     }
 
 protected:

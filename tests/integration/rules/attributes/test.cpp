@@ -97,7 +97,7 @@ TEST(TestRuleAttributesIntegration, SingleValueOutputAndEvent)
                                   .name = "rule2",
                                   .tags = {{"type", "flow2"}, {"category", "category2"}},
                                   .matches = {{.op = "match_regex",
-                                      .op_value = "^rule2",
+                                      .op_value = "^rule2$",
                                       .highlight = "rule2"sv,
                                       .args = {{.value = "rule2"sv, .address = "value2"}}}}});
 
@@ -666,7 +666,7 @@ TEST(TestRuleAttributesIntegration, AttributesEventsAndEphemeralMatches)
                                   .name = "rule2",
                                   .tags = {{"type", "flow2"}, {"category", "category2"}},
                                   .matches = {{.op = "match_regex",
-                                      .op_value = "^rule2",
+                                      .op_value = "^rule2$",
                                       .highlight = "rule2"sv,
                                       .args = {{
                                           .value = "rule2"sv,
@@ -695,7 +695,7 @@ TEST(TestRuleAttributesIntegration, AttributesEventsAndEphemeralMatches)
                                   .name = "rule2",
                                   .tags = {{"type", "flow2"}, {"category", "category2"}},
                                   .matches = {{.op = "match_regex",
-                                      .op_value = "^rule2",
+                                      .op_value = "^rule2$",
                                       .highlight = "rule2"sv,
                                       .args = {{
                                           .value = "rule2"sv,
@@ -711,6 +711,29 @@ TEST(TestRuleAttributesIntegration, AttributesEventsAndEphemeralMatches)
     }
 
     ddwaf_context_destroy(context1);
+}
+
+TEST(TestRuleAttributesIntegration, InputAttributesInKnownAddresses)
+{
+    auto rule = read_file("rules.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_free(&rule);
+
+    uint32_t size;
+    const char *const *addresses = ddwaf_known_addresses(handle, &size);
+    EXPECT_EQ(size, 12);
+
+    std::set<std::string_view> available_addresses{"value1", "value2", "value3", "value4", "value5",
+        "value6", "value7", "value8", "value9", "value10", "output_value9", "output_value10"};
+    while ((size--) != 0U) {
+        EXPECT_NE(available_addresses.find(addresses[size]), available_addresses.end());
+    }
+
+    // Destroying the handle should not invalidate it
+    ddwaf_destroy(handle);
 }
 
 } // namespace

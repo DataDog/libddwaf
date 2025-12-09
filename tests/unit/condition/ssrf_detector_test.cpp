@@ -205,7 +205,7 @@ TEST(TestSSRFDetector, MatchCustomDangerousIP)
                     .resolved = "[0:0:0:0:0:ffff:a9fe:a9fe]",
                     .key_path = {"form", "url"}}},
         },
-        false, {}, std::nullopt, std::nullopt, {{}});
+        false, {}, std::nullopt, std::nullopt, std::vector<std::string_view>{});
 
     match_path_and_input(
         {
@@ -235,7 +235,7 @@ TEST(TestSSRFDetector, MatchCustomDangerousDomain)
             {"https://localhost/path", {.yaml = "localhost"}},
             {"https://ifconfig.pro", {.yaml = "ifconfig.pro"}},
         },
-        false, {}, std::nullopt, {{}});
+        false, {}, std::nullopt, std::vector<std::string>{});
 
     match_path_and_input(
         {
