@@ -1,5 +1,11 @@
 # libddwaf release
 
+## v1.30.1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+
+### Release changelog
+#### Fixes
+- Report input attribute addresses on `ddwaf_known_addresses`, increase macos target and increase version to v1.30.1  ([#484](https://github.com/DataDog/libddwaf/pull/484)) 
+
 ## v1.30.0 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 This release introduces no new features, however the recently introduced `block_id` action parameter has been renamed to `security_response_id` for consistency.
 
