@@ -19,7 +19,7 @@ rules:
         parameters:
           inputs:
             - address: value1
-          regex: ^rule1
+          regex: ^rule1$
     output:
       event: false
       keep: false
@@ -36,7 +36,7 @@ rules:
         parameters:
           inputs:
             - address: value2
-          regex: ^rule2
+          regex: ^rule2$
     output:
       event: true
       keep: false
@@ -53,7 +53,7 @@ rules:
         parameters:
           inputs:
             - address: value3
-          regex: ^rule3
+          regex: ^rule3$
     output:
       event: false
       keep: false
@@ -70,7 +70,7 @@ rules:
         parameters:
           inputs:
             - address: value4
-          regex: ^rule4
+          regex: ^rule4$
     output:
       event: false
       keep: false
@@ -93,7 +93,7 @@ rules:
         parameters:
           inputs:
             - address: value5
-          regex: ^rule5
+          regex: ^rule5$
     output:
       event: false
       keep: true
@@ -112,7 +112,7 @@ rules:
         parameters:
           inputs:
             - address: value6
-          regex: ^rule6
+          regex: ^rule6$
     output:
       event: false
       keep: false
@@ -130,7 +130,7 @@ rules:
         parameters:
           inputs:
             - address: value7
-          regex: ^rule7
+          regex: ^rule7$
     output:
       event: false
       keep: true
@@ -148,10 +148,45 @@ rules:
         parameters:
           inputs:
             - address: value8
-          regex: ^rule8
+          regex: ^rule8$
     output:
       event: false
       keep: false
       attributes:
         result.rule8: 
           address: value8
+  - id: rule9
+    name: rule9
+    tags:
+      type: flow9
+      category: category9
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: value9
+          regex: ^rule9$
+    output:
+      event: false
+      keep: true
+      attributes:
+        result.rule9:
+          address: output_value9
+  - id: rule10
+    name: rule10
+    tags:
+      type: flow10
+      category: category10
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: value10
+          regex: ^rule10$
+    output:
+      event: false
+      keep: true
+      attributes:
+        result.rule10:
+          address: output_value10
+          key_path: [path, to, scalar]
