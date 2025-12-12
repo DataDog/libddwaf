@@ -23,7 +23,7 @@ Since the use of allocators is now required on many of the API functions, the mi
 
 See the [allocators document](../allocators.md) for more information on the different types of allocators available.
 
-## 1. WAF instantiation: removal of `ddwaf_config`
+## 1. WAF instantiation: Removal of `ddwaf_config`
 
 The main changes pertaining to WAF initialisation is the removal of `ddwaf_config`, as the evaluation limits have been entirely removed in favour of user-controlled truncation and the free function is no longer required due to the explicit memory ownership defined through allocators. As a consequence, instantiation through `ddwaf_init` has changed as follows:
 
@@ -56,9 +56,11 @@ ddwaf_builder builder = ddwaf_builder_init(&config);
 ddwaf_builder builder = ddwaf_builder_init();
 ```
 
-## 2. Context Lifecycle
+## 2. WAF Context: Input & Output Allocators and Removal of Ephemerals
 
 
-### Subcontexts
-## 3. Object Creation
+### 3. WAF Subcontext: Replacement of Ephemerals
+
+## 3. Object Creation: New API & Allocator support
+
 
