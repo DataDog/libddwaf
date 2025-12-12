@@ -59,8 +59,8 @@ ddwaf_builder builder = ddwaf_builder_init();
 ## 2. WAF Context: Input & Output Allocators and Removal of Ephemerals
 
 
-### 3. WAF Subcontext: Replacement of Ephemerals
+## 3. WAF Subcontext: Replacement of Ephemerals
 
-## 3. Object Creation: New API & Allocator support
+## 4. Object Creation: New API & Allocator support
 
 
