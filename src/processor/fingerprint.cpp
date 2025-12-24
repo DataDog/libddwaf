@@ -403,7 +403,7 @@ owned_object generate_fragment(
         buffer.append(field);
     }
 
-    return buffer.to_object();
+    return buffer.to_object(alloc);
 }
 
 template <typename T, typename... Rest>
@@ -464,7 +464,7 @@ owned_object generate_fragment_cached(std::string_view header,
         }
     }
 
-    return buffer.to_object();
+    return buffer.to_object(alloc);
 }
 
 enum class header_type : uint8_t { unknown, standard, ip_origin, user_agent, datadog };
