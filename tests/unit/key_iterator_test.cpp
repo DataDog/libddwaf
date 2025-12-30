@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include "common/ddwaf_object_da.hpp"
 #include "common/gtest_utils.hpp"
 #include "iterator.hpp"
 
@@ -29,7 +30,7 @@ TEST(TestKeyIterator, TestInvalidIterator)
 
 TEST(TestKeyIterator, TestStringScalar)
 {
-    owned_object object{"value"};
+    owned_object object = test::ddwaf_object_da::make_string("value");
 
     object_set_ref exclude;
     ddwaf::key_iterator it(object, {}, exclude);

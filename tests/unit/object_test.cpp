@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include "common/ddwaf_object_da.hpp"
 #include "common/gtest_utils.hpp"
 #include "memory_resource.hpp"
 #include "object.hpp"
@@ -159,7 +160,7 @@ TEST(TestObject, FloatObject)
 TEST(TestObject, StringObject)
 {
     {
-        auto ow = owned_object::make_string("this is a string");
+        auto ow = test::ddwaf_object_da::make_string("this is a string");
         EXPECT_EQ(ow.type(), object_type::string);
         EXPECT_TRUE(ow.is_string());
         EXPECT_TRUE(ow.is_valid());
@@ -167,7 +168,7 @@ TEST(TestObject, StringObject)
     }
 
     {
-        owned_object ow{"this is a string"};
+        owned_object ow = test::ddwaf_object_da::make_string("this is a string");
         EXPECT_TRUE(ow.is_string());
         EXPECT_TRUE(ow.is_valid());
         EXPECT_EQ(ow.as<std::string_view>(), "this is a string");
@@ -179,7 +180,7 @@ TEST(TestObject, StringObjectWithAllocator)
     counting_resource alloc;
 
     {
-        auto ow = owned_object::make_string("this is a string", &alloc);
+        auto ow = test::ddwaf_object_da::make_string("this is a string", &alloc);
         EXPECT_EQ(ow.type(), object_type::string);
         EXPECT_TRUE(ow.is_string());
         EXPECT_TRUE(ow.is_valid());
@@ -203,7 +204,7 @@ TEST(TestObject, StringObjectWithAllocator)
 TEST(TestObject, SmallStringObject)
 {
     {
-        auto ow = owned_object::make_string("string");
+        auto ow = test::ddwaf_object_da::make_string("string");
         EXPECT_EQ(ow.type(), object_type::small_string);
         EXPECT_TRUE(ow.is_string());
         EXPECT_TRUE(ow.is_valid());
@@ -211,7 +212,7 @@ TEST(TestObject, SmallStringObject)
     }
 
     {
-        owned_object ow{"string"};
+        owned_object ow = test::ddwaf_object_da::make_string("string");
         EXPECT_EQ(ow.type(), object_type::small_string);
         EXPECT_TRUE(ow.is_string());
         EXPECT_TRUE(ow.is_valid());
@@ -231,7 +232,7 @@ TEST(TestObject, StringLiteralObject)
 TEST(TestObject, EmptyArrayObject)
 {
     {
-        auto root = owned_object::make_array();
+        auto root = test::ddwaf_object_da::make_array();
         EXPECT_EQ(root.type(), object_type::array);
         EXPECT_TRUE(root.is_valid());
         EXPECT_TRUE(root.is_array());
@@ -240,7 +241,7 @@ TEST(TestObject, EmptyArrayObject)
     }
 
     {
-        auto root = owned_object::make_array(0);
+        auto root = test::ddwaf_object_da::make_array(0);
         EXPECT_EQ(root.type(), object_type::array);
         EXPECT_TRUE(root.is_valid());
         EXPECT_TRUE(root.is_array());
@@ -268,7 +269,7 @@ TEST(TestObject, EmptyArrayObjectWithAllocator)
 
 TEST(TestObject, EmptyPreallocatedArrayObject)
 {
-    auto root = owned_object::make_array(20);
+    auto root = test::ddwaf_object_da::make_array(20);
     EXPECT_EQ(root.type(), object_type::array);
     EXPECT_TRUE(root.is_valid());
     EXPECT_TRUE(root.is_array());
@@ -295,7 +296,7 @@ TEST(TestObject, EmptyPreallocatedArrayObjectWithAllocator)
 
 TEST(TestObject, ArrayObjectEmplaceBack)
 {
-    auto root = owned_object::make_array();
+    auto root = test::ddwaf_object_da::make_array();
     EXPECT_EQ(root.type(), object_type::array);
     EXPECT_TRUE(root.is_valid());
 
@@ -342,8 +343,8 @@ TEST(TestObject, ArrayObjectEmplaceBackWithAllocator)
         EXPECT_TRUE(root.is_valid());
 
         for (unsigned i = 0; i < 20; i++) {
-            root.emplace_back(
-                owned_object::make_string(std::to_string(i) + "_012345678901234"s, &alloc));
+            root.emplace_back(test::ddwaf_object_da::make_string(
+                std::to_string(i) + "_012345678901234"s, &alloc));
         }
 
         object_view view(root);
@@ -384,7 +385,7 @@ TEST(TestObject, ArrayObjectEmplaceBackWithAllocator)
 
 TEST(TestObject, PreallocatedArrayObjectEmplaceBack)
 {
-    auto root = owned_object::make_array(20);
+    auto root = test::ddwaf_object_da::make_array(20);
     EXPECT_EQ(root.type(), object_type::array);
     EXPECT_TRUE(root.is_valid());
 
@@ -431,8 +432,8 @@ TEST(TestObject, PreallocatedArrayObjectEmplaceBackWithAllocator)
         EXPECT_TRUE(root.is_valid());
 
         for (unsigned i = 0; i < 20; i++) {
-            root.emplace_back(
-                owned_object::make_string(std::to_string(i) + "_012345678901234"s, &alloc));
+            root.emplace_back(test::ddwaf_object_da::make_string(
+                std::to_string(i) + "_012345678901234"s, &alloc));
         }
 
         object_view view(root);
@@ -475,14 +476,14 @@ TEST(TestObject, ArrayObjectIncompatibleAllocators)
 {
     memory::monotonic_buffer_resource alloc;
 
-    auto root = owned_object::make_array(20);
-    EXPECT_THROW(root.emplace_back(owned_object::make_string("012345678901234"sv, &alloc)),
+    auto root = test::ddwaf_object_da::make_array(20);
+    EXPECT_THROW(root.emplace_back(test::ddwaf_object_da::make_string("012345678901234"sv, &alloc)),
         std::runtime_error);
 }
 
 TEST(TestObject, EmptyMapObject)
 {
-    auto root = owned_object::make_map(0);
+    auto root = test::ddwaf_object_da::make_map(0);
     EXPECT_EQ(root.type(), object_type::map);
     EXPECT_TRUE(root.is_valid());
     EXPECT_TRUE(root.empty());
@@ -505,7 +506,7 @@ TEST(TestObject, EmptyMapObjectWithAllocator)
 
 TEST(TestObject, EmptyPreallocatedMapObject)
 {
-    auto root = owned_object::make_map(20);
+    auto root = test::ddwaf_object_da::make_map(20);
     EXPECT_EQ(root.type(), object_type::map);
     EXPECT_TRUE(root.is_valid());
     EXPECT_TRUE(root.empty());
@@ -528,7 +529,7 @@ TEST(TestObject, EmptyPreallocatedMapObjectWithAllocator)
 
 TEST(TestObject, MapObjectEmplace)
 {
-    auto root = owned_object::make_map();
+    auto root = test::ddwaf_object_da::make_map();
     EXPECT_EQ(root.type(), object_type::map);
     EXPECT_TRUE(root.is_valid());
 
@@ -576,8 +577,8 @@ TEST(TestObject, MapObjectEmplaceWithAllocator)
         EXPECT_TRUE(root.is_valid());
 
         for (unsigned i = 0; i < 20; i++) {
-            root.emplace(std::to_string(i),
-                owned_object::make_string(std::to_string(i) + "_012345678901234"s, &alloc));
+            root.emplace(std::to_string(i), test::ddwaf_object_da::make_string(
+                                                std::to_string(i) + "_012345678901234"s, &alloc));
         }
 
         object_view view(root);
@@ -619,7 +620,7 @@ TEST(TestObject, MapObjectEmplaceWithAllocator)
 
 TEST(TestObject, PreallocatedMapObjectEmplace)
 {
-    auto root = owned_object::make_map(20);
+    auto root = test::ddwaf_object_da::make_map(20);
     EXPECT_EQ(root.type(), object_type::map);
     EXPECT_TRUE(root.is_valid());
 
@@ -667,8 +668,8 @@ TEST(TestObject, PreallocatedMapObjectEmplaceWithAllocator)
         EXPECT_TRUE(root.is_valid());
 
         for (unsigned i = 0; i < 20; i++) {
-            root.emplace(std::to_string(i),
-                owned_object::make_string(std::to_string(i) + "_012345678901234"s, &alloc));
+            root.emplace(std::to_string(i), test::ddwaf_object_da::make_string(
+                                                std::to_string(i) + "_012345678901234"s, &alloc));
         }
 
         object_view view(root);
@@ -712,8 +713,9 @@ TEST(TestObject, MapObjectIncompatibleAllocators)
 {
     memory::monotonic_buffer_resource alloc;
 
-    auto root = owned_object::make_map(20);
-    EXPECT_THROW(root.emplace("key"sv, owned_object::make_string("012345678901234"sv, &alloc)),
+    auto root = test::ddwaf_object_da::make_map(20);
+    EXPECT_THROW(
+        root.emplace("key"sv, test::ddwaf_object_da::make_string("012345678901234"sv, &alloc)),
         std::runtime_error);
 }
 
@@ -951,7 +953,7 @@ TEST(TestObject, ObjectWithNullAllocator)
     {
         null_counting_resource alloc;
         {
-            owned_object other{root.ref(), &alloc};
+            owned_object other = owned_object::create_unchecked(root.ref(), &alloc);
         }
         EXPECT_EQ(alloc.deallocations(), 0);
     }
@@ -1007,7 +1009,7 @@ TEST(TestObject, CloneFloat)
 
 TEST(TestObject, CloneString)
 {
-    auto input = owned_object::make_string("this is a string");
+    auto input = test::ddwaf_object_da::make_string("this is a string");
     auto output = input.clone();
     EXPECT_TRUE(output.is_string());
     EXPECT_EQ(input.as<std::string_view>(), output.as<std::string_view>());
@@ -1016,7 +1018,7 @@ TEST(TestObject, CloneString)
 
 TEST(TestObject, CloneSmallString)
 {
-    auto input = owned_object::make_string("this");
+    auto input = test::ddwaf_object_da::make_string("this");
     auto output = input.clone();
     EXPECT_TRUE(output.is_string());
     EXPECT_EQ(input.as<std::string_view>(), output.as<std::string_view>());
@@ -1034,7 +1036,7 @@ TEST(TestObject, CloneStringLiteral)
 
 TEST(TestObject, CloneEmptyArray)
 {
-    auto input = owned_object::make_array();
+    auto input = test::ddwaf_object_da::make_array();
     auto output = input.clone();
     EXPECT_EQ(output.type(), object_type::array);
     EXPECT_EQ(input.size(), output.size());
@@ -1042,7 +1044,7 @@ TEST(TestObject, CloneEmptyArray)
 
 TEST(TestObject, CloneEmptyMap)
 {
-    auto input = owned_object::make_map();
+    auto input = test::ddwaf_object_da::make_map();
     auto output = input.clone();
     EXPECT_EQ(output.type(), object_type::map);
     EXPECT_EQ(input.size(), output.size());
@@ -1050,7 +1052,7 @@ TEST(TestObject, CloneEmptyMap)
 
 TEST(TestObject, CloneArray)
 {
-    auto input = owned_object::make_array();
+    auto input = test::ddwaf_object_da::make_array();
     input.emplace_back(true);
     input.emplace_back("string");
     input.emplace_back(5L);

@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include "common/ddwaf_object_da.hpp"
 #include "common/gtest_utils.hpp"
 #include "context_allocator.hpp"
 #include "iterator.hpp"
@@ -31,7 +32,7 @@ TEST(TestValueIterator, TestInvalidIterator)
 
 TEST(TestValueIterator, TestStringScalar)
 {
-    owned_object object{"value"};
+    owned_object object = test::ddwaf_object_da::make_string("value");
 
     std::unordered_set<object_cache_key> context;
     object_set_ref exclude{context};

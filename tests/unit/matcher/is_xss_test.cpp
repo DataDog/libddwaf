@@ -6,6 +6,7 @@
 
 #include "matcher/is_xss.hpp"
 
+#include "common/ddwaf_object_da.hpp"
 #include "common/gtest_utils.hpp"
 
 using namespace ddwaf;
@@ -18,7 +19,7 @@ TEST(TestIsXSS, TestBasic)
     EXPECT_STRV(matcher.to_string(), "");
     EXPECT_STRV(matcher.name(), "is_xss");
 
-    owned_object param{"<script>alert(1);</script>"};
+    owned_object param = test::ddwaf_object_da::make_string("<script>alert(1);</script>");
     auto [res, highlight] = matcher.match(param);
     EXPECT_TRUE(res);
     EXPECT_STR(highlight, "");
@@ -27,7 +28,7 @@ TEST(TestIsXSS, TestBasic)
 TEST(TestIsXSS, TestNoMatch)
 {
     is_xss matcher;
-    owned_object param{"non-xss"};
+    owned_object param = test::ddwaf_object_da::make_string("non-xss");
     EXPECT_FALSE(matcher.match(param).first);
 }
 

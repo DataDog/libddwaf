@@ -826,12 +826,9 @@ class owned_object final : public readable_object<owned_object>,
                            public writable_object<owned_object> {
 public:
     owned_object() = default;
-    explicit owned_object(detail::object obj,
-        nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
-        : obj_(obj), alloc_(alloc)
-    {}
 
-    explicit owned_object(bool value) { *this = make_boolean(value); }
+    // do not take a bool to avoid implicit conversions from pointers
+    explicit owned_object(std::same_as<bool> auto value) { *this = make_boolean(value); }
 
     template <typename T>
     explicit owned_object(T value)
@@ -854,22 +851,20 @@ public:
         *this = make_float(value);
     }
 
-    explicit owned_object(const char *value,
-        nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
+    explicit owned_object(const char *value, nonnull_ptr<memory::memory_resource> alloc)
     {
         *this = make_string(std::string_view{value}, alloc);
     }
 
     template <typename T>
-    explicit owned_object(
-        const T &value, nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
+    explicit owned_object(const T &value, nonnull_ptr<memory::memory_resource> alloc)
         requires is_type_in_set_v<T, std::string, std::string_view, dynamic_string>
     {
         *this = make_string(std::string_view{value}, alloc);
     }
 
-    explicit owned_object(const char *data, std::size_t size,
-        nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
+    explicit owned_object(
+        const char *data, std::size_t size, nonnull_ptr<memory::memory_resource> alloc)
     {
         *this = make_string(data, size, alloc);
     }
@@ -900,61 +895,72 @@ public:
     [[nodiscard]] const detail::object *ptr() const noexcept { return &obj_; }
     [[nodiscard]] nonnull_ptr<memory::memory_resource> alloc() const noexcept { return alloc_; }
 
-    static owned_object make_null() { return owned_object{{.type = object_type::null}}; }
+    static owned_object make_null()
+    {
+        return create_unchecked({.type = object_type::null}, memory::get_default_null_resource());
+    }
 
     static owned_object make_boolean(bool value)
     {
-        return owned_object{{.via{.b8{.type = object_type::boolean, .val = value}}}};
+        return create_unchecked({.via{.b8{.type = object_type::boolean, .val = value}}},
+            memory::get_default_null_resource());
     }
 
     static owned_object make_signed(int64_t value)
     {
-        return owned_object{{.via{.i64{.type = object_type::int64, .val = value}}}};
+        return create_unchecked({.via{.i64{.type = object_type::int64, .val = value}}},
+            memory::get_default_null_resource());
     }
 
     static owned_object make_unsigned(uint64_t value)
     {
-        return owned_object{{.via{.u64{.type = object_type::uint64, .val = value}}}};
+        return create_unchecked({.via{.u64{.type = object_type::uint64, .val = value}}},
+            memory::get_default_null_resource());
     }
 
     static owned_object make_float(double value)
     {
-        return owned_object{{.via{.f64{.type = object_type::float64, .val = value}}}};
+        return create_unchecked({.via{.f64{.type = object_type::float64, .val = value}}},
+            memory::get_default_null_resource());
     }
 
     static owned_object make_string_literal(const char *str, std::uint32_t len)
     {
-        return owned_object{{.via{.str{.type = object_type::literal_string,
-            .size = static_cast<uint32_t>(len),
-            // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
-            .ptr = const_cast<char *>(str)}}}};
+        return create_unchecked({.via{.str{.type = object_type::literal_string,
+                                    .size = static_cast<uint32_t>(len),
+                                    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
+                                    .ptr = const_cast<char *>(str)}}},
+            memory::get_default_null_resource());
     }
 
-    static owned_object make_string_nocopy(const char *str, std::uint32_t len,
-        nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
+    // UNSAFE: Does not copy the string - caller must ensure the string memory
+    // can be deallocated by alloc
+    static owned_object unsafe_make_string_nocopy(
+        const char *str, std::uint32_t len, nonnull_ptr<memory::memory_resource> alloc)
     {
-        return owned_object{{.via{.str{.type = object_type::string,
-                                .size = len,
-                                // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
-                                .ptr = const_cast<char *>(str)}}},
-            alloc};
+        return create_unchecked({.via{.str{.type = object_type::string,
+                                    .size = len,
+                                    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
+                                    .ptr = const_cast<char *>(str)}}},
+            alloc);
     }
 
-    template <typename T>
-    static owned_object make_string_nocopy(
-        T str, nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
-        requires std::is_same_v<T, std::string_view> || std::is_same_v<T, object_view>
+    // UNSAFE: Does not copy the string - caller must ensure the string memory
+    // can be deallocated by alloc
+    static owned_object unsafe_make_string_nocopy(
+        std::same_as<std::string_view> auto str, nonnull_ptr<memory::memory_resource> alloc)
     {
-        return make_string_nocopy(str.data(), str.size(), alloc);
+        return unsafe_make_string_nocopy(str.data(), str.size(), alloc);
     }
 
-    static owned_object make_string(const char *str, std::uint32_t len,
-        nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
+    static owned_object make_string(
+        const char *str, std::uint32_t len, nonnull_ptr<memory::memory_resource> alloc)
     {
         if (len <= detail::small_string_size) {
-            owned_object obj{{.via{.sstr{.type = object_type::small_string,
-                .size = static_cast<uint8_t>(len),
-                .data = {}}}}};
+            owned_object obj = create_unchecked({.via{.sstr{.type = object_type::small_string,
+                                                    .size = static_cast<uint8_t>(len),
+                                                    .data = {}}}},
+                memory::get_default_null_resource());
 
             if (str != nullptr && len > 0) {
                 memcpy(obj.obj_.via.sstr.data.data(), str, len);
@@ -963,54 +969,52 @@ public:
             return obj;
         }
 
-        return owned_object{{.via{.str{.type = object_type::string,
-                                .size = len,
-                                .ptr = detail::copy_string(str, len, *alloc)}}},
-            alloc};
+        return create_unchecked({.via{.str{.type = object_type::string,
+                                    .size = len,
+                                    .ptr = detail::copy_string(str, len, *alloc)}}},
+            alloc);
     }
 
-    static owned_object make_string(std::string_view str,
-        nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
+    static owned_object make_string(
+        std::string_view str, nonnull_ptr<memory::memory_resource> alloc)
     {
         if (str.empty()) {
-            return make_string("", 0);
+            return make_string("", 0, alloc);
         }
         return make_string(str.data(), str.size(), alloc);
     }
 
-    static owned_object make_array(uint16_t capacity = 0,
-        nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
+    static owned_object make_array(uint16_t capacity, nonnull_ptr<memory::memory_resource> alloc)
     {
         if (capacity == 0) {
-            return owned_object{
+            return create_unchecked(
                 {.via{
                     .array{.type = object_type::array, .size = 0, .capacity = 0, .ptr = nullptr}}},
-                alloc};
+                alloc);
         }
 
-        return owned_object{
+        return create_unchecked(
             {.via{.array{.type = object_type::array,
                 .size = 0,
                 .capacity = capacity,
                 .ptr = detail::alloc_helper<detail::object, uint16_t>(capacity, *alloc)}}},
-            alloc};
+            alloc);
     }
 
-    static owned_object make_map(uint16_t capacity = 0,
-        nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
+    static owned_object make_map(uint16_t capacity, nonnull_ptr<memory::memory_resource> alloc)
     {
         if (capacity == 0) {
-            return owned_object{
+            return create_unchecked(
                 {.via{.map{.type = object_type::map, .size = 0, .capacity = 0, .ptr = nullptr}}},
-                alloc};
+                alloc);
         }
 
-        return owned_object{
+        return create_unchecked(
             {.via{.map{.type = object_type::map,
                 .size = 0,
                 .capacity = capacity,
                 .ptr = detail::alloc_helper<detail::object_kv, uint16_t>(capacity, *alloc)}}},
-            alloc};
+            alloc);
     }
 
     detail::object move()
@@ -1020,12 +1024,24 @@ public:
         return copy;
     }
 
+    // UNSAFE: Caller must ensure the object's memory is compatible with the allocator
+    static owned_object create_unchecked(
+        detail::object obj, nonnull_ptr<memory::memory_resource> alloc)
+    {
+        return owned_object{obj, alloc};
+    }
+
 protected:
     detail::object obj_{.type = object_type::invalid};
     nonnull_ptr<memory::memory_resource> alloc_{memory::get_default_resource()};
 
     friend class borrowed_object;
     friend class object_view;
+
+private:
+    explicit owned_object(detail::object obj, nonnull_ptr<memory::memory_resource> alloc)
+        : obj_(obj), alloc_(alloc)
+    {}
 };
 
 inline object_view::object_view(const owned_object &ow) : obj_(&ow.obj_) {}
@@ -1241,7 +1257,7 @@ template <typename Derived>
 template <typename T>
 borrowed_object writable_object<Derived>::emplace_back(T &&value)
 {
-    if constexpr (is_type_in_set_v<std::decay_t<T>, std::string, std::string_view>) {
+    if constexpr (std::constructible_from<owned_object, T, nonnull_ptr<memory::memory_resource>>) {
         return emplace_back(owned_object{std::forward<T>(value), alloc()});
     } else {
         return emplace_back(owned_object{std::forward<T>(value)});
@@ -1252,7 +1268,7 @@ template <typename Derived>
 template <typename T>
 borrowed_object writable_object<Derived>::emplace(std::string_view key, T &&value)
 {
-    if constexpr (is_type_in_set_v<std::decay_t<T>, std::string, std::string_view>) {
+    if constexpr (std::constructible_from<owned_object, T, nonnull_ptr<memory::memory_resource>>) {
         return emplace(key, owned_object{std::forward<T>(value), alloc()});
     } else {
         return emplace(key, owned_object{std::forward<T>(value)});

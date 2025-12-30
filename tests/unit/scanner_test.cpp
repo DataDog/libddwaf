@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include "common/ddwaf_object_da.hpp"
 #include "common/gtest_utils.hpp"
 #include "matcher/exact_match.hpp"
 #include "matcher/ip_match.hpp"
@@ -27,7 +28,7 @@ TEST(TestScanner, SimpleMatch)
     EXPECT_EQ(scnr.get_tags(), tags);
 
     std::string_view key{"hello"};
-    auto value = owned_object::make_string("192.168.0.1");
+    auto value = test::ddwaf_object_da::make_string("192.168.0.1");
     EXPECT_TRUE(scnr.eval(key, value));
 }
 
@@ -42,7 +43,7 @@ TEST(TestScanner, SimpleMatchNoKeyMatcher)
     EXPECT_EQ(scnr.get_tags(), tags);
 
     std::string_view key{"hello"};
-    auto value = owned_object::make_string("192.168.0.1");
+    auto value = test::ddwaf_object_da::make_string("192.168.0.1");
 
     EXPECT_TRUE(scnr.eval(key, value));
 }
@@ -58,7 +59,7 @@ TEST(TestScanner, SimpleMatchNoValueMatcher)
     EXPECT_EQ(scnr.get_tags(), tags);
 
     std::string_view key{"hello"};
-    auto value = owned_object::make_string("192.168.0.1");
+    auto value = test::ddwaf_object_da::make_string("192.168.0.1");
 
     EXPECT_TRUE(scnr.eval(key, value));
 }
@@ -78,7 +79,7 @@ TEST(TestScanner, NoMatchOnKey)
     EXPECT_EQ(scnr.get_tags(), tags);
 
     std::string_view key{"helloo"};
-    auto value = owned_object::make_string("192.168.0.1");
+    auto value = test::ddwaf_object_da::make_string("192.168.0.1");
 
     EXPECT_FALSE(scnr.eval(key, value));
 }
@@ -97,7 +98,7 @@ TEST(TestScanner, NoMatchOnValue)
     EXPECT_EQ(scnr.get_tags(), tags);
 
     std::string_view key{"hello"};
-    auto value = owned_object::make_string("192.168.0.2");
+    auto value = test::ddwaf_object_da::make_string("192.168.0.2");
     EXPECT_FALSE(scnr.eval(key, value));
 }
 
@@ -115,7 +116,7 @@ TEST(TestScanner, InvalidKey)
     EXPECT_STRV(scnr.get_id(), "0");
     EXPECT_EQ(scnr.get_tags(), tags);
 
-    auto value = owned_object::make_string("192.168.0.1");
+    auto value = test::ddwaf_object_da::make_string("192.168.0.1");
     EXPECT_FALSE(scnr.eval({}, value));
 }
 

@@ -6,6 +6,7 @@
 
 #include "attribute_collector.hpp"
 
+#include "common/ddwaf_object_da.hpp"
 #include "common/gtest_utils.hpp"
 
 using namespace ddwaf;
@@ -15,7 +16,7 @@ namespace {
 TEST(TestAttributeCollector, InsertNoCopy)
 {
     std::string_view expected = "value";
-    owned_object input{expected};
+    owned_object input = test::ddwaf_object_da::make_string(expected);
 
     attribute_collector collector;
     EXPECT_TRUE(collector.insert("address", std::move(input)));
@@ -36,7 +37,7 @@ TEST(TestAttributeCollector, InsertNoCopy)
 TEST(TestAttributeCollector, InsertDuplicate)
 {
     std::string_view expected = "value";
-    owned_object input{expected};
+    owned_object input = test::ddwaf_object_da::make_string(expected);
 
     attribute_collector collector;
     EXPECT_TRUE(collector.insert("address", input.clone()));

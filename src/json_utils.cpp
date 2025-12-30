@@ -144,7 +144,7 @@ public:
             return true;
         }
 
-        return emplace(owned_object::make_string(str, length));
+        return emplace(owned_object::make_string(str, length, alloc_));
     }
 
     bool Key(const char *str, rapidjson::SizeType length, bool /*copy*/)

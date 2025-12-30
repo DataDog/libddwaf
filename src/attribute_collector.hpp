@@ -48,9 +48,20 @@ public:
     attribute_collector &operator=(attribute_collector &&other) noexcept = default;
     ~attribute_collector() = default;
 
-    template <typename T> bool insert(std::string_view key, T &&value)
+    // For types where owned_object has a single-argument constructor
+    template <typename T>
+    bool insert(std::string_view key, T &&value)
+        requires std::constructible_from<owned_object, T>
     {
         return insert(key, owned_object{std::forward<T>(value)});
+    }
+
+    // For types that require an allocator
+    template <typename T>
+    bool insert(std::string_view key, T &&value, nonnull_ptr<memory::memory_resource> alloc)
+        requires std::constructible_from<owned_object, T, nonnull_ptr<memory::memory_resource>>
+    {
+        return insert(key, owned_object{std::forward<T>(value), alloc});
     }
 
     bool insert(std::string_view key, owned_object &&object);
