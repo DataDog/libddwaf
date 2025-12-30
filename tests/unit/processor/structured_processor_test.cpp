@@ -9,6 +9,7 @@
 
 #include <gmock/gmock.h>
 
+#include "common/ddwaf_object_da.hpp"
 #include "common/gtest_utils.hpp"
 
 using ::testing::_;
@@ -45,7 +46,7 @@ TEST(TestStructuredProcessor, AllParametersAvailable)
 {
     auto *alloc = memory::get_default_resource();
 
-    owned_object output = owned_object::make_string("output_string");
+    owned_object output = test::ddwaf_object_da::make_string("output_string");
 
     auto input_map = object_builder::map(
         {{"unary_address", "unary_string"}, {"optional_address", "optional_string"},
@@ -94,7 +95,7 @@ TEST(TestStructuredProcessor, OptionalParametersNotAvailable)
 {
     auto *alloc = memory::get_default_resource();
 
-    owned_object output = owned_object::make_string("output_string");
+    owned_object output = test::ddwaf_object_da::make_string("output_string");
 
     auto input_map = object_builder::map({{"unary_address", "unary_string"},
         {"variadic_address_1", 1U}, {"variadic_address_2", 1U}});

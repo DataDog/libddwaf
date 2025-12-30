@@ -5,6 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 
 #include "common/yaml_utils.hpp"
+#include "common/ddwaf_object_da.hpp"
 #include "ddwaf.h"
 #include "log.hpp"
 
@@ -116,14 +117,14 @@ owned_object node_to_owned_object(const Node &node)
 {
     switch (node.Type()) {
     case NodeType::Sequence: {
-        auto parent = owned_object::make_array();
+        auto parent = test::ddwaf_object_da::make_array();
         for (auto it = node.begin(); it != node.end(); ++it) {
             parent.emplace_back(node_to_owned_object(*it));
         }
         return parent;
     }
     case NodeType::Map: {
-        auto parent = owned_object::make_map();
+        auto parent = test::ddwaf_object_da::make_map();
         for (auto it = node.begin(); it != node.end(); ++it) {
             parent.emplace(it->first.as<std::string>(), node_to_owned_object(it->second));
         }
@@ -153,7 +154,7 @@ owned_object node_to_owned_object(const Node &node)
             } catch (...) {} // NOLINT(bugprone-empty-catch)
         }
 
-        return owned_object{value};
+        return test::ddwaf_object_da::make_string(value);
     }
     case NodeType::Null:
         return owned_object::make_null();

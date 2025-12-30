@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include "common/ddwaf_object_da.hpp"
 #include "common/gtest_utils.hpp"
 #include "condition/match_iterator.hpp"
 
@@ -28,7 +29,7 @@ TEST(TestMatchIterator, InvalidIterator)
 
 TEST(TestMatchIterator, NoMatch)
 {
-    owned_object object{"no match"};
+    owned_object object = test::ddwaf_object_da::make_string("no match");
 
     std::string resource = "this is the resource";
     object_set_ref exclude;
@@ -43,7 +44,7 @@ TEST(TestMatchIterator, NoMatch)
 
 TEST(TestMatchIterator, SingleMatch)
 {
-    owned_object object{"resource"};
+    owned_object object = test::ddwaf_object_da::make_string("resource");
 
     std::string resource = "this is the resource";
     object_set_ref exclude;
@@ -62,7 +63,7 @@ TEST(TestMatchIterator, SingleMatch)
 
 TEST(TestMatchIterator, MultipleMatches)
 {
-    owned_object object{"resource"};
+    owned_object object = test::ddwaf_object_da::make_string("resource");
 
     std::string resource = "resource resource resource resource";
     object_set_ref exclude;
@@ -85,7 +86,7 @@ TEST(TestMatchIterator, MultipleMatches)
 
 TEST(TestMatchIterator, OverlappingMatches)
 {
-    owned_object object{"ee"};
+    owned_object object = test::ddwaf_object_da::make_string("ee");
 
     std::string resource = "eeeeeeeeee";
     object_set_ref exclude;

@@ -7,6 +7,7 @@
 #include "matcher/is_sqli.hpp"
 #include "object.hpp"
 
+#include "common/ddwaf_object_da.hpp"
 #include "common/gtest_utils.hpp"
 
 using namespace ddwaf;
@@ -20,7 +21,7 @@ TEST(TestIsSQLi, TestBasic)
     EXPECT_STRV(matcher.to_string(), "");
     EXPECT_STRV(matcher.name(), "is_sqli");
 
-    owned_object param{"'OR 1=1/*"};
+    owned_object param = test::ddwaf_object_da::make_string("'OR 1=1/*");
 
     auto [res, highlight] = matcher.match(param);
     EXPECT_TRUE(res);
@@ -34,7 +35,7 @@ TEST(TestIsSQLi, TestMatch)
     auto match = {"1, -sin(1)) UNION SELECT 1"};
 
     for (const auto *pattern : match) {
-        owned_object param{pattern};
+        owned_object param = test::ddwaf_object_da::make_string(pattern);
         EXPECT_TRUE(matcher.match(param).first);
     }
 }
@@ -46,7 +47,7 @@ TEST(TestIsSQLi, TestNoMatch)
     auto no_match = {"*", "00119007249934829312950000808000953OR-240128165430155"};
 
     for (const auto *pattern : no_match) {
-        owned_object param{pattern};
+        owned_object param = test::ddwaf_object_da::make_string(pattern);
         EXPECT_FALSE(matcher.match(param).first);
     }
 }

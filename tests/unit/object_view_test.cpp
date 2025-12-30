@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include "common/ddwaf_object_da.hpp"
 #include "common/gtest_utils.hpp"
 #include "object.hpp"
 
@@ -286,7 +287,7 @@ TEST(TestObjectView, FloatObject)
 
 TEST(TestObjectView, StringObject)
 {
-    owned_object original{"string_value"};
+    owned_object original = test::ddwaf_object_da::make_string("string_value");
 
     object_view view(original);
 
@@ -312,7 +313,7 @@ TEST(TestObjectView, StringObject)
 
 TEST(TestObjectView, ArrayObject)
 {
-    auto root = owned_object::make_array();
+    auto root = test::ddwaf_object_da::make_array();
     for (unsigned i = 0; i < 20; i++) { root.emplace_back(std::to_string(i + 100)); }
 
     object_view view(root);
@@ -346,7 +347,7 @@ TEST(TestObjectView, ArrayObject)
 
 TEST(TestObjectView, MapObject)
 {
-    auto root = owned_object::make_map();
+    auto root = test::ddwaf_object_da::make_map();
     for (unsigned i = 0; i < 20; i++) { root.emplace(std::to_string(i), std::to_string(i + 100)); }
 
     object_view view(root);
@@ -433,7 +434,7 @@ TEST(TestObjectView, Inequality)
 
 TEST(TestObjectView, StringEquality)
 {
-    owned_object root{"something"};
+    owned_object root = test::ddwaf_object_da::make_string("something");
 
     object_view view(root);
 
@@ -443,7 +444,7 @@ TEST(TestObjectView, StringEquality)
 
 TEST(TestObjectView, StringInequality)
 {
-    owned_object root{"something"};
+    owned_object root = test::ddwaf_object_da::make_string("something");
 
     object_view view(root);
 
@@ -508,7 +509,7 @@ TEST(TestObjectView, FloatObjectStringConversion)
 
 TEST(TestObjectView, StringtObjectStringConversion)
 {
-    owned_object original{"this is a string"};
+    owned_object original = test::ddwaf_object_da::make_string("this is a string");
     object_view view(original);
     auto converted = view.convert<std::string>();
     EXPECT_STR(converted, "this is a string");
@@ -528,7 +529,7 @@ TEST(TestObjectView, LiteralAndLongStringHandling)
 
     // Long string uses heap path (object_type::string), pointer differs from source buffer
     const std::string long_src(40, 'x');
-    auto long_obj = owned_object::make_string(std::string_view{long_src});
+    auto long_obj = test::ddwaf_object_da::make_string(std::string_view{long_src});
     object_view long_view{long_obj};
     ASSERT_TRUE(long_view.is_string());
     EXPECT_EQ(long_view.type(), object_type::string);
@@ -864,7 +865,7 @@ TEST(TestObjectView, CloneFloat)
 
 TEST(TestObjectView, CloneString)
 {
-    auto input_data = owned_object::make_string("this is a string");
+    auto input_data = test::ddwaf_object_da::make_string("this is a string");
     object_view input{input_data};
 
     auto output = input.clone();
@@ -875,7 +876,7 @@ TEST(TestObjectView, CloneString)
 
 TEST(TestObjectView, CloneEmptyArray)
 {
-    auto input_data = owned_object::make_array();
+    auto input_data = test::ddwaf_object_da::make_array();
     object_view input{input_data};
 
     auto output = input.clone();
@@ -885,7 +886,7 @@ TEST(TestObjectView, CloneEmptyArray)
 
 TEST(TestObjectView, CloneEmptyMap)
 {
-    auto input_data = owned_object::make_map();
+    auto input_data = test::ddwaf_object_da::make_map();
     object_view input{input_data};
 
     auto output = input.clone();
@@ -895,9 +896,9 @@ TEST(TestObjectView, CloneEmptyMap)
 
 TEST(TestObjectView, CloneArray)
 {
-    auto input_data = owned_object::make_array();
+    auto input_data = test::ddwaf_object_da::make_array();
     input_data.emplace_back(owned_object::make_boolean(true));
-    input_data.emplace_back(owned_object::make_string("string"));
+    input_data.emplace_back(test::ddwaf_object_da::make_string("string"));
     input_data.emplace_back(owned_object::make_signed(5));
     object_view input{input_data};
 
@@ -941,9 +942,9 @@ TEST(TestObjectView, CloneArray)
 
 TEST(TestObjectView, CloneMap)
 {
-    owned_object input_data = owned_object::make_map();
+    owned_object input_data = test::ddwaf_object_da::make_map();
     input_data.emplace("bool", owned_object::make_boolean(true));
-    input_data.emplace("string", owned_object::make_string("string"));
+    input_data.emplace("string", test::ddwaf_object_da::make_string("string"));
     input_data.emplace("signed", owned_object::make_signed(5));
     object_view input{input_data};
 
@@ -992,7 +993,7 @@ TEST(TestObjectView, CloneMap)
 
 TEST(TestArrayView, InvalidArray)
 {
-    auto root = owned_object::make_map();
+    auto root = test::ddwaf_object_da::make_map();
     EXPECT_THROW(array_view view{root}, std::invalid_argument);
     EXPECT_THROW(array_view view{nullptr}, std::invalid_argument);
 }
@@ -1008,7 +1009,7 @@ TEST(TestArrayView, Default)
 
 TEST(TestArrayView, AtAccess)
 {
-    auto root = owned_object::make_array();
+    auto root = test::ddwaf_object_da::make_array();
     for (unsigned i = 0; i < 20; i++) { root.emplace_back(std::to_string(i + 100)); }
 
     array_view view(root);
@@ -1024,7 +1025,7 @@ TEST(TestArrayView, AtAccess)
 
 TEST(TestArrayView, IteratorAccess)
 {
-    auto root = owned_object::make_array();
+    auto root = test::ddwaf_object_da::make_array();
     for (unsigned i = 0; i < 20; i++) { root.emplace_back(std::to_string(i + 100)); }
 
     array_view view(root);
@@ -1040,7 +1041,7 @@ TEST(TestArrayView, IteratorAccess)
 
 TEST(TestMapView, InvalidMap)
 {
-    auto root = owned_object::make_array();
+    auto root = test::ddwaf_object_da::make_array();
     EXPECT_THROW(map_view view{root}, std::invalid_argument);
     EXPECT_THROW(map_view view{nullptr}, std::invalid_argument);
 }
@@ -1059,7 +1060,7 @@ TEST(TestMapView, Default)
 
 TEST(TestMapView, AtAccess)
 {
-    auto root = owned_object::make_map();
+    auto root = test::ddwaf_object_da::make_map();
     for (unsigned i = 0; i < 20; i++) { root.emplace(std::to_string(i), std::to_string(i + 100)); }
 
     map_view view(root);
@@ -1089,7 +1090,7 @@ TEST(TestMapView, AtAccess)
 
 TEST(TestMapView, FindAccess)
 {
-    auto root = owned_object::make_map();
+    auto root = test::ddwaf_object_da::make_map();
     for (unsigned i = 0; i < 20; i++) { root.emplace(std::to_string(i), std::to_string(i + 100)); }
 
     map_view view(root);
@@ -1112,7 +1113,7 @@ TEST(TestMapView, FindAccess)
 
 TEST(TestMapView, IteratorAccess)
 {
-    auto root = owned_object::make_map();
+    auto root = test::ddwaf_object_da::make_map();
     for (unsigned i = 0; i < 20; i++) { root.emplace(std::to_string(i), std::to_string(i + 100)); }
 
     map_view view(root);

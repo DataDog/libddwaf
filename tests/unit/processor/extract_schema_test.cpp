@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog
 // (https://www.datadoghq.com/). Copyright 2023 Datadog, Inc.
 
+#include "common/ddwaf_object_da.hpp"
 #include "common/gtest_utils.hpp"
 #include "matcher/regex_match.hpp"
 #include "memory_resource.hpp"
@@ -91,7 +92,7 @@ TEST(TestExtractSchema, StringScalarSchema)
 {
     auto *alloc = memory::get_default_resource();
 
-    owned_object input{"string"};
+    owned_object input = test::ddwaf_object_da::make_string("string");
 
     extract_schema gen{"id", {}, {}, {}, false, true};
 
@@ -307,7 +308,7 @@ TEST(TestExtractSchema, SchemaWithSingleScanner)
 {
     auto *alloc = memory::get_default_resource();
 
-    owned_object input{"string"};
+    owned_object input = test::ddwaf_object_da::make_string("string");
 
     scanner scnr{"0", {{"type", "PII"}, {"category", "IP"}}, nullptr,
         std::make_unique<matcher::regex_match>("string", 6, true)};
@@ -325,7 +326,7 @@ TEST(TestExtractSchema, SchemaWithMultipleScanners)
 {
     auto *alloc = memory::get_default_resource();
 
-    owned_object input{"string"};
+    owned_object input = test::ddwaf_object_da::make_string("string");
 
     scanner scnr0{"0", {{"type", "PII"}, {"category", "first"}}, nullptr,
         std::make_unique<matcher::regex_match>("strong", 6, true)};
@@ -347,7 +348,7 @@ TEST(TestExtractSchema, SchemaWithScannerNoMatch)
 {
     auto *alloc = memory::get_default_resource();
 
-    owned_object input{"string"};
+    owned_object input = test::ddwaf_object_da::make_string("string");
 
     scanner scnr0{"0", {{"type", "PII"}, {"category", "first"}}, nullptr,
         std::make_unique<matcher::regex_match>("strong", 6, true)};
@@ -369,7 +370,7 @@ TEST(TestExtractSchema, SchemaWithScannerSingleValueNoKey)
 {
     auto *alloc = memory::get_default_resource();
 
-    owned_object input{"string"};
+    owned_object input = test::ddwaf_object_da::make_string("string");
 
     scanner scnr{"0", {{"type", "PII"}, {"category", "IP"}},
         std::make_unique<matcher::regex_match>("string", 6, true),

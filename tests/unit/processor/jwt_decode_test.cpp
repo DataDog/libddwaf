@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog
 // (https://www.datadoghq.com/). Copyright 2023 Datadog, Inc.
 
+#include "common/ddwaf_object_da.hpp"
 #include "common/gtest_utils.hpp"
 #include "processor/jwt_decode.hpp"
 
@@ -131,7 +132,7 @@ TEST(TestJwtDecoder, MissingKeypath)
 {
     auto *alloc = memory::get_default_resource();
 
-    owned_object headers{
+    owned_object headers = test::ddwaf_object_da::make_string(
         "Bearer eyJhbGciOiJSUzM4NCIsInR5cCI6IkpXVCJ9."
         "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUx"
         "NjIzOTAyMn0.o1hC1xYbJolSyh0-bOY230w22zEQSk5TiBfc-OCvtpI2JtYlW-23-"
@@ -139,7 +140,7 @@ TEST(TestJwtDecoder, MissingKeypath)
         "61L6SXswzPAQu4kVDwAefGf5hyYBUM-80vYZwWPEpLI8K4yCBsF6I9N1yQaZAJmkMp_"
         "Iw371Menae4Mp4JusvBJS-s6LrmG2QbiZaFaxVJiW8KlUkWyUCns8-"
         "qFl5OMeYlgGFsyvvSHvXCzQrsEXqyCdS4tQJd73ayYA4SPtCb9clz76N1zE5WsV4Z0BYrxeb77oA7jJh"
-        "h994RAPzCG0hmQ"};
+        "h994RAPzCG0hmQ");
 
     jwt_decode gen{"id", {}, {}, false, true};
 

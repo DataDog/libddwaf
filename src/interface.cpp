@@ -260,7 +260,10 @@ DDWAF_RET_CODE ddwaf_context_eval(ddwaf_context context, ddwaf_object *data,
 
     try {
         if (alloc != nullptr) {
-            if (!context->insert(owned_object{to_ref(data), to_alloc_ptr(alloc)})) {
+            if (!context->insert(
+                    // safety: caller is responsible to ensure that the passed
+                    // allocator can deallocate memory allocated for `data`
+                    owned_object::create_unchecked(to_ref(data), to_alloc_ptr(alloc)))) {
                 return DDWAF_ERR_INVALID_OBJECT;
             }
         } else {
@@ -326,7 +329,10 @@ DDWAF_RET_CODE ddwaf_subcontext_eval(ddwaf_subcontext subcontext, ddwaf_object *
 
     try {
         if (alloc != nullptr) {
-            if (!subcontext->insert(owned_object{to_ref(data), to_alloc_ptr(alloc)})) {
+            if (!subcontext->insert(
+                    // safety: caller is responsible to ensure that the passed
+                    // allocator can deallocate memory allocated for `data`
+                    owned_object::create_unchecked(to_ref(data), to_alloc_ptr(alloc)))) {
                 return DDWAF_ERR_INVALID_OBJECT;
             }
         } else {
@@ -471,7 +477,8 @@ uint32_t ddwaf_builder_get_config_paths(
         }
 
         if (paths != nullptr) {
-            auto object = owned_object::make_array(config_paths.size());
+            auto object =
+                owned_object::make_array(config_paths.size(), memory::get_default_resource());
             for (const auto &value : config_paths) { object.emplace_back(value); }
             to_borrowed(paths) = std::move(object);
         }
@@ -625,7 +632,10 @@ ddwaf_object *ddwaf_object_set_string_nocopy(
     if (object == nullptr || string == nullptr) {
         return nullptr;
     }
-    to_borrowed(object) = owned_object::make_string_nocopy(string, length);
+    // safety: the allocator is irrelevant: unsafe_make_string_copy doesn't
+    // allocate from it and we forget it when we convert the
+    to_borrowed(object) = owned_object::unsafe_make_string_nocopy(
+        string, length, memory::get_default_null_resource());
     return object;
 }
 
@@ -771,7 +781,10 @@ ddwaf_object *ddwaf_object_insert_key_nocopy(
         // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
         return reinterpret_cast<ddwaf_object *>(
             to_borrowed(map, to_alloc_ptr(alloc))
-                .emplace(owned_object::make_string_nocopy(key, length), {})
+                // safety: it's paret of the contract of this function that the
+                // key can be deallocated with alloc
+                .emplace(
+                    owned_object::unsafe_make_string_nocopy(key, length, to_alloc_ptr(alloc)), {})
                 .ptr());
     } catch (...) {} // NOLINT(bugprone-empty-catch)
     return nullptr;

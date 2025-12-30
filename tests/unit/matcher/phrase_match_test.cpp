@@ -6,6 +6,7 @@
 
 #include "matcher/phrase_match.hpp"
 
+#include "common/ddwaf_object_da.hpp"
 #include "common/gtest_utils.hpp"
 
 using namespace ddwaf;
@@ -23,13 +24,13 @@ TEST(TestPhraseMatch, TestBasic)
     EXPECT_STRV(matcher.name(), "phrase_match");
     EXPECT_STRV(matcher.to_string(), "");
 
-    owned_object param{"bbbb"};
+    owned_object param = test::ddwaf_object_da::make_string("bbbb");
 
     auto [res, highlight] = matcher.match(param);
     EXPECT_TRUE(res);
     EXPECT_STR(highlight, "bbbb");
 
-    owned_object param2{"dddd"};
+    owned_object param2 = test::ddwaf_object_da::make_string("dddd");
 
     EXPECT_FALSE(matcher.match(param2).first);
 }
@@ -42,7 +43,7 @@ TEST(TestPhraseMatch, TestEmptyArrays)
 
     EXPECT_STRV(matcher.name(), "phrase_match");
 
-    owned_object param{"bbbb"};
+    owned_object param = test::ddwaf_object_da::make_string("bbbb");
 
     EXPECT_FALSE(matcher.match(param).first);
 }
@@ -64,7 +65,7 @@ TEST(TestPhraseMatch, TestComplex)
     phrase_match matcher(strings, lengths);
 
     auto run = [&matcher](const char *str, const char *expect) {
-        owned_object param{str};
+        owned_object param = test::ddwaf_object_da::make_string(str);
         if (expect != nullptr) {
             auto [res, highlight] = matcher.match(ddwaf::object_view{param});
             EXPECT_TRUE(res);
@@ -97,7 +98,7 @@ TEST(TestPhraseMatch, TestWordBoundary)
     phrase_match matcher(strings, lengths, true);
 
     auto run = [&matcher](const char *str, const char *expect) {
-        owned_object param{str};
+        owned_object param = test::ddwaf_object_da::make_string(str);
         if (expect != nullptr) {
             auto [res, highlight] = matcher.match(ddwaf::object_view{param});
             EXPECT_TRUE(res);
@@ -190,13 +191,13 @@ TEST(TestPhraseMatch, TestSingleCharMatch)
     EXPECT_STR(matcher.name(), "phrase_match");
     EXPECT_STR(matcher.to_string(), "");
 
-    owned_object param{"a"};
+    owned_object param = test::ddwaf_object_da::make_string("a");
 
     auto [res, highlight] = matcher.match(param);
     EXPECT_TRUE(res);
     EXPECT_STR(highlight, "a");
 
-    owned_object param2{"2"};
+    owned_object param2 = test::ddwaf_object_da::make_string("2");
 
     EXPECT_FALSE(matcher.match(param2).first);
 }

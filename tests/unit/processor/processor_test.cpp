@@ -10,6 +10,7 @@
 
 #include <gmock/gmock.h>
 
+#include "common/ddwaf_object_da.hpp"
 #include "common/gtest_utils.hpp"
 
 using ::testing::_;
@@ -44,7 +45,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalUnconditional)
 {
     auto *alloc = memory::get_default_resource();
 
-    owned_object output = owned_object::make_string("output_string");
+    owned_object output = test::ddwaf_object_da::make_string("output_string");
 
     auto input_map = object_builder::map({{"input_address", "input_string"}});
     object_store store;
@@ -82,8 +83,8 @@ TEST(TestProcessor, MultiMappingOutputNoEvalUnconditional)
 {
     auto *alloc = memory::get_default_resource();
 
-    owned_object first_output = owned_object::make_string("first_output_string");
-    owned_object second_output = owned_object::make_string("second_output_string");
+    owned_object first_output = test::ddwaf_object_da::make_string("first_output_string");
+    owned_object second_output = test::ddwaf_object_da::make_string("second_output_string");
 
     auto input_map = object_builder::map(
         {{"input_address", "first_input_string"}, {"input_address.second", "second_input_string"}});
@@ -137,7 +138,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalTrue)
 {
     auto *alloc = memory::get_default_resource();
 
-    owned_object output = owned_object::make_string("output_string");
+    owned_object output = test::ddwaf_object_da::make_string("output_string");
 
     auto input_map = object_builder::map({{"input_address", "input_string"}, {"enabled?", true}});
 
@@ -181,7 +182,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalCached)
 {
     auto *alloc = memory::get_default_resource();
 
-    owned_object output = owned_object::make_string("output_string");
+    owned_object output = test::ddwaf_object_da::make_string("output_string");
 
     auto input_map = object_builder::map({{"enabled?", true}});
 
@@ -236,7 +237,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalFalse)
 {
     auto *alloc = memory::get_default_resource();
 
-    owned_object output = owned_object::make_string("output_string");
+    owned_object output = test::ddwaf_object_da::make_string("output_string");
 
     auto input_map = object_builder::map({{"input_address", "input_string"}, {"enabled?", false}});
 
@@ -274,7 +275,7 @@ TEST(TestProcessor, SingleMappingNoOutputEvalUnconditional)
 {
     auto *alloc = memory::get_default_resource();
 
-    owned_object output = owned_object::make_string("output_string");
+    owned_object output = test::ddwaf_object_da::make_string("output_string");
 
     auto input_map = object_builder::map({
         {"input_address", "input_string"},
@@ -321,7 +322,7 @@ TEST(TestProcessor, SingleMappingNoOutputEvalConditionalTrue)
 {
     auto *alloc = memory::get_default_resource();
 
-    owned_object output = owned_object::make_string("output_string");
+    owned_object output = test::ddwaf_object_da::make_string("output_string");
 
     auto input_map = object_builder::map({{"input_address", "input_string"}, {"enabled?", true}});
 
@@ -369,7 +370,7 @@ TEST(TestProcessor, SingleMappingNoOutputEvalConditionalFalse)
 {
     auto *alloc = memory::get_default_resource();
 
-    owned_object output = owned_object::make_string("output_string");
+    owned_object output = test::ddwaf_object_da::make_string("output_string");
 
     auto input_map = object_builder::map({{"input_address", "input_string"}, {"enabled?", false}});
 
@@ -409,8 +410,8 @@ TEST(TestProcessor, MultiMappingNoOutputEvalUnconditional)
 {
     auto *alloc = memory::get_default_resource();
 
-    owned_object first_output = owned_object::make_string("first_output_string");
-    owned_object second_output = owned_object::make_string("second_output_string");
+    owned_object first_output = test::ddwaf_object_da::make_string("first_output_string");
+    owned_object second_output = test::ddwaf_object_da::make_string("second_output_string");
 
     auto input_map = object_builder::map(
         {{"input_address", "first_input_string"}, {"input_address.second", "second_input_string"}});
@@ -466,7 +467,7 @@ TEST(TestProcessor, SingleMappingOutputEvalUnconditional)
 {
     auto *alloc = memory::get_default_resource();
 
-    owned_object output = owned_object::make_string("output_string");
+    owned_object output = test::ddwaf_object_da::make_string("output_string");
 
     auto input_map = object_builder::map({
         {"input_address", "input_string"},
@@ -612,7 +613,7 @@ TEST(TestProcessor, OutputEvalWithoutattributesMap)
 {
     auto *alloc = memory::get_default_resource();
 
-    owned_object output = owned_object::make_string("output_string");
+    owned_object output = test::ddwaf_object_da::make_string("output_string");
 
     auto input_map = object_builder::map({
         {"input_address", "input_string"},
