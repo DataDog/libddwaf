@@ -9,6 +9,7 @@
 #include "platform.hpp"
 
 using namespace ddwaf;
+using namespace ddwaf::test;
 using namespace std::literals;
 
 namespace {
@@ -37,8 +38,8 @@ TEST(TestCmdiDetector, InvalidType)
 {
     cmdi_detector cond{{gen_param_def("server.sys.exec.cmd", "server.request.query")}};
 
-    auto root = object_builder::map(
-        {{"server.sys.exec.cmd", object_builder::map()}, {"server.request.query", "whatever"}});
+    auto root = object_builder_da::map(
+        {{"server.sys.exec.cmd", object_builder_da::map()}, {"server.request.query", "whatever"}});
 
     object_store store;
     store.insert(std::move(root));
@@ -52,8 +53,8 @@ TEST(TestCmdiDetector, EmptyResource)
 {
     cmdi_detector cond{{gen_param_def("server.sys.exec.cmd", "server.request.query")}};
 
-    auto root = object_builder::map(
-        {{"server.sys.exec.cmd", object_builder::array()}, {"server.request.query", "whatever"}});
+    auto root = object_builder_da::map({{"server.sys.exec.cmd", object_builder_da::array()},
+        {"server.request.query", "whatever"}});
 
     object_store store;
     store.insert(std::move(root));
@@ -96,9 +97,9 @@ TEST(TestCmdiDetector, NoInjection)
     };
 
     for (const auto &[resource, param] : samples) {
-        auto root = object_builder::map({{"server.request.query", param}});
+        auto root = object_builder_da::map({{"server.request.query", param}});
 
-        auto array = root.emplace("server.sys.exec.cmd", object_builder::array());
+        auto array = root.emplace("server.sys.exec.cmd", object_builder_da::array());
 
         for (const auto &arg : resource) { array.emplace_back(arg); }
 
@@ -133,9 +134,9 @@ TEST(TestCmdiDetector, NoExecutableInjection)
     };
 
     for (const auto &[resource, param] : samples) {
-        auto root = object_builder::map({{"server.request.query", param}});
+        auto root = object_builder_da::map({{"server.request.query", param}});
 
-        auto array = root.emplace("server.sys.exec.cmd", object_builder::array());
+        auto array = root.emplace("server.sys.exec.cmd", object_builder_da::array());
 
         for (const auto &arg : resource) { array.emplace_back(arg); }
 
@@ -187,9 +188,9 @@ TEST(TestCmdiDetector, NoShellInjection)
     };
 
     for (const auto &[resource, param] : samples) {
-        auto root = object_builder::map({{"server.request.query", param}});
+        auto root = object_builder_da::map({{"server.request.query", param}});
 
-        auto array = root.emplace("server.sys.exec.cmd", object_builder::array());
+        auto array = root.emplace("server.sys.exec.cmd", object_builder_da::array());
 
         for (const auto &arg : resource) { array.emplace_back(arg); }
 
@@ -220,9 +221,9 @@ TEST(TestCmdiDetector, ExecutableInjectionLinux)
     };
 
     for (const auto &[resource, param, expected] : samples) {
-        auto root = object_builder::map({{"server.request.query", param}});
+        auto root = object_builder_da::map({{"server.request.query", param}});
 
-        auto array = root.emplace("server.sys.exec.cmd", object_builder::array());
+        auto array = root.emplace("server.sys.exec.cmd", object_builder_da::array());
 
         std::string resource_str = generate_resource_string(resource);
         for (const auto &arg : resource) { array.emplace_back(arg); }
@@ -268,9 +269,9 @@ TEST(TestCmdiDetector, ExecutableInjectionWindows)
     };
 
     for (const auto &[resource, param, expected] : samples) {
-        auto root = object_builder::map({{"server.request.query", param}});
+        auto root = object_builder_da::map({{"server.request.query", param}});
 
-        auto array = root.emplace("server.sys.exec.cmd", object_builder::array());
+        auto array = root.emplace("server.sys.exec.cmd", object_builder_da::array());
 
         std::string resource_str = generate_resource_string(resource);
         for (const auto &arg : resource) { array.emplace_back(arg); }
@@ -311,9 +312,9 @@ TEST(TestCmdiDetector, ExecutableWithSpacesInjection)
     };
 
     for (const auto &[resource, param, expected] : samples) {
-        auto root = object_builder::map({{"server.request.query", param}});
+        auto root = object_builder_da::map({{"server.request.query", param}});
 
-        auto array = root.emplace("server.sys.exec.cmd", object_builder::array());
+        auto array = root.emplace("server.sys.exec.cmd", object_builder_da::array());
 
         std::string resource_str = generate_resource_string(resource);
         for (const auto &arg : resource) { array.emplace_back(arg); }
@@ -537,9 +538,9 @@ TEST(TestCmdiDetector, LinuxShellInjection)
     };
 
     for (const auto &[resource, param] : samples) {
-        auto root = object_builder::map({{"server.request.query", param}});
+        auto root = object_builder_da::map({{"server.request.query", param}});
 
-        auto array = root.emplace("server.sys.exec.cmd", object_builder::array());
+        auto array = root.emplace("server.sys.exec.cmd", object_builder_da::array());
 
         std::string resource_str = generate_resource_string(resource);
         for (const auto &arg : resource) { array.emplace_back(arg); }
@@ -624,9 +625,9 @@ TEST(TestCmdiDetector, WindowsShellInjection)
     };
 
     for (const auto &[resource, param] : samples) {
-        auto root = object_builder::map({{"server.request.query", param}});
+        auto root = object_builder_da::map({{"server.request.query", param}});
 
-        auto array = root.emplace("server.sys.exec.cmd", object_builder::array());
+        auto array = root.emplace("server.sys.exec.cmd", object_builder_da::array());
 
         std::string resource_str = generate_resource_string(resource);
         for (const auto &arg : resource) { array.emplace_back(arg); }
@@ -660,12 +661,12 @@ TEST(TestCmdiDetector, ExecutableInjectionMultipleArguments)
         {"halt", "bin"}, {"-h", "usr"}, {"executable", "/usr/bin/halt"}};
     std::string resource_str = generate_resource_string(resource);
 
-    auto root = object_builder::map();
-    auto array = root.emplace("server.sys.exec.cmd", object_builder::array());
+    auto root = object_builder_da::map();
+    auto array = root.emplace("server.sys.exec.cmd", object_builder_da::array());
 
     for (const auto &arg : resource) { array.emplace_back(arg); }
 
-    auto map = root.emplace("server.request.query", object_builder::map());
+    auto map = root.emplace("server.request.query", object_builder_da::map());
     for (const auto &[key, value] : params) { map.emplace(key, value); }
 
     object_store store;
@@ -695,12 +696,12 @@ TEST(TestCmdiDetector, EmptyExecutable)
     std::unordered_map<std::string, std::string> params{
         {"halt", "bin"}, {"-h", "usr"}, {"executable", "/usr/bin/halt"}};
 
-    auto root = object_builder::map();
-    auto array = root.emplace("server.sys.exec.cmd", object_builder::array());
+    auto root = object_builder_da::map();
+    auto array = root.emplace("server.sys.exec.cmd", object_builder_da::array());
 
     for (const auto &arg : resource) { array.emplace_back(arg); }
 
-    auto map = root.emplace("server.request.query", object_builder::map());
+    auto map = root.emplace("server.request.query", object_builder_da::map());
     for (const auto &[key, value] : params) { map.emplace(key, value); }
 
     object_store store;
@@ -721,12 +722,12 @@ TEST(TestCmdiDetector, ShellInjectionMultipleArguments)
 
     std::string resource_str = generate_resource_string(resource);
 
-    auto root = object_builder::map();
-    auto array = root.emplace("server.sys.exec.cmd", object_builder::array());
+    auto root = object_builder_da::map();
+    auto array = root.emplace("server.sys.exec.cmd", object_builder_da::array());
 
     for (const auto &arg : resource) { array.emplace_back(arg); }
 
-    auto map = root.emplace("server.request.query", object_builder::map());
+    auto map = root.emplace("server.request.query", object_builder_da::map());
     for (const auto &[key, value] : params) { map.emplace(key, value); }
 
     object_store store;

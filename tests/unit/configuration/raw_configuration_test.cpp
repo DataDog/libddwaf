@@ -11,20 +11,21 @@
 #include "common/gtest_utils.hpp"
 
 using namespace ddwaf;
+using namespace ddwaf::test;
 
 namespace {
 
 TEST(TestParameter, ToBool)
 {
     {
-        owned_object root{true};
+        owned_object root = test::ddwaf_object_da::make_boolean(true);
 
         bool value = static_cast<bool>(raw_configuration(root));
         EXPECT_TRUE(value);
     }
 
     {
-        owned_object root{false};
+        owned_object root = test::ddwaf_object_da::make_boolean(false);
 
         bool value = static_cast<bool>(raw_configuration(root));
         EXPECT_FALSE(value);
@@ -67,28 +68,29 @@ TEST(TestParameter, ToBool)
 TEST(TestParameter, ToUint64)
 {
     {
-        owned_object root{2123};
+        owned_object root = test::ddwaf_object_da::make_signed(2123);
 
         uint64_t value = static_cast<uint64_t>(raw_configuration(root));
         EXPECT_EQ(value, 2123);
     }
 
     {
-        owned_object root{2123};
+        owned_object root = test::ddwaf_object_da::make_signed(2123);
 
         uint64_t value = static_cast<uint64_t>(raw_configuration(root));
         EXPECT_EQ(value, 2123);
     }
 
     {
-        owned_object root{21.0};
+        owned_object root = test::ddwaf_object_da::make_float(21.0);
 
         uint64_t value = static_cast<uint64_t>(raw_configuration(root));
         EXPECT_EQ(value, 21);
     }
 
     {
-        owned_object root{static_cast<double>(std::numeric_limits<uint64_t>::max() - 1024)};
+        owned_object root = test::ddwaf_object_da::make_float(
+            static_cast<double>(std::numeric_limits<uint64_t>::max() - 1024));
 
         uint64_t value = static_cast<uint64_t>(raw_configuration(root));
         EXPECT_EQ(value, 18446744073709549568U);
@@ -108,19 +110,19 @@ TEST(TestParameter, ToUint64)
     }
 
     {
-        owned_object root{-2123};
+        owned_object root = test::ddwaf_object_da::make_signed(-2123);
 
         EXPECT_THROW((void)static_cast<uint64_t>(raw_configuration(root)), bad_cast);
     }
 
     {
-        owned_object root{-21.0};
+        owned_object root = test::ddwaf_object_da::make_float(-21.0);
 
         EXPECT_THROW((void)static_cast<uint64_t>(raw_configuration(root)), bad_cast);
     }
 
     {
-        owned_object root{std::numeric_limits<double>::max()};
+        owned_object root = test::ddwaf_object_da::make_float(std::numeric_limits<double>::max());
 
         EXPECT_THROW((void)static_cast<uint64_t>(raw_configuration(root)), bad_cast);
     }
@@ -129,28 +131,29 @@ TEST(TestParameter, ToUint64)
 TEST(TestParameter, ToInt64)
 {
     {
-        owned_object root{-2123};
+        owned_object root = test::ddwaf_object_da::make_signed(-2123);
 
         int64_t value = static_cast<int64_t>(raw_configuration(root));
         EXPECT_EQ(value, -2123);
     }
 
     {
-        owned_object root{2123};
+        owned_object root = test::ddwaf_object_da::make_signed(2123);
 
         int64_t value = static_cast<int64_t>(raw_configuration(root));
         EXPECT_EQ(value, 2123);
     }
 
     {
-        owned_object root{-21.0};
+        owned_object root = test::ddwaf_object_da::make_float(-21.0);
 
         int64_t value = static_cast<int64_t>(raw_configuration(root));
         EXPECT_EQ(value, -21);
     }
 
     {
-        owned_object root{static_cast<double>(std::numeric_limits<int64_t>::max() - 512)};
+        owned_object root = test::ddwaf_object_da::make_float(
+            static_cast<double>(std::numeric_limits<int64_t>::max() - 512));
 
         int64_t value = static_cast<int64_t>(raw_configuration(root));
         EXPECT_EQ(value, 9223372036854774784);
@@ -170,13 +173,14 @@ TEST(TestParameter, ToInt64)
     }
 
     {
-        owned_object root{std::numeric_limits<uint64_t>::max()};
+        owned_object root =
+            test::ddwaf_object_da::make_unsigned(std::numeric_limits<uint64_t>::max());
 
         EXPECT_THROW((void)static_cast<int64_t>(raw_configuration(root)), bad_cast);
     }
 
     {
-        owned_object root{std::numeric_limits<double>::max()};
+        owned_object root = test::ddwaf_object_da::make_float(std::numeric_limits<double>::max());
 
         EXPECT_THROW((void)static_cast<int64_t>(raw_configuration(root)), bad_cast);
     }
@@ -185,7 +189,7 @@ TEST(TestParameter, ToInt64)
 TEST(TestParameter, ToFloat)
 {
     {
-        owned_object root{21.23};
+        owned_object root = test::ddwaf_object_da::make_float(21.23);
 
         double value = static_cast<double>(raw_configuration(root));
         EXPECT_EQ(value, 21.23);
@@ -333,7 +337,7 @@ TEST(TestParameter, ToStringViewVector)
 
     {
         auto root = test::ddwaf_object_da::make_array();
-        root.emplace_back(50);
+        root.emplace_back(test::ddwaf_object_da::make_signed(50));
 
         raw_configuration param{root};
         EXPECT_THROW(param.operator std::vector<std::string_view>(), malformed_object);
@@ -362,7 +366,7 @@ TEST(TestParameter, ToStringViewSet)
 
     {
         auto root = test::ddwaf_object_da::make_array();
-        root.emplace_back(50);
+        root.emplace_back(test::ddwaf_object_da::make_signed(50));
 
         raw_configuration param{root};
         EXPECT_THROW(param.operator raw_configuration::string_set(), malformed_object);
@@ -393,7 +397,7 @@ TEST(TestParameter, ToSemanticVersion)
     }
 
     {
-        owned_object root{3};
+        owned_object root = test::ddwaf_object_da::make_signed(3);
 
         raw_configuration param{root};
         EXPECT_THROW(param.operator semantic_version(), bad_cast);

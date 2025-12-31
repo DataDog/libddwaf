@@ -14,6 +14,10 @@ namespace ddwaf::test {
 
 class ddwaf_object_da {
 public:
+    static owned_object make_uninit()
+    {
+        return owned_object::make_uninit(memory::get_default_resource());
+    }
     static owned_object make_null() { return owned_object::make_null(); }
 
     static owned_object make_boolean(bool value) { return owned_object::make_boolean(value); }
@@ -87,5 +91,21 @@ public:
         return owned_object::make_map(capacity, memory::get_default_resource());
     }
 };
+
+// Test-only wrappers for object_builder that use default allocator
+namespace object_builder_da {
+using all_types = object_builder::all_types;
+using key_value = object_builder::key_value;
+
+inline owned_object array(std::initializer_list<all_types> list = {})
+{
+    return object_builder::array(list, memory::get_default_resource());
+}
+
+inline owned_object map(std::initializer_list<key_value> list = {})
+{
+    return object_builder::map(list, memory::get_default_resource());
+}
+} // namespace object_builder_da
 
 } // namespace ddwaf::test

@@ -18,7 +18,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
     std::string_view value{reinterpret_cast<const char *>(bytes), size};
 
-    auto headers = object_builder::map({{"authorization", value}});
+    auto headers =
+        object_builder::map({{"authorization", value}}, ddwaf::memory::get_default_resource());
 
     jwt_decode gen{"id", {}, {}, false, true};
 
@@ -26,7 +27,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
     ddwaf::timer deadline{2s};
     static const std::vector<std::variant<std::string, int64_t>> key_path{"authorization"};
     auto output = gen.eval_impl({.address = {}, .key_path = key_path, .value = headers}, cache,
-        memory::get_default_resource(), deadline);
+        ddwaf::memory::get_default_resource(), deadline);
 
     return 0;
 }

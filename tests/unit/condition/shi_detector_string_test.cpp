@@ -8,6 +8,7 @@
 #include "condition/shi_detector.hpp"
 
 using namespace ddwaf;
+using namespace ddwaf::test;
 using namespace std::literals;
 
 namespace {
@@ -21,8 +22,10 @@ TEST(TestShiDetectorString, InvalidType)
 {
     shi_detector cond{{gen_param_def("server.sys.shell.cmd", "server.request.query")}};
 
-    auto root = object_builder::map(
-        {{"server.sys.shell.cmd", owned_object{}}, {"server.request.query", "whatever"}});
+    auto root = object_builder_da::map(
+        {{"server.sys.shell.cmd", owned_object::create_unchecked({.type = object_type::invalid},
+                                      memory::get_default_resource())},
+            {"server.request.query", "whatever"}});
 
     object_store store;
     store.insert(std::move(root));
@@ -36,8 +39,8 @@ TEST(TestShiDetectorString, EmptyResource)
 {
     shi_detector cond{{gen_param_def("server.sys.shell.cmd", "server.request.query")}};
 
-    auto root =
-        object_builder::map({{"server.sys.shell.cmd", ""}, {"server.request.query", "whatever"}});
+    auto root = object_builder_da::map(
+        {{"server.sys.shell.cmd", ""}, {"server.request.query", "whatever"}});
 
     object_store store;
     store.insert(std::move(root));
@@ -74,7 +77,7 @@ TEST(TestShiDetectorString, NoMatchAndFalsePositives)
     };
 
     for (const auto &[resource, param] : samples) {
-        auto root = object_builder::map({
+        auto root = object_builder_da::map({
             {"server.sys.shell.cmd", resource},
             {"server.request.query", param},
         });
@@ -104,7 +107,7 @@ TEST(TestShiDetectorString, ExecutablesAndRedirections)
     };
 
     for (const auto &[resource, param] : samples) {
-        auto root = object_builder::map({
+        auto root = object_builder_da::map({
             {"server.sys.shell.cmd", resource},
             {"server.request.query", param},
         });
@@ -146,7 +149,7 @@ TEST(TestShiDetectorString, InjectionsWithinCommandSubstitution)
     };
 
     for (const auto &[resource, param] : samples) {
-        auto root = object_builder::map({
+        auto root = object_builder_da::map({
             {"server.sys.shell.cmd", resource},
             {"server.request.query", param},
         });
@@ -181,7 +184,7 @@ TEST(TestShiDetectorString, InjectionsWithinProcessSubstitution)
     };
 
     for (const auto &[resource, param] : samples) {
-        auto root = object_builder::map({
+        auto root = object_builder_da::map({
             {"server.sys.shell.cmd", resource},
             {"server.request.query", param},
         });
@@ -218,7 +221,7 @@ TEST(TestShiDetectorString, OffByOnePayloadsMatch)
     };
 
     for (const auto &[resource, param] : samples) {
-        auto root = object_builder::map({
+        auto root = object_builder_da::map({
             {"server.sys.shell.cmd", resource},
             {"server.request.query", param},
         });
@@ -278,7 +281,7 @@ TEST(TestShiDetectorString, MultipleArgumentsMatch)
     };
 
     for (const auto &resource : samples) {
-        auto root = object_builder::map({{"server.sys.shell.cmd", resource},
+        auto root = object_builder_da::map({{"server.sys.shell.cmd", resource},
             {"server.request.query", yaml_to_object<owned_object>(params)}});
 
         object_store store;

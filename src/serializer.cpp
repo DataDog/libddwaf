@@ -307,14 +307,14 @@ void serialize_actions(const action_tracker &actions, borrowed_object action_map
 }
 
 void collect_attributes(const object_store &store, const std::vector<rule_attribute> &attributes,
-    attribute_collector &collector, nonnull_ptr<memory::memory_resource> alloc)
+    attribute_collector &collector)
 {
     for (const auto &attr : attributes) {
         if (std::holds_alternative<rule_attribute::input_target>(attr.value_or_target)) {
             auto input = std::get<rule_attribute::input_target>(attr.value_or_target);
             collector.collect(store, input.index, input.key_path, attr.key);
         } else if (std::holds_alternative<std::string>(attr.value_or_target)) {
-            collector.insert(attr.key, std::get<std::string>(attr.value_or_target), alloc);
+            collector.insert(attr.key, std::get<std::string>(attr.value_or_target));
         } else if (std::holds_alternative<uint64_t>(attr.value_or_target)) {
             collector.insert(attr.key, std::get<uint64_t>(attr.value_or_target));
         } else if (std::holds_alternative<int64_t>(attr.value_or_target)) {
@@ -354,26 +354,27 @@ void result_serializer::serialize(const object_store &store, std::vector<rule_re
                 result.actions, actions, output.events);
         }
 
-        collect_attributes(store, result.attributes.get(), collector, alloc_);
+        collect_attributes(store, result.attributes.get(), collector);
     }
 
     // Using the interface functions would replace the key contained within the
     // object. This will not be an issue in v2.
-    output.duration = owned_object::make_unsigned(deadline.elapsed().count());
-    output.timeout = owned_object{deadline.expired_before()};
-    output.keep = owned_object{final_keep};
+    output.duration = owned_object::make_unsigned(deadline.elapsed().count(), alloc_);
+    output.timeout = owned_object::make_boolean(deadline.expired_before(), alloc_);
+    output.keep = owned_object::make_boolean(final_keep, alloc_);
     output.attributes = collector.get_available_attributes_and_reset();
     serialize_actions(actions, output.actions);
 }
 
 std::pair<owned_object, result_components> result_serializer::initialise_result_object()
 {
-    auto object =
-        object_builder::map({{"events", object_builder::array({}, alloc_)},
-                                {"actions", object_builder::map({}, alloc_)},
-                                {"duration", owned_object::make_unsigned(0)}, {"timeout", false},
-                                {"attributes", object_builder::map({}, alloc_)}, {"keep", false}},
-            alloc_);
+    auto object = object_builder::map({{"events", object_builder::array({}, alloc_)},
+                                          {"actions", object_builder::map({}, alloc_)},
+                                          {"duration", owned_object::make_unsigned(0, alloc_)},
+                                          {"timeout", owned_object::make_boolean(false, alloc_)},
+                                          {"attributes", object_builder::map({}, alloc_)},
+                                          {"keep", owned_object::make_boolean(false, alloc_)}},
+        alloc_);
 
     const result_components res{.events = object.at(0),
         .actions = object.at(1),

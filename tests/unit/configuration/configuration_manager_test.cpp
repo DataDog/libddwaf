@@ -11,6 +11,7 @@
 #include "configuration/configuration_manager.hpp"
 
 using namespace ddwaf;
+using namespace ddwaf::test;
 
 namespace {
 

@@ -11,6 +11,7 @@
 #include "processor/extract_schema.hpp"
 
 using namespace ddwaf;
+using namespace ddwaf::test;
 using namespace std::literals;
 
 namespace {
@@ -19,7 +20,7 @@ TEST(TestExtractSchema, UnknownScalarSchema)
 {
     auto *alloc = memory::get_default_resource();
 
-    owned_object input;
+    owned_object input = ddwaf::test::ddwaf_object_da::make_uninit();
 
     extract_schema gen{"id", {}, {}, {}, false, true};
 
@@ -49,7 +50,7 @@ TEST(TestExtractSchema, BoolScalarSchema)
 {
     auto *alloc = memory::get_default_resource();
 
-    owned_object input{true};
+    owned_object input = test::ddwaf_object_da::make_boolean(true);
 
     extract_schema gen{"id", {}, {}, {}, false, true};
 
@@ -65,7 +66,7 @@ TEST(TestExtractSchema, IntScalarSchema)
     auto *alloc = memory::get_default_resource();
 
     {
-        owned_object input{5};
+        owned_object input = test::ddwaf_object_da::make_signed(5);
 
         extract_schema gen{"id", {}, {}, {}, false, true};
 
@@ -76,7 +77,7 @@ TEST(TestExtractSchema, IntScalarSchema)
         EXPECT_SCHEMA_EQ(output.ref(), R"([4])");
     }
     {
-        owned_object input{-5};
+        owned_object input = test::ddwaf_object_da::make_signed(-5);
 
         extract_schema gen{"id", {}, {}, {}, false, true};
 
@@ -107,7 +108,7 @@ TEST(TestExtractSchema, FloatScalarSchema)
 {
     auto *alloc = memory::get_default_resource();
 
-    owned_object input{1.5};
+    owned_object input = test::ddwaf_object_da::make_float(1.5);
 
     extract_schema gen{"id", {}, {}, {}, false, true};
 
@@ -122,7 +123,7 @@ TEST(TestExtractSchema, EmptyArraySchema)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto input = object_builder::array();
+    auto input = object_builder_da::array();
 
     extract_schema gen{"id", {}, {}, {}, false, true};
 
@@ -137,7 +138,8 @@ TEST(TestExtractSchema, ArraySchema)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto input = object_builder::array({22, "string", owned_object{}, owned_object::make_null()});
+    auto input = object_builder_da::array({test::ddwaf_object_da::make_signed(22), "string",
+        ddwaf::test::ddwaf_object_da::make_uninit(), owned_object::make_null()});
 
     extract_schema gen{"id", {}, {}, {}, false, true};
 
@@ -152,7 +154,7 @@ TEST(TestExtractSchema, ArrayWithDuplicateScalarSchema)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto input = object_builder::array({"string", "string", "string", "string"});
+    auto input = object_builder_da::array({"string", "string", "string", "string"});
 
     extract_schema gen{"id", {}, {}, {}, false, true};
 
@@ -167,9 +169,13 @@ TEST(TestExtractSchema, ArrayWithDuplicateMapsSchema)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto input = object_builder::array({object_builder::map({{"unsigned", 5}, {"string", "str"}}),
-        object_builder::map({{"signed", -5}}), object_builder::map({{"unsigned", 5}}),
-        object_builder::map({{"unsigned", 109}, {"string", "wahtever"}})});
+    auto input = object_builder_da::array(
+        {object_builder_da::map(
+             {{"unsigned", test::ddwaf_object_da::make_signed(5)}, {"string", "str"}}),
+            object_builder_da::map({{"signed", test::ddwaf_object_da::make_signed(-5)}}),
+            object_builder_da::map({{"unsigned", test::ddwaf_object_da::make_signed(5)}}),
+            object_builder_da::map(
+                {{"unsigned", test::ddwaf_object_da::make_signed(109)}, {"string", "wahtever"}})});
 
     extract_schema gen{"id", {}, {}, {}, false, true};
 
@@ -185,9 +191,11 @@ TEST(TestExtractSchema, ArrayWithDuplicateArraysSchema)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto input =
-        object_builder::array({object_builder::array({5, "str"}), object_builder::array({-5}),
-            object_builder::array({5}), object_builder::array({109, "wahtever"})});
+    auto input = object_builder_da::array(
+        {object_builder_da::array({test::ddwaf_object_da::make_signed(5), "str"}),
+            object_builder_da::array({test::ddwaf_object_da::make_signed(-5)}),
+            object_builder_da::array({test::ddwaf_object_da::make_signed(5)}),
+            object_builder_da::array({test::ddwaf_object_da::make_signed(109), "wahtever"})});
 
     extract_schema gen{"id", {}, {}, {}, false, true};
 
@@ -202,9 +210,13 @@ TEST(TestExtractSchema, ArrayWithDuplicateContainersSchema)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto input = object_builder::array({object_builder::map({{"unsigned", 5}, {"string", "str"}}),
-        object_builder::array({-5}), object_builder::array({5}),
-        object_builder::map({{"string", "wahtever"}, {"unsigned", 109}})});
+    auto input = object_builder_da::array(
+        {object_builder_da::map(
+             {{"unsigned", test::ddwaf_object_da::make_signed(5)}, {"string", "str"}}),
+            object_builder_da::array({test::ddwaf_object_da::make_signed(-5)}),
+            object_builder_da::array({test::ddwaf_object_da::make_signed(5)}),
+            object_builder_da::map(
+                {{"string", "wahtever"}, {"unsigned", test::ddwaf_object_da::make_signed(109)}})});
 
     extract_schema gen{"id", {}, {}, {}, false, true};
 
@@ -220,7 +232,7 @@ TEST(TestExtractSchema, EmptyMapSchema)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto input = object_builder::map();
+    auto input = object_builder_da::map();
 
     extract_schema gen{"id", {}, {}, {}, false, true};
 
@@ -235,10 +247,12 @@ TEST(TestExtractSchema, MapSchema)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto input = object_builder::map({{"unsigned", 22}, {"string", "string"},
-        {"invalid", owned_object{}}, {"null", owned_object::make_null()},
-        {"map", object_builder::map({{"unsigned", 5}, {"string", "str"}})},
-        {"array", object_builder::array({-5})}});
+    auto input = object_builder_da::map({{"unsigned", test::ddwaf_object_da::make_signed(22)},
+        {"string", "string"}, {"invalid", ddwaf::test::ddwaf_object_da::make_uninit()},
+        {"null", owned_object::make_null()},
+        {"map", object_builder_da::map(
+                    {{"unsigned", test::ddwaf_object_da::make_signed(5)}, {"string", "str"}})},
+        {"array", object_builder_da::array({test::ddwaf_object_da::make_signed(-5)})}});
 
     extract_schema gen{"id", {}, {}, {}, false, true};
 
@@ -254,10 +268,10 @@ TEST(TestExtractSchema, DepthLimit)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto input = object_builder::array();
+    auto input = object_builder_da::array();
     borrowed_object parent{input};
     for (unsigned i = 0; i < extract_schema::max_container_depth + 10; ++i) {
-        parent = parent.emplace_back(object_builder::array());
+        parent = parent.emplace_back(object_builder_da::array());
     }
 
     extract_schema gen{"id", {}, {}, {}, false, true};
@@ -274,9 +288,9 @@ TEST(TestExtractSchema, ArrayNodesLimit)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto input = object_builder::array();
+    auto input = object_builder_da::array();
     for (unsigned i = 0; i < extract_schema::max_array_nodes + 10; ++i) {
-        input.emplace_back(object_builder::array());
+        input.emplace_back(object_builder_da::array());
     }
 
     extract_schema gen{"id", {}, {}, {}, false, true};
@@ -291,9 +305,9 @@ TEST(TestExtractSchema, RecordNodesLimit)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto input = object_builder::map();
+    auto input = object_builder_da::map();
     for (unsigned i = 0; i < extract_schema::max_record_nodes + 10; ++i) {
-        input.emplace("child", object_builder::array());
+        input.emplace("child", object_builder_da::array());
     }
 
     extract_schema gen{"id", {}, {}, {}, false, true};
@@ -389,7 +403,7 @@ TEST(TestExtractSchema, SchemaWithScannerArrayNoKey)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto input = object_builder::array({"string"});
+    auto input = object_builder_da::array({"string"});
 
     scanner scnr{"0", {{"type", "PII"}, {"category", "IP"}},
         std::make_unique<matcher::regex_match>("string", 6, true),
@@ -408,7 +422,7 @@ TEST(TestExtractSchema, SchemaWithScannerArrayWithKey)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto input = object_builder::map({{"string", object_builder::array({"string"})}});
+    auto input = object_builder_da::map({{"string", object_builder_da::array({"string"})}});
 
     scanner scnr{"0", {{"type", "PII"}, {"category", "IP"}},
         std::make_unique<matcher::regex_match>("string", 6, true),
@@ -428,8 +442,8 @@ TEST(TestExtractSchema, SchemaWithScannerNestedArrayWithKey)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto input = object_builder::map(
-        {{"string", object_builder::array({object_builder::array({"string"})})}});
+    auto input = object_builder_da::map(
+        {{"string", object_builder_da::array({object_builder_da::array({"string"})})}});
 
     scanner scnr{"0", {{"type", "PII"}, {"category", "IP"}},
         std::make_unique<matcher::regex_match>("string", 6, true),

@@ -134,22 +134,22 @@ owned_object node_to_owned_object(const Node &node)
         const std::string &value = node.Scalar();
         if (node.Tag() == "?") {
             try {
-                return owned_object{node.as<uint64_t>()};
+                return test::ddwaf_object_da::make_unsigned(node.as<uint64_t>());
             } catch (...) {} // NOLINT(bugprone-empty-catch)
 
             try {
-                return owned_object{node.as<int64_t>()};
+                return test::ddwaf_object_da::make_signed(node.as<int64_t>());
             } catch (...) {} // NOLINT(bugprone-empty-catch)
 
             try {
-                return owned_object{node.as<double>()};
+                return test::ddwaf_object_da::make_float(node.as<double>());
             } catch (...) {} // NOLINT(bugprone-empty-catch)
 
             try {
                 if (!value.empty() && value[0] != 'Y' && value[0] != 'y' && value[0] != 'n' &&
                     value[0] != 'N') {
                     // Skip the yes / no variants of boolean
-                    return owned_object{node.as<bool>()};
+                    return test::ddwaf_object_da::make_boolean(node.as<bool>());
                 }
             } catch (...) {} // NOLINT(bugprone-empty-catch)
         }
@@ -159,7 +159,7 @@ owned_object node_to_owned_object(const Node &node)
     case NodeType::Null:
         return owned_object::make_null();
     case NodeType::Undefined:
-        return {};
+        return ddwaf::test::ddwaf_object_da::make_uninit();
     }
 
     throw parsing_error("Invalid YAML node type");

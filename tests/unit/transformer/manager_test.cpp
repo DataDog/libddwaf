@@ -10,6 +10,7 @@
 #include "common/gtest_utils.hpp"
 
 using namespace ddwaf;
+using namespace ddwaf::test;
 
 namespace {
 
@@ -46,8 +47,8 @@ std::optional<std::string> transform(std::string_view input, const std::vector<t
 
 TEST(TestTransformerManager, InvalidTypes)
 {
-    owned_object src(29U);
-    owned_object dst;
+    owned_object src = test::ddwaf_object_da::make_unsigned(29U);
+    owned_object dst = ddwaf::test::ddwaf_object_da::make_uninit();
 
     {
         std::vector<transformer_id> ids{transformer_id::compress_whitespace};

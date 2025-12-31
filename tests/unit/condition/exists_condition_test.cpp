@@ -10,6 +10,7 @@
 #include "common/gtest_utils.hpp"
 
 using namespace ddwaf;
+using namespace ddwaf::test;
 using namespace std::literals;
 
 namespace {
@@ -23,7 +24,8 @@ TEST(TestExistsCondition, AddressAvailable)
 {
     exists_condition cond{{gen_variadic_param("server.request.uri_raw")}};
 
-    auto root = object_builder::map({{"server.request.uri_raw", owned_object{}}});
+    auto root = object_builder_da::map(
+        {{"server.request.uri_raw", ddwaf::test::ddwaf_object_da::make_uninit()}});
 
     object_store store;
     store.insert(std::move(root));
@@ -39,9 +41,11 @@ TEST(TestExistsCondition, KeyPathAvailable)
         .index = get_target_index("server.request.uri_raw"),
         .key_path = {"path", "to", "object"}}}}}};
 
-    auto root = object_builder::map({{"server.request.uri_raw",
-        object_builder::map({{"path",
-            object_builder::map({{"to", object_builder::map({{"object", owned_object{}}})}})}})}});
+    auto root = object_builder_da::map({{"server.request.uri_raw",
+        object_builder_da::map(
+            {{"path", object_builder_da::map(
+                          {{"to", object_builder_da::map({{"object",
+                                      ddwaf::test::ddwaf_object_da::make_uninit()}})}})}})}});
 
     object_store store;
     store.insert(std::move(root));
@@ -55,7 +59,8 @@ TEST(TestExistsCondition, AddressNotAvaialble)
 {
     exists_condition cond{{gen_variadic_param("server.request.uri_raw")}};
 
-    auto root = object_builder::map({{"server.request.query", owned_object{}}});
+    auto root = object_builder_da::map(
+        {{"server.request.query", ddwaf::test::ddwaf_object_da::make_uninit()}});
 
     object_store store;
     store.insert(std::move(root));
@@ -71,8 +76,9 @@ TEST(TestExistsCondition, KeyPathNotAvailable)
         .index = get_target_index("server.request.uri_raw"),
         .key_path = {"path", "to", "object"}}}}}};
 
-    auto root = object_builder::map({{"server.request.uri_raw",
-        object_builder::map({{"path", object_builder::map({{"to", owned_object{}}})}})}});
+    auto root = object_builder_da::map({{"server.request.uri_raw",
+        object_builder_da::map({{"path",
+            object_builder_da::map({{"to", ddwaf::test::ddwaf_object_da::make_uninit()}})}})}});
 
     object_store store;
     store.insert(std::move(root));
@@ -88,8 +94,8 @@ TEST(TestExistsCondition, KeyPathPositiveIndexOnArray)
         .index = get_target_index("server.request.uri_raw"),
         .key_path = {"path", 0}}}}}};
 
-    auto root = object_builder::map({{"server.request.uri_raw",
-        object_builder::map({{"path", object_builder::array({"item"})}})}});
+    auto root = object_builder_da::map({{"server.request.uri_raw",
+        object_builder_da::map({{"path", object_builder_da::array({"item"})}})}});
 
     object_store store;
     store.insert(std::move(root));
@@ -105,8 +111,8 @@ TEST(TestExistsCondition, KeyPathNegativeIndexOnArray)
         .index = get_target_index("server.request.uri_raw"),
         .key_path = {"path", -1}}}}}};
 
-    auto root = object_builder::map({{"server.request.uri_raw",
-        object_builder::map({{"path", object_builder::array({"item"})}})}});
+    auto root = object_builder_da::map({{"server.request.uri_raw",
+        object_builder_da::map({{"path", object_builder_da::array({"item"})}})}});
 
     object_store store;
     store.insert(std::move(root));
@@ -122,8 +128,8 @@ TEST(TestExistsCondition, KeyPathIndexOnNonArray)
         .index = get_target_index("server.request.uri_raw"),
         .key_path = {0}}}}}};
 
-    auto root = object_builder::map(
-        {{"server.request.uri_raw", object_builder::map({{"path", owned_object{}}})}});
+    auto root = object_builder_da::map({{"server.request.uri_raw",
+        object_builder_da::map({{"path", ddwaf::test::ddwaf_object_da::make_uninit()}})}});
 
     object_store store;
     store.insert(std::move(root));
@@ -139,9 +145,11 @@ TEST(TestExistsCondition, KeyPathAvailableButExcluded)
         .index = get_target_index("server.request.uri_raw"),
         .key_path = {"path", "to", "object"}}}}}};
 
-    auto root = object_builder::map({{"server.request.uri_raw",
-        object_builder::map({{"path",
-            object_builder::map({{"to", object_builder::map({{"object", owned_object{}}})}})}})}});
+    auto root = object_builder_da::map({{"server.request.uri_raw",
+        object_builder_da::map(
+            {{"path", object_builder_da::map(
+                          {{"to", object_builder_da::map({{"object",
+                                      ddwaf::test::ddwaf_object_da::make_uninit()}})}})}})}});
 
     std::unordered_set<object_cache_key> excluded = {root.at(0)};
     object_store store;
@@ -162,7 +170,8 @@ TEST(TestExistsCondition, MultipleAddresses)
         {gen_variadic_param("server.request.uri_raw", "server.request.body", "usr.id")}};
 
     auto validate_address = [&](const std::string &address, bool expected = true) {
-        auto root = object_builder::map({{address, owned_object{}}});
+        auto root =
+            object_builder_da::map({{address, ddwaf::test::ddwaf_object_da::make_uninit()}});
 
         object_store store;
         store.insert(std::move(root));
@@ -191,11 +200,11 @@ TEST(TestExistsCondition, MultipleAddressesAndKeyPaths)
 
     auto validate_address = [&](const std::string &address, const std::vector<std::string> &kp,
                                 bool expected = true) {
-        auto root = object_builder::map();
-        auto map = root.emplace(address, object_builder::map());
+        auto root = object_builder_da::map();
+        auto map = root.emplace(address, object_builder_da::map());
         // NOLINTNEXTLINE(modernize-loop-convert)
         for (auto it = kp.begin(); it != kp.end(); ++it) {
-            map = map.emplace(*it, object_builder::map());
+            map = map.emplace(*it, object_builder_da::map());
         }
 
         object_store store;
@@ -224,9 +233,11 @@ TEST(TestNegatedExistsCondition, KeyPathAvailable)
         .index = get_target_index("server.request.uri_raw"),
         .key_path = {"path", "to", "object"}}}}}};
 
-    auto root = object_builder::map({{"server.request.uri_raw",
-        object_builder::map({{"path",
-            object_builder::map({{"to", object_builder::map({{"object", owned_object{}}})}})}})}});
+    auto root = object_builder_da::map({{"server.request.uri_raw",
+        object_builder_da::map(
+            {{"path", object_builder_da::map(
+                          {{"to", object_builder_da::map({{"object",
+                                      ddwaf::test::ddwaf_object_da::make_uninit()}})}})}})}});
 
     object_store store;
     store.insert(std::move(root));
@@ -242,8 +253,8 @@ TEST(TestNegativeExistsCondition, KeyPathAvailablePositiveIndexOnArray)
         .index = get_target_index("server.request.uri_raw"),
         .key_path = {"path", 0}}}}}};
 
-    auto root = object_builder::map({{"server.request.uri_raw",
-        object_builder::map({{"path", object_builder::array({"item"})}})}});
+    auto root = object_builder_da::map({{"server.request.uri_raw",
+        object_builder_da::map({{"path", object_builder_da::array({"item"})}})}});
 
     object_store store;
     store.insert(std::move(root));
@@ -259,8 +270,8 @@ TEST(TestNegativeExistsCondition, KeyPathAvailableNegativeIndexOnArray)
         .index = get_target_index("server.request.uri_raw"),
         .key_path = {"path", -1}}}}}};
 
-    auto root = object_builder::map({{"server.request.uri_raw",
-        object_builder::map({{"path", object_builder::array({"item"})}})}});
+    auto root = object_builder_da::map({{"server.request.uri_raw",
+        object_builder_da::map({{"path", object_builder_da::array({"item"})}})}});
 
     object_store store;
     store.insert(std::move(root));
@@ -276,8 +287,8 @@ TEST(TestNegativeExistsCondition, KeyPathUnvailablePositiveIndexOnArray)
         .index = get_target_index("server.request.uri_raw"),
         .key_path = {"path", 0}}}}}};
 
-    auto root = object_builder::map(
-        {{"server.request.uri_raw", object_builder::map({{"path", object_builder::array({})}})}});
+    auto root = object_builder_da::map({{"server.request.uri_raw",
+        object_builder_da::map({{"path", object_builder_da::array({})}})}});
 
     object_store store;
     store.insert(std::move(root));
@@ -293,8 +304,8 @@ TEST(TestNegativeExistsCondition, KeyPathUnvailableNegativeIndexOnArray)
         .index = get_target_index("server.request.uri_raw"),
         .key_path = {"path", -1}}}}}};
 
-    auto root = object_builder::map(
-        {{"server.request.uri_raw", object_builder::map({{"path", object_builder::array({})}})}});
+    auto root = object_builder_da::map({{"server.request.uri_raw",
+        object_builder_da::map({{"path", object_builder_da::array({})}})}});
 
     object_store store;
     store.insert(std::move(root));
@@ -310,8 +321,9 @@ TEST(TestNegatedExistsCondition, KeyPathNotAvailable)
         .index = get_target_index("server.request.uri_raw"),
         .key_path = {"path", "to", "object"}}}}}};
 
-    auto root = object_builder::map({{"server.request.uri_raw",
-        object_builder::map({{"path", object_builder::map({{"to", owned_object{}}})}})}});
+    auto root = object_builder_da::map({{"server.request.uri_raw",
+        object_builder_da::map({{"path",
+            object_builder_da::map({{"to", ddwaf::test::ddwaf_object_da::make_uninit()}})}})}});
     object_store store;
     store.insert(std::move(root));
 
@@ -326,9 +338,11 @@ TEST(TestNegatedExistsCondition, KeyPathAvailableButExcluded)
         .index = get_target_index("server.request.uri_raw"),
         .key_path = {"path", "to", "object"}}}}}};
 
-    auto root = object_builder::map({{"server.request.uri_raw",
-        object_builder::map({{"path",
-            object_builder::map({{"to", object_builder::map({{"object", owned_object{}}})}})}})}});
+    auto root = object_builder_da::map({{"server.request.uri_raw",
+        object_builder_da::map(
+            {{"path", object_builder_da::map(
+                          {{"to", object_builder_da::map({{"object",
+                                      ddwaf::test::ddwaf_object_da::make_uninit()}})}})}})}});
 
     std::unordered_set<object_cache_key> excluded = {root.at(0)};
 

@@ -9,6 +9,7 @@
 #include "waf.hpp"
 
 using namespace ddwaf;
+using namespace ddwaf::test;
 using namespace std::literals;
 
 namespace {
@@ -49,8 +50,8 @@ TEST(TestWaf, BasicContextRun)
 {
     auto instance = build_instance("interface.yaml");
 
-    auto root = object_builder::map({{"value1", "rule1"}});
-    auto ctx = instance.create_context();
+    auto root = object_builder_da::map({{"value1", "rule1"}});
+    auto ctx = instance.create_context(memory::get_default_resource());
 
     EXPECT_TRUE(ctx.insert(std::move(root)));
     ddwaf::timer deadline{2s};

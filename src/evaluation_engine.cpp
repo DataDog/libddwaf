@@ -42,7 +42,7 @@ void set_context_event_address(object_store &store)
         return;
     }
 
-    store.insert(event_addr_idx, event_addr, owned_object{true});
+    store.insert(event_addr_idx, event_addr, owned_object::make_boolean(true));
 }
 
 } // namespace

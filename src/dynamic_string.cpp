@@ -13,14 +13,15 @@ namespace ddwaf {
 
 owned_object dynamic_string::to_object(nonnull_ptr<memory::memory_resource> alloc)
 {
-    owned_object object;
-    if (size_ == capacity_ && alloc->is_equal(*alloc_)) {
-        // safety: the allocators compare equal; by definition this means alloc
-        // (the deallocator for the owned_object) can deallocate memory from
-        // alloc_ (the allocator for this dynamic_string)
-        object = owned_object::unsafe_make_string_nocopy(buffer_, size_, alloc);
-    } else {
-        object = owned_object::make_string(buffer_, size_, alloc);
+    const bool should_copy = size_ != capacity_ || !alloc->is_equal(*alloc_);
+    owned_object object = should_copy ? owned_object::make_string(buffer_, size_, alloc)
+                                      : // safety: the allocators compare equal; by definition
+                                        // this means alloc (the deallocator for the owned_object)
+                                        // can deallocate memory from alloc_ (the allocator for
+                                        // this dynamic_string)
+                              owned_object::unsafe_make_string_nocopy(buffer_, size_, alloc);
+
+    if (should_copy) {
         alloc_->deallocate(buffer_, capacity_, alignof(char));
     }
     buffer_ = nullptr;
