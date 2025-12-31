@@ -8,6 +8,7 @@
 #include "indexer.hpp"
 
 using namespace ddwaf;
+using namespace ddwaf::test;
 
 namespace {
 

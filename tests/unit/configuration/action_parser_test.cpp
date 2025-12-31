@@ -13,6 +13,7 @@
 #include "fmt/core.h"
 
 using namespace ddwaf;
+using namespace ddwaf::test;
 
 namespace {
 

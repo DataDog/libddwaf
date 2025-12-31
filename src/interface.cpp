@@ -143,16 +143,17 @@ const detail::object *to_ptr(const ddwaf_object *ptr)
 detail::object &to_ref(ddwaf_object *ptr) { return *to_ptr(ptr); }
 const detail::object &to_ref(const ddwaf_object *ptr) { return *to_ptr(ptr); }
 
-borrowed_object to_borrowed(ddwaf_object *ptr)
-{
-    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-    return borrowed_object{reinterpret_cast<detail::object *>(ptr)};
-}
-
+// UNSAFE: caller is responsible for ensuring that the allocator macthes the
+// object's memory; to the extent that the borrow is from a larger owned object,
+// the allocator must match that of the owned object. The reason for this is the
+// contents of the borrowed object may be replaced through the assignment
+// operator, and this new value may be destroyed using the allocator of the
+// owning object.
 borrowed_object to_borrowed(ddwaf_object *ptr, nonnull_ptr<memory::memory_resource> alloc)
 {
+    // safety: caller is responsible for ensuring allocator matches object's memory
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-    return borrowed_object{reinterpret_cast<detail::object *>(ptr), alloc};
+    return borrowed_object::create_unchecked(reinterpret_cast<detail::object *>(ptr), alloc);
 }
 
 memory::memory_resource *to_alloc_ptr(ddwaf_allocator alloc)
@@ -175,7 +176,9 @@ ddwaf::waf *ddwaf_init(const ddwaf_object *ruleset, ddwaf_object *diagnostics)
             ddwaf::ruleset_info ri;
             const ddwaf::defer on_exit([&]() {
                 if (diagnostics != nullptr) {
-                    to_borrowed(diagnostics) = ri.to_object();
+                    // avoid to_borrowed(diagnostics, ...) = ... as that would destroy
+                    // the current value in diagnostics, which could be uninitialized
+                    *to_ptr(diagnostics) = ri.to_object().move();
                 }
             });
             builder.add_or_update("default", input, ri);
@@ -281,7 +284,10 @@ DDWAF_RET_CODE ddwaf_context_eval(ddwaf_context context, ddwaf_object *data,
         timer deadline{std::chrono::microseconds(timeout)};
         auto [code, res] = context->eval(deadline);
         if (result != nullptr) {
-            to_borrowed(result) = std::move(res);
+            // avoid to_borrowed(result, res.alloc()) = std::move(res);
+            // as that would destroy the current value in result, which could be
+            // garbage (result could be uninitialized memory)
+            *to_ptr(result) = res.move();
         }
         return code ? DDWAF_MATCH : DDWAF_OK;
     } catch (const std::exception &e) {
@@ -349,7 +355,7 @@ DDWAF_RET_CODE ddwaf_subcontext_eval(ddwaf_subcontext subcontext, ddwaf_object *
         timer deadline{std::chrono::microseconds(timeout)};
         auto [code, res] = subcontext->eval(deadline);
         if (result != nullptr) {
-            to_borrowed(result) = std::move(res);
+            *to_ptr(result) = res.move();
         }
         return code ? DDWAF_MATCH : DDWAF_OK;
     } catch (const std::exception &e) {
@@ -409,7 +415,9 @@ bool ddwaf_builder_add_or_update_config(ddwaf::waf_builder *builder, const char 
         ddwaf::ruleset_info ri;
         const ddwaf::defer on_exit([&]() {
             if (diagnostics != nullptr) {
-                to_borrowed(diagnostics) = ri.to_object();
+                // avoid to_borrowed(diagnostics, ...) = ... as that would destroy
+                // the current value in diagnostics, which could be uninitialized
+                *to_ptr(diagnostics) = ri.to_object().move();
             }
         });
         return builder->add_or_update({path, path_len}, input, ri);
@@ -477,10 +485,12 @@ uint32_t ddwaf_builder_get_config_paths(
         }
 
         if (paths != nullptr) {
-            auto object =
-                owned_object::make_array(config_paths.size(), memory::get_default_resource());
+            auto *default_allocator = memory::get_default_resource();
+            auto object = owned_object::make_array(config_paths.size(), default_allocator);
             for (const auto &value : config_paths) { object.emplace_back(value); }
-            to_borrowed(paths) = std::move(object);
+            // avoid to_borrowed(paths, ...) = ... as that would destroy
+            // the current value in paths, which could be uninitialized
+            *to_ptr(paths) = object.move();
         }
         return config_paths.size();
     } catch (const std::exception &e) {
@@ -598,7 +608,9 @@ ddwaf_object *ddwaf_object_set_invalid(ddwaf_object *object)
         return nullptr;
     }
 
-    to_borrowed(object) = owned_object{};
+    to_ref(object) = detail::object{
+        .type = object_type::invalid,
+    };
 
     return object;
 }
@@ -609,7 +621,9 @@ ddwaf_object *ddwaf_object_set_null(ddwaf_object *object)
         return nullptr;
     }
 
-    to_borrowed(object) = owned_object::make_null();
+    to_ref(object) = detail::object{
+        .type = object_type::null,
+    };
 
     return object;
 }
@@ -622,7 +636,8 @@ ddwaf_object *ddwaf_object_set_string(
     if (object == nullptr || (string == nullptr && length != 0) || alloc == nullptr) {
         return nullptr;
     }
-    to_borrowed(object) = owned_object{string, length, to_alloc_ptr(alloc)};
+    owned_object new_str = owned_object::make_string(string, length, to_alloc_ptr(alloc));
+    to_ref(object) = new_str.move();
     return object;
 }
 
@@ -633,9 +648,11 @@ ddwaf_object *ddwaf_object_set_string_nocopy(
         return nullptr;
     }
     // safety: the allocator is irrelevant: unsafe_make_string_copy doesn't
-    // allocate from it and we forget it when we convert the
-    to_borrowed(object) = owned_object::unsafe_make_string_nocopy(
-        string, length, memory::get_default_null_resource());
+    // allocate from it and we forget it afterwards (we just care about the
+    // detail::object part of the owned_object)
+    to_ref(object) =
+        owned_object::unsafe_make_string_nocopy(string, length, memory::get_default_null_resource())
+            .move();
     return object;
 }
 
@@ -645,7 +662,7 @@ ddwaf_object *ddwaf_object_set_string_literal(
     if (object == nullptr || string == nullptr) {
         return nullptr;
     }
-    to_borrowed(object) = owned_object::make_string_literal(string, length);
+    to_ref(object) = owned_object::make_string_literal(string, length).ref();
     return object;
 }
 
@@ -655,7 +672,9 @@ ddwaf_object *ddwaf_object_set_unsigned(ddwaf_object *object, uint64_t value)
         return nullptr;
     }
 
-    to_borrowed(object) = owned_object{value};
+    to_ref(object) = detail::object{
+        .via = {.u64 = {.type = object_type::uint64, .val = value}},
+    };
     return object;
 }
 
@@ -670,7 +689,9 @@ ddwaf_object *ddwaf_object_set_signed(ddwaf_object *object, int64_t value)
         return nullptr;
     }
 
-    to_borrowed(object) = owned_object{value};
+    to_ref(object) = detail::object{
+        .via = {.i64 = {.type = object_type::int64, .val = value}},
+    };
     return object;
 }
 
@@ -684,7 +705,9 @@ ddwaf_object *ddwaf_object_set_bool(ddwaf_object *object, bool value)
     if (object == nullptr) {
         return nullptr;
     }
-    to_borrowed(object) = owned_object{value};
+    to_ref(object) = detail::object{
+        .via = {.b8 = {.type = object_type::boolean, .val = value}},
+    };
     return object;
 }
 
@@ -698,7 +721,9 @@ ddwaf_object *ddwaf_object_set_float(ddwaf_object *object, double value)
     if (object == nullptr) {
         return nullptr;
     }
-    to_borrowed(object) = owned_object{value};
+    to_ref(object) = detail::object{
+        .via = {.f64 = {.type = object_type::float64, .val = value}},
+    };
     return object;
 }
 
@@ -712,7 +737,10 @@ ddwaf_object *ddwaf_object_set_array(ddwaf_object *object, uint16_t capacity, dd
     if (object == nullptr || alloc == nullptr) {
         return nullptr;
     }
-    to_borrowed(object) = owned_object::make_array(capacity, to_alloc_ptr(alloc));
+    // object may be uninitialized
+    auto *alloc_ptr = to_alloc_ptr(alloc);
+    auto new_array = owned_object::make_array(capacity, alloc_ptr);
+    to_ref(object) = new_array.move();
     return object;
 }
 
@@ -722,7 +750,10 @@ ddwaf_object *ddwaf_object_set_map(ddwaf_object *object, uint16_t capacity, ddwa
         return nullptr;
     }
 
-    to_borrowed(object) = owned_object::make_map(capacity, to_alloc_ptr(alloc));
+    // object may be uninitialized
+    auto *alloc_ptr = to_alloc_ptr(alloc);
+    auto new_map = owned_object::make_map(capacity, alloc_ptr);
+    to_ref(object) = new_map.move();
     return object;
 }
 
@@ -733,10 +764,12 @@ bool ddwaf_object_from_json(
         return false;
     }
 
+    auto *alloc_ptr = to_alloc_ptr(alloc);
     try {
-        auto borrowed = to_borrowed(output);
-        borrowed = json_to_object({json_str, length}, to_alloc_ptr(alloc));
-        return borrowed.is_valid();
+        // avoid to_borrowed(output, ...) = ... as that would destroy
+        // the current value in output, which could be uninitialized
+        *to_ptr(output) = json_to_object({json_str, length}, alloc_ptr).move();
+        return to_borrowed(output, alloc_ptr).is_valid();
     } catch (...) {} // NOLINT(bugprone-empty-catch)
 
     return false;
@@ -749,9 +782,13 @@ ddwaf_object *ddwaf_object_insert(ddwaf_object *array, ddwaf_allocator alloc)
     }
 
     try {
+        auto *alloc_ptr = to_alloc_ptr(alloc);
+        borrowed_object container = to_borrowed(array, alloc_ptr);
+        owned_object new_element = owned_object::make_uninit(alloc_ptr);
+        borrowed_object inserted = container.emplace_back(std::move(new_element));
+
         // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-        return reinterpret_cast<ddwaf_object *>(
-            to_borrowed(array, to_alloc_ptr(alloc)).emplace_back({}).ptr());
+        return reinterpret_cast<ddwaf_object *>(inserted.ptr());
     } catch (...) {} // NOLINT(bugprone-empty-catch)
     return nullptr;
 }
@@ -763,9 +800,14 @@ ddwaf_object *ddwaf_object_insert_key(
     }
 
     try {
+        auto *alloc_ptr = to_alloc_ptr(alloc);
+        borrowed_object container = to_borrowed(map, alloc_ptr);
+        owned_object new_value = owned_object::make_uninit(alloc_ptr);
+        borrowed_object inserted =
+            container.emplace(std::string_view{key, length}, std::move(new_value));
+
         // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-        return reinterpret_cast<ddwaf_object *>(
-            to_borrowed(map, to_alloc_ptr(alloc)).emplace(std::string_view{key, length}, {}).ptr());
+        return reinterpret_cast<ddwaf_object *>(inserted.ptr());
     } catch (...) {} // NOLINT(bugprone-empty-catch)
     return nullptr;
 }
@@ -778,13 +820,16 @@ ddwaf_object *ddwaf_object_insert_key_nocopy(
     }
 
     try {
+        auto *alloc_ptr = to_alloc_ptr(alloc);
+        auto key_obj = owned_object::unsafe_make_string_nocopy(key, length, alloc_ptr);
+        auto value_obj = owned_object::make_uninit(alloc_ptr);
+
         // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
         return reinterpret_cast<ddwaf_object *>(
-            to_borrowed(map, to_alloc_ptr(alloc))
-                // safety: it's paret of the contract of this function that the
+            to_borrowed(map, alloc_ptr)
+                // safety: it's part of the contract of this function that the
                 // key can be deallocated with alloc
-                .emplace(
-                    owned_object::unsafe_make_string_nocopy(key, length, to_alloc_ptr(alloc)), {})
+                .emplace(std::move(key_obj), std::move(value_obj))
                 .ptr());
     } catch (...) {} // NOLINT(bugprone-empty-catch)
     return nullptr;
@@ -798,11 +843,13 @@ ddwaf_object *ddwaf_object_insert_literal_key(
     }
 
     try {
+        auto *alloc_ptr = to_alloc_ptr(alloc);
+        auto key_obj = owned_object::make_string_literal(key, length, alloc_ptr);
+        auto value_obj = owned_object::make_uninit(alloc_ptr);
+
         // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
         return reinterpret_cast<ddwaf_object *>(
-            to_borrowed(map, to_alloc_ptr(alloc))
-                .emplace(owned_object::make_string_literal(key, length), {})
-                .ptr());
+            to_borrowed(map, alloc_ptr).emplace(std::move(key_obj), std::move(value_obj)).ptr());
     } catch (...) {} // NOLINT(bugprone-empty-catch)
     return nullptr;
 }
@@ -939,7 +986,10 @@ ddwaf_object *ddwaf_object_clone(
         return nullptr;
     }
 
-    to_borrowed(destination) = view.clone(to_alloc_ptr(alloc));
+    auto *alloc_ptr = to_alloc_ptr(alloc);
+    // destination may be uninitialized; don't use borrowed_object
+    auto output = view.clone(alloc_ptr);
+    to_ref(destination) = output.move();
     return destination;
 }
 

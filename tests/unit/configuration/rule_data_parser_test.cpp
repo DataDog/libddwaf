@@ -11,6 +11,7 @@
 #include "configuration/data_parser.hpp"
 
 using namespace ddwaf;
+using namespace ddwaf::test;
 
 namespace {
 

@@ -188,11 +188,15 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
 
     auto [resource, param] = deserialize(bytes, size);
 
-    auto root = owned_object::make_map();
-    root.emplace("server.request.query", owned_object::make_string(param));
+    auto root = owned_object::make_map(0, ddwaf::memory::get_default_resource());
+    root.emplace("server.request.query",
+        owned_object::make_string(param, ddwaf::memory::get_default_resource()));
 
-    auto array = root.emplace("server.sys.exec.cmd", owned_object::make_array());
-    for (auto arg : resource) { array.emplace_back(owned_object::make_string(arg)); }
+    auto array = root.emplace(
+        "server.sys.exec.cmd", owned_object::make_array(0, ddwaf::memory::get_default_resource()));
+    for (auto arg : resource) {
+        array.emplace_back(owned_object::make_string(arg, ddwaf::memory::get_default_resource()));
+    }
 
     object_store store;
     store.insert(std::move(root));

@@ -9,12 +9,13 @@
 #include "condition/match_iterator.hpp"
 
 using namespace ddwaf;
+using namespace ddwaf::test;
 
 namespace {
 
 TEST(TestMatchIterator, InvalidIterator)
 {
-    owned_object object;
+    owned_object object = ddwaf::test::ddwaf_object_da::make_uninit();
 
     std::string resource = "this is the resource";
     object_set_ref exclude;

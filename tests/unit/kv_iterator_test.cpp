@@ -10,12 +10,13 @@
 #include "iterator.hpp"
 
 using namespace ddwaf;
+using namespace ddwaf::test;
 
 namespace {
 
 TEST(TestKVIterator, TestInvalidIterator)
 {
-    owned_object object;
+    owned_object object = ddwaf::test::ddwaf_object_da::make_uninit();
 
     object_set_ref exclude;
     ddwaf::kv_iterator it(object, {}, exclude);
@@ -49,7 +50,7 @@ TEST(TestKVIterator, TestStringScalar)
 
 TEST(TestKVIterator, TestUnsignedScalar)
 {
-    owned_object object{22U};
+    owned_object object = test::ddwaf_object_da::make_unsigned(22U);
 
     object_set_ref exclude;
     ddwaf::kv_iterator it(object, {}, exclude);
@@ -64,7 +65,7 @@ TEST(TestKVIterator, TestUnsignedScalar)
 
 TEST(TestKVIterator, TestSignedScalar)
 {
-    owned_object object{22L};
+    owned_object object = test::ddwaf_object_da::make_signed(22L);
 
     object_set_ref exclude;
     ddwaf::kv_iterator it(object, {}, exclude);
@@ -79,7 +80,7 @@ TEST(TestKVIterator, TestSignedScalar)
 
 TEST(TestKVIterator, TestArraySingleItem)
 {
-    auto object = object_builder::array({"string"});
+    auto object = object_builder_da::array({"string"});
 
     object_set_ref exclude;
     ddwaf::kv_iterator it(object, {}, exclude);
@@ -95,7 +96,7 @@ TEST(TestKVIterator, TestArraySingleItem)
 
 TEST(TestKVIterator, TestArrayMultipleItems)
 {
-    auto object = object_builder::array();
+    auto object = object_builder_da::array();
     for (unsigned i = 0; i < 50; i++) { object.emplace_back(std::to_string(i)); }
 
     std::unordered_set<object_cache_key> persistent;
@@ -119,10 +120,10 @@ TEST(TestKVIterator, TestArrayMultipleItems)
 
 TEST(TestKVIterator, TestArrayMultipleNullAndInvalid)
 {
-    auto object = object_builder::array();
+    auto object = object_builder_da::array();
     for (unsigned i = 0; i < 25; i++) {
         object.emplace_back(std::to_string(i));
-        object.emplace_back(owned_object{});
+        object.emplace_back(ddwaf::test::ddwaf_object_da::make_uninit());
         object.emplace_back(owned_object::make_null());
     }
 
@@ -149,11 +150,11 @@ TEST(TestKVIterator, TestArrayMultipleNullAndInvalid)
 
 TEST(TestKVIterator, TestDeepArray)
 {
-    auto object = object_builder::array();
+    auto object = object_builder_da::array();
     borrowed_object array{object};
     for (unsigned i = 0; i < 10; i++) {
         array.emplace_back("val" + std::to_string(i));
-        array = array.emplace_back(object_builder::array());
+        array = array.emplace_back(object_builder_da::array());
     }
 
     std::unordered_set<object_cache_key> persistent;
@@ -176,8 +177,8 @@ TEST(TestKVIterator, TestDeepArray)
 
 TEST(TestKVIterator, TestArrayNoScalars)
 {
-    auto object = object_builder::array();
-    for (unsigned i = 0; i < 50; i++) { object.emplace_back(object_builder::array()); }
+    auto object = object_builder_da::array();
+    for (unsigned i = 0; i < 50; i++) { object.emplace_back(object_builder_da::array()); }
 
     object_set_ref exclude;
     ddwaf::kv_iterator it(object, {}, exclude);
@@ -189,7 +190,7 @@ TEST(TestKVIterator, TestArrayNoScalars)
 
 TEST(TestKVIterator, TestMapSingleItem)
 {
-    auto object = object_builder::map({{"key", "value"}});
+    auto object = object_builder_da::map({{"key", "value"}});
 
     object_set_ref exclude;
     ddwaf::kv_iterator it(object, {}, exclude);
@@ -216,7 +217,7 @@ TEST(TestKVIterator, TestMapSingleItem)
 
 TEST(TestKVIterator, TestMapMultipleItems)
 {
-    auto object = object_builder::map();
+    auto object = object_builder_da::map();
 
     for (unsigned i = 0; i < 50; i++) {
         auto index = std::to_string(i);
@@ -253,7 +254,7 @@ TEST(TestKVIterator, TestMapMultipleItems)
 
 TEST(TestKVIterator, TestMapMultipleNullAndInvalid)
 {
-    auto object = object_builder::map();
+    auto object = object_builder_da::map();
 
     for (unsigned i = 0; i < 25; i++) {
         {
@@ -268,7 +269,7 @@ TEST(TestKVIterator, TestMapMultipleNullAndInvalid)
 
         {
             auto index = std::to_string(i * 3 + 2);
-            object.emplace("key" + index, owned_object{});
+            object.emplace("key" + index, ddwaf::test::ddwaf_object_da::make_uninit());
         }
     }
 
@@ -329,13 +330,13 @@ TEST(TestKVIterator, TestMapMultipleNullAndInvalid)
 
 TEST(TestKVIterator, TestDeepMap)
 {
-    auto object = object_builder::map();
+    auto object = object_builder_da::map();
     borrowed_object map{object};
 
     for (unsigned i = 0; i < 10; i++) {
         auto index = std::to_string(i);
         map.emplace("str" + index, "val" + index);
-        map = map.emplace("map" + index, object_builder::map());
+        map = map.emplace("map" + index, object_builder_da::map());
     }
 
     object_set_ref exclude;
@@ -389,8 +390,8 @@ TEST(TestKVIterator, TestDeepMap)
 // addesses (e.g. server.request.query).
 TEST(TestKVIterator, TestNoRootKey)
 {
-    auto object = object_builder::map();
-    object.emplace("root", object_builder::map({{"key", "value"}}));
+    auto object = object_builder_da::map();
+    object.emplace("root", object_builder_da::map({{"key", "value"}}));
 
     object_set_ref exclude;
     ddwaf::kv_iterator it(object.at(0), {}, exclude);
@@ -468,8 +469,8 @@ TEST(TestKVIterator, TestContainerMix)
 
 TEST(TestKVIterator, TestMapNoScalars)
 {
-    auto object = object_builder::map();
-    for (unsigned i = 0; i < 50; i++) { object.emplace("key", object_builder::map()); }
+    auto object = object_builder_da::map();
+    for (unsigned i = 0; i < 50; i++) { object.emplace("key", object_builder_da::map()); }
 
     object_set_ref exclude;
     ddwaf::kv_iterator it(object, {}, exclude);
@@ -489,7 +490,7 @@ TEST(TestKVIterator, TestMapNoScalars)
 
 TEST(TestKVIterator, TestInvalidObjectPath)
 {
-    owned_object object;
+    owned_object object = ddwaf::test::ddwaf_object_da::make_uninit();
 
     object_set_ref exclude;
     std::vector<std::variant<std::string, int64_t>> key_path{"key", "0", "value"};
@@ -504,7 +505,7 @@ TEST(TestKVIterator, TestInvalidObjectPath)
 
 TEST(TestKVIterator, TestSimplePath)
 {
-    owned_object object;
+    owned_object object = ddwaf::test::ddwaf_object_da::make_uninit();
 
     {
         std::vector<std::variant<std::string, int64_t>> key_path{"key"};
@@ -538,9 +539,9 @@ TEST(TestKVIterator, TestSimplePath)
 
 TEST(TestKVIterator, TestMultiPath)
 {
-    auto object = object_builder::map(
-        {{"first", object_builder::map({{"second", object_builder::map({{"third", "final"},
-                                                       {"value", "value_third"}})},
+    auto object = object_builder_da::map(
+        {{"first", object_builder_da::map({{"second", object_builder_da::map({{"third", "final"},
+                                                          {"value", "value_third"}})},
                        {"value", "value_second"}})},
             {"value", "value_first"}});
 
@@ -783,7 +784,7 @@ TEST(TestKVIterator, TestIntInPathSucceeds)
 
 TEST(TestKVIterator, TestExcludeSingleObject)
 {
-    auto object = object_builder::map({{"key", "value"}});
+    auto object = object_builder_da::map({{"key", "value"}});
 
     std::unordered_set<object_cache_key> persistent{object.at(0)};
 
@@ -795,10 +796,10 @@ TEST(TestKVIterator, TestExcludeSingleObject)
 
 TEST(TestKVIterator, TestExcludeMultipleObjects)
 {
-    auto root = object_builder::map({{"key", "value"}});
+    auto root = object_builder_da::map({{"key", "value"}});
 
     auto map =
-        root.emplace("other", object_builder::map({{"hello_key", "hello"}, {"bye_key", "bye"}}));
+        root.emplace("other", object_builder_da::map({{"hello_key", "hello"}, {"bye_key", "bye"}}));
 
     std::unordered_set<object_cache_key> persistent{root.at(0), map.at(1)};
     object_set_ref exclude{persistent};
@@ -833,8 +834,8 @@ TEST(TestKVIterator, TestExcludeMultipleObjects)
 
 TEST(TestKVIterator, TestExcludeObjectInKeyPath)
 {
-    auto root = object_builder::map();
-    auto child = root.emplace("parent", object_builder::map());
+    auto root = object_builder_da::map();
+    auto child = root.emplace("parent", object_builder_da::map());
     child.emplace("child", "value");
 
     std::unordered_set<object_cache_key> persistent{child.at(0)};
@@ -847,7 +848,7 @@ TEST(TestKVIterator, TestExcludeObjectInKeyPath)
 
 TEST(TestKVIterator, TestExcludeRootOfKeyPath)
 {
-    auto root = object_builder::map({{"parent", object_builder::map({{"child", "value"}})}});
+    auto root = object_builder_da::map({{"parent", object_builder_da::map({{"child", "value"}})}});
 
     std::unordered_set<object_cache_key> persistent{root.at(0)};
     object_set_ref exclude{persistent};

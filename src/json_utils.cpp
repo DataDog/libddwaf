@@ -65,7 +65,9 @@ struct string_view_stream {
 class object_reader_handler
     : public rapidjson::BaseReaderHandler<rapidjson::UTF8<>, object_reader_handler> {
 public:
-    explicit object_reader_handler(nonnull_ptr<memory::memory_resource> alloc) : alloc_(alloc)
+    explicit object_reader_handler(nonnull_ptr<memory::memory_resource> alloc)
+        : alloc_(alloc), root_(owned_object::make_uninit(alloc)),
+          key_(owned_object::make_uninit(alloc))
     {
         stack_.reserve(max_depth + 1);
     }
@@ -259,7 +261,7 @@ owned_object json_to_object(std::string_view json, nonnull_ptr<memory::memory_re
     const rapidjson::ParseResult res = reader.Parse(ss, handler);
     if (res.IsError()) {
         // Not interested in partial JSON for now
-        return {};
+        return owned_object::make_uninit(alloc);
     }
 
     return handler.finalize();

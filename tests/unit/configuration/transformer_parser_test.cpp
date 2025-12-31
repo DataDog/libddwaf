@@ -10,6 +10,7 @@
 #include "common/gtest_utils.hpp"
 
 using namespace ddwaf;
+using namespace ddwaf::test;
 
 // NOLINTBEGIN(cppcoreguidelines-macro-usage,bugprone-unchecked-optional-access)
 #define EXPECT_OPTEQ(opt, expected)                                                                \

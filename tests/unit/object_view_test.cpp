@@ -9,6 +9,7 @@
 #include "object.hpp"
 
 using namespace ddwaf;
+using namespace ddwaf::test;
 using namespace std::literals;
 
 namespace {
@@ -21,7 +22,7 @@ TEST(TestObjectView, DefaultObject)
 
 TEST(TestObjectView, InvalidObject)
 {
-    owned_object original;
+    owned_object original = ddwaf::test::ddwaf_object_da::make_uninit();
     object_view view(original);
 
     ASSERT_TRUE(view.has_value());
@@ -70,7 +71,7 @@ TEST(TestObjectView, NullObject)
 
 TEST(TestObjectView, BooleanObject)
 {
-    owned_object original{true};
+    owned_object original = test::ddwaf_object_da::make_boolean(true);
 
     object_view view(original);
 
@@ -96,7 +97,7 @@ TEST(TestObjectView, BooleanObject)
 
 TEST(TestObjectView, SignedObject)
 {
-    owned_object original{-20};
+    owned_object original = test::ddwaf_object_da::make_signed(-20);
 
     object_view view(original);
 
@@ -123,7 +124,7 @@ TEST(TestObjectView, SignedObject)
 TEST(TestObjectView, SignedObjectCompatibility)
 {
     {
-        owned_object original{-1};
+        owned_object original = test::ddwaf_object_da::make_signed(-1);
         object_view view(original);
 
         EXPECT_TRUE(view.is<int8_t>());
@@ -133,7 +134,8 @@ TEST(TestObjectView, SignedObjectCompatibility)
     }
 
     {
-        owned_object original{std::numeric_limits<int8_t>::min() - 1};
+        owned_object original =
+            test::ddwaf_object_da::make_signed(std::numeric_limits<int8_t>::min() - 1);
         object_view view(original);
 
         EXPECT_FALSE(view.is<int8_t>());
@@ -143,7 +145,8 @@ TEST(TestObjectView, SignedObjectCompatibility)
     }
 
     {
-        owned_object original{std::numeric_limits<int8_t>::max() + 1};
+        owned_object original =
+            test::ddwaf_object_da::make_signed(std::numeric_limits<int8_t>::max() + 1);
         object_view view(original);
 
         EXPECT_FALSE(view.is<int8_t>());
@@ -153,7 +156,8 @@ TEST(TestObjectView, SignedObjectCompatibility)
     }
 
     {
-        owned_object original{std::numeric_limits<int16_t>::min() - 1};
+        owned_object original =
+            test::ddwaf_object_da::make_signed(std::numeric_limits<int16_t>::min() - 1);
         object_view view(original);
 
         EXPECT_FALSE(view.is<int8_t>());
@@ -163,7 +167,8 @@ TEST(TestObjectView, SignedObjectCompatibility)
     }
 
     {
-        owned_object original{std::numeric_limits<int16_t>::max() + 1};
+        owned_object original =
+            test::ddwaf_object_da::make_signed(std::numeric_limits<int16_t>::max() + 1);
         object_view view(original);
 
         EXPECT_FALSE(view.is<int8_t>());
@@ -173,7 +178,8 @@ TEST(TestObjectView, SignedObjectCompatibility)
     }
 
     {
-        owned_object original{static_cast<int64_t>(std::numeric_limits<int32_t>::min()) - 1};
+        owned_object original = test::ddwaf_object_da::make_signed(
+            static_cast<int64_t>(std::numeric_limits<int32_t>::min()) - 1);
         object_view view(original);
 
         EXPECT_FALSE(view.is<int8_t>());
@@ -183,7 +189,8 @@ TEST(TestObjectView, SignedObjectCompatibility)
     }
 
     {
-        owned_object original{static_cast<int64_t>(std::numeric_limits<int32_t>::max()) + 1};
+        owned_object original = test::ddwaf_object_da::make_signed(
+            static_cast<int64_t>(std::numeric_limits<int32_t>::max()) + 1);
         object_view view(original);
 
         EXPECT_FALSE(view.is<int8_t>());
@@ -195,7 +202,7 @@ TEST(TestObjectView, SignedObjectCompatibility)
 
 TEST(TestObjectView, UnsignedObject)
 {
-    owned_object original{20UL};
+    owned_object original = test::ddwaf_object_da::make_unsigned(20UL);
     object_view view(original);
 
     ASSERT_TRUE(view.has_value());
@@ -221,7 +228,7 @@ TEST(TestObjectView, UnsignedObject)
 TEST(TestObjectView, UnsignedObjectCompatibility)
 {
     {
-        owned_object original{1UL};
+        owned_object original = test::ddwaf_object_da::make_unsigned(1UL);
         object_view view(original);
 
         EXPECT_TRUE(view.is<uint8_t>());
@@ -231,7 +238,8 @@ TEST(TestObjectView, UnsignedObjectCompatibility)
     }
 
     {
-        owned_object original{static_cast<uint64_t>(std::numeric_limits<uint8_t>::max() + 1)};
+        owned_object original = test::ddwaf_object_da::make_unsigned(
+            static_cast<uint64_t>(std::numeric_limits<uint8_t>::max() + 1));
         object_view view(original);
 
         EXPECT_FALSE(view.is<uint8_t>());
@@ -241,7 +249,8 @@ TEST(TestObjectView, UnsignedObjectCompatibility)
     }
 
     {
-        owned_object original{static_cast<uint64_t>(std::numeric_limits<uint16_t>::max() + 1)};
+        owned_object original = test::ddwaf_object_da::make_unsigned(
+            static_cast<uint64_t>(std::numeric_limits<uint16_t>::max() + 1));
         object_view view(original);
 
         EXPECT_FALSE(view.is<uint8_t>());
@@ -251,7 +260,8 @@ TEST(TestObjectView, UnsignedObjectCompatibility)
     }
 
     {
-        owned_object original{static_cast<uint64_t>(std::numeric_limits<uint32_t>::max()) + 1};
+        owned_object original = test::ddwaf_object_da::make_unsigned(
+            static_cast<uint64_t>(std::numeric_limits<uint32_t>::max()) + 1);
         object_view view(original);
 
         EXPECT_FALSE(view.is<uint8_t>());
@@ -262,7 +272,7 @@ TEST(TestObjectView, UnsignedObjectCompatibility)
 }
 TEST(TestObjectView, FloatObject)
 {
-    owned_object original{20.1};
+    owned_object original = test::ddwaf_object_da::make_float(20.1);
     object_view view(original);
 
     ASSERT_TRUE(view.has_value());
@@ -382,7 +392,7 @@ TEST(TestObjectView, MapObject)
 
 TEST(TestObjectView, Equality)
 {
-    owned_object root;
+    owned_object root = ddwaf::test::ddwaf_object_da::make_uninit();
     object_view view(root);
 
     {
@@ -392,7 +402,7 @@ TEST(TestObjectView, Equality)
     }
 
     {
-        owned_object other;
+        owned_object other = ddwaf::test::ddwaf_object_da::make_uninit();
         object_view view2(other);
 
         EXPECT_FALSE(view == view2);
@@ -408,7 +418,7 @@ TEST(TestObjectView, Equality)
 
 TEST(TestObjectView, Inequality)
 {
-    owned_object root;
+    owned_object root = ddwaf::test::ddwaf_object_da::make_uninit();
     object_view view(root);
 
     {
@@ -418,7 +428,7 @@ TEST(TestObjectView, Inequality)
     }
 
     {
-        owned_object other;
+        owned_object other = ddwaf::test::ddwaf_object_da::make_uninit();
         object_view view2(other);
 
         EXPECT_TRUE(view != view2);
@@ -460,7 +470,7 @@ TEST(TestObjectView, StringComparisonEdgeCases)
     EXPECT_FALSE(empty_view != "anything"sv);
 
     // Non-string object compared to string
-    owned_object boolean_obj{true};
+    owned_object boolean_obj = owned_object::make_boolean(true);
     object_view bool_view{boolean_obj};
     EXPECT_FALSE(bool_view == "true"sv);
     EXPECT_TRUE(bool_view != "true"sv);
@@ -469,14 +479,14 @@ TEST(TestObjectView, StringComparisonEdgeCases)
 TEST(TestObjectView, BooleanObjectStringConversion)
 {
     {
-        owned_object original{true};
+        owned_object original = owned_object::make_boolean(true);
         object_view view(original);
         auto converted = view.convert<std::string>();
         EXPECT_STR(converted, "true");
     }
 
     {
-        owned_object original{false};
+        owned_object original = owned_object::make_boolean(false);
         object_view view(original);
         auto converted = view.convert<std::string>();
         EXPECT_STR(converted, "false");
@@ -485,7 +495,7 @@ TEST(TestObjectView, BooleanObjectStringConversion)
 
 TEST(TestObjectView, SignedObjectStringConversion)
 {
-    owned_object original{-123456};
+    owned_object original = test::ddwaf_object_da::make_signed(-123456);
     object_view view(original);
     auto converted = view.convert<std::string>();
     EXPECT_STR(converted, "-123456");
@@ -493,7 +503,7 @@ TEST(TestObjectView, SignedObjectStringConversion)
 
 TEST(TestObjectView, UnsignedObjectStringConversion)
 {
-    owned_object original{123456UL};
+    owned_object original = test::ddwaf_object_da::make_unsigned(123456UL);
     object_view view(original);
     auto converted = view.convert<std::string>();
     EXPECT_STR(converted, "123456");
@@ -501,7 +511,7 @@ TEST(TestObjectView, UnsignedObjectStringConversion)
 
 TEST(TestObjectView, FloatObjectStringConversion)
 {
-    owned_object original{20.1};
+    owned_object original = test::ddwaf_object_da::make_float(20.1);
     object_view view(original);
     auto converted = view.convert<std::string>();
     EXPECT_STR(converted, "20.1");
@@ -540,7 +550,7 @@ TEST(TestObjectView, LiteralAndLongStringHandling)
 
 TEST(TestObjectView, AsOrDefault)
 {
-    owned_object original;
+    owned_object original = ddwaf::test::ddwaf_object_da::make_uninit();
     object_view view(original);
 
     EXPECT_EQ(view.as_or_default<std::string_view>({}), std::string_view{});
@@ -563,10 +573,12 @@ TEST(TestObjectView, AsOrDefaultReturnsActual)
 
 TEST(TestObjectView, KeyPathAccess)
 {
-    auto root = object_builder::map({
-        {"1", object_builder::map({{"1.2", 111}, {"1.3", 123}})},
-        {"2", object_builder::map({{"2.1", object_builder::map({{"2.1.1", 9}})}})},
-        {"3", object_builder::array({"3.1"})},
+    auto root = object_builder_da::map({
+        {"1", object_builder_da::map({{"1.2", test::ddwaf_object_da::make_signed(111)},
+                  {"1.3", test::ddwaf_object_da::make_signed(123)}})},
+        {"2", object_builder_da::map({{"2.1",
+                  object_builder_da::map({{"2.1.1", test::ddwaf_object_da::make_signed(9)}})}})},
+        {"3", object_builder_da::array({"3.1"})},
     });
 
     object_view view(root);
@@ -631,8 +643,8 @@ TEST(TestObjectView, KeyPathAccess)
 TEST(TestObjectView, FindKeyPathEmptyAndExcluded)
 {
     // Build a nested structure: { "a": { "b": ["x","y"] } }
-    auto root_obj = object_builder::map({
-        {"a", object_builder::map({{"b", object_builder::array({"x", "y"})}})},
+    auto root_obj = object_builder_da::map({
+        {"a", object_builder_da::map({{"b", object_builder_da::array({"x", "y"})}})},
     });
     object_view root{root_obj};
 
@@ -664,7 +676,7 @@ TEST(TestObjectView, FindKeyPathEmptyAndExcluded)
 TEST(TestObjectView, FindKeyPathVariantNegativeIndex)
 {
     {
-        auto root = object_builder::map({{"arr", object_builder::array({"x", "y", "z"})}});
+        auto root = object_builder_da::map({{"arr", object_builder_da::array({"x", "y", "z"})}});
         object_view view(root);
 
         std::vector<std::variant<std::string, int64_t>> key_path{"arr", -1};
@@ -674,7 +686,7 @@ TEST(TestObjectView, FindKeyPathVariantNegativeIndex)
     }
 
     {
-        auto root = object_builder::array({"x", "y", "z"});
+        auto root = object_builder_da::array({"x", "y", "z"});
         object_view view(root);
 
         std::vector<std::variant<std::string, int64_t>> key_path{-1};
@@ -687,7 +699,7 @@ TEST(TestObjectView, FindKeyPathVariantNegativeIndex)
 TEST(TestObjectView, FindKeyPathVariantNegativeIndexOutOfBounds)
 {
     {
-        auto root = object_builder::map({{"arr", object_builder::array({"x", "y", "z"})}});
+        auto root = object_builder_da::map({{"arr", object_builder_da::array({"x", "y", "z"})}});
         object_view view(root);
 
         std::vector<std::variant<std::string, int64_t>> key_path{"arr", -4};
@@ -696,7 +708,7 @@ TEST(TestObjectView, FindKeyPathVariantNegativeIndexOutOfBounds)
     }
 
     {
-        auto root = object_builder::array({"x", "y", "z"});
+        auto root = object_builder_da::array({"x", "y", "z"});
         object_view view(root);
 
         std::vector<std::variant<std::string, int64_t>> key_path{-4};
@@ -708,7 +720,7 @@ TEST(TestObjectView, FindKeyPathVariantNegativeIndexOutOfBounds)
 TEST(TestObjectView, FindKeyPathVariantNegativeIndexWithExclusion)
 {
     {
-        auto root = object_builder::map({{"arr", object_builder::array({"x", "y", "z"})}});
+        auto root = object_builder_da::map({{"arr", object_builder_da::array({"x", "y", "z"})}});
         object_view view(root);
 
         std::unordered_set<object_cache_key> excluded;
@@ -721,7 +733,7 @@ TEST(TestObjectView, FindKeyPathVariantNegativeIndexWithExclusion)
     }
 
     {
-        auto root = object_builder::array({"x", "y", "z"});
+        auto root = object_builder_da::array({"x", "y", "z"});
         object_view view(root);
 
         std::unordered_set<object_cache_key> excluded;
@@ -737,7 +749,7 @@ TEST(TestObjectView, FindKeyPathVariantNegativeIndexWithExclusion)
 TEST(TestObjectView, FindKeyPathVariantPositiveIndex)
 {
     {
-        auto root = object_builder::map({{"arr", object_builder::array({"x", "y", "z"})}});
+        auto root = object_builder_da::map({{"arr", object_builder_da::array({"x", "y", "z"})}});
         object_view view(root);
 
         std::vector<std::variant<std::string, int64_t>> key_path{"arr", 1};
@@ -747,7 +759,7 @@ TEST(TestObjectView, FindKeyPathVariantPositiveIndex)
     }
 
     {
-        auto root = object_builder::array({"x", "y", "z"});
+        auto root = object_builder_da::array({"x", "y", "z"});
         object_view view(root);
 
         std::vector<std::variant<std::string, int64_t>> key_path{1};
@@ -760,7 +772,7 @@ TEST(TestObjectView, FindKeyPathVariantPositiveIndex)
 TEST(TestObjectView, FindKeyPathVariantPositiveIndexOutOfBounds)
 {
     {
-        auto root = object_builder::map({{"arr", object_builder::array({"x", "y", "z"})}});
+        auto root = object_builder_da::map({{"arr", object_builder_da::array({"x", "y", "z"})}});
         object_view view(root);
 
         std::vector<std::variant<std::string, int64_t>> key_path{"arr", 3};
@@ -768,7 +780,7 @@ TEST(TestObjectView, FindKeyPathVariantPositiveIndexOutOfBounds)
         EXPECT_FALSE(child.has_value());
     }
     {
-        auto root = object_builder::array({"x", "y", "z"});
+        auto root = object_builder_da::array({"x", "y", "z"});
         object_view view(root);
 
         std::vector<std::variant<std::string, int64_t>> key_path{3};
@@ -780,7 +792,7 @@ TEST(TestObjectView, FindKeyPathVariantPositiveIndexOutOfBounds)
 TEST(TestObjectView, FindKeyPathVariantPositiveIndexWithExclusion)
 {
     {
-        auto root = object_builder::map({{"arr", object_builder::array({"x", "y", "z"})}});
+        auto root = object_builder_da::map({{"arr", object_builder_da::array({"x", "y", "z"})}});
         object_view view(root);
 
         std::unordered_set<object_cache_key> excluded;
@@ -793,7 +805,7 @@ TEST(TestObjectView, FindKeyPathVariantPositiveIndexWithExclusion)
     }
 
     {
-        auto root = object_builder::array({"x", "y", "z"});
+        auto root = object_builder_da::array({"x", "y", "z"});
         object_view view(root);
 
         std::unordered_set<object_cache_key> excluded;
@@ -808,9 +820,9 @@ TEST(TestObjectView, FindKeyPathVariantPositiveIndexWithExclusion)
 
 TEST(TestObjectView, CloneInvalid)
 {
-    owned_object input_data;
+    owned_object input_data = ddwaf::test::ddwaf_object_da::make_uninit();
     object_view input{input_data};
-    auto output = input.clone();
+    auto output = input.clone(memory::get_default_resource());
     EXPECT_TRUE(output.is_invalid());
 }
 
@@ -819,7 +831,7 @@ TEST(TestObjectView, CloneNull)
     auto input_data = owned_object::make_null();
     object_view input{input_data};
 
-    auto output = input.clone();
+    auto output = input.clone(memory::get_default_resource());
     EXPECT_EQ(output.type(), object_type::null);
 }
 
@@ -828,7 +840,7 @@ TEST(TestObjectView, CloneBool)
     auto input_data = owned_object::make_boolean(true);
     object_view input{input_data};
 
-    auto output = input.clone();
+    auto output = input.clone(memory::get_default_resource());
     EXPECT_EQ(output.type(), object_type::boolean);
     EXPECT_EQ(output.as<bool>(), true);
 }
@@ -838,7 +850,7 @@ TEST(TestObjectView, CloneSigned)
     auto input_data = owned_object::make_signed(-5);
     object_view input{input_data};
 
-    auto output = input.clone();
+    auto output = input.clone(memory::get_default_resource());
     EXPECT_EQ(output.type(), object_type::int64);
     EXPECT_EQ(output.as<int64_t>(), -5);
 }
@@ -848,7 +860,7 @@ TEST(TestObjectView, CloneUnsigned)
     auto input_data = owned_object::make_unsigned(5);
     object_view input{input_data};
 
-    auto output = input.clone();
+    auto output = input.clone(memory::get_default_resource());
     EXPECT_EQ(output.type(), object_type::uint64);
     EXPECT_EQ(output.as<uint64_t>(), 5);
 }
@@ -858,7 +870,7 @@ TEST(TestObjectView, CloneFloat)
     auto input_data = owned_object::make_float(5.1);
     object_view input{input_data};
 
-    auto output = input.clone();
+    auto output = input.clone(memory::get_default_resource());
     EXPECT_EQ(output.type(), object_type::float64);
     EXPECT_EQ(output.as<double>(), 5.1);
 }
@@ -868,7 +880,7 @@ TEST(TestObjectView, CloneString)
     auto input_data = test::ddwaf_object_da::make_string("this is a string");
     object_view input{input_data};
 
-    auto output = input.clone();
+    auto output = input.clone(memory::get_default_resource());
     EXPECT_TRUE(output.is_string());
     EXPECT_EQ(input.as<std::string_view>(), output.as<std::string_view>());
     EXPECT_EQ(input.size(), output.size());
@@ -879,7 +891,7 @@ TEST(TestObjectView, CloneEmptyArray)
     auto input_data = test::ddwaf_object_da::make_array();
     object_view input{input_data};
 
-    auto output = input.clone();
+    auto output = input.clone(memory::get_default_resource());
     EXPECT_EQ(output.type(), object_type::array);
     EXPECT_EQ(input.size(), output.size());
 }
@@ -889,7 +901,7 @@ TEST(TestObjectView, CloneEmptyMap)
     auto input_data = test::ddwaf_object_da::make_map();
     object_view input{input_data};
 
-    auto output = input.clone();
+    auto output = input.clone(memory::get_default_resource());
     EXPECT_EQ(output.type(), object_type::map);
     EXPECT_EQ(input.size(), output.size());
 }
@@ -902,7 +914,7 @@ TEST(TestObjectView, CloneArray)
     input_data.emplace_back(owned_object::make_signed(5));
     object_view input{input_data};
 
-    auto output_data = input.clone();
+    auto output_data = input.clone(memory::get_default_resource());
     object_view output{output_data};
 
     EXPECT_EQ(output.type(), object_type::array);
@@ -948,7 +960,7 @@ TEST(TestObjectView, CloneMap)
     input_data.emplace("signed", owned_object::make_signed(5));
     object_view input{input_data};
 
-    auto output_data = input.clone();
+    auto output_data = input.clone(memory::get_default_resource());
     object_view output{output_data};
 
     EXPECT_EQ(output.type(), object_type::map);

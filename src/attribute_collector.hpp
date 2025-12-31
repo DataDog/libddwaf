@@ -48,20 +48,40 @@ public:
     attribute_collector &operator=(attribute_collector &&other) noexcept = default;
     ~attribute_collector() = default;
 
-    // For types where owned_object has a single-argument constructor
-    template <typename T>
-    bool insert(std::string_view key, T &&value)
-        requires std::constructible_from<owned_object, T>
+    bool insert(std::string_view key, bool value)
     {
-        return insert(key, owned_object{std::forward<T>(value)});
+        return insert(key, owned_object::make_boolean(value, attributes_.alloc()));
     }
 
-    // For types that require an allocator
     template <typename T>
-    bool insert(std::string_view key, T &&value, nonnull_ptr<memory::memory_resource> alloc)
-        requires std::constructible_from<owned_object, T, nonnull_ptr<memory::memory_resource>>
+    bool insert(std::string_view key, T value)
+        requires std::is_integral_v<T> && std::is_signed_v<T>
     {
-        return insert(key, owned_object{std::forward<T>(value), alloc});
+        return insert(key, owned_object::make_signed(value, attributes_.alloc()));
+    }
+
+    template <typename T>
+    bool insert(std::string_view key, T value)
+        requires std::is_integral_v<T> && std::is_unsigned_v<T> && (!std::same_as<T, bool>)
+    {
+        return insert(key, owned_object::make_unsigned(value, attributes_.alloc()));
+    }
+
+    template <typename T>
+    bool insert(std::string_view key, T value)
+        requires std::is_floating_point_v<T>
+    {
+        return insert(key, owned_object::make_float(value, attributes_.alloc()));
+    }
+
+    template <typename T>
+    bool insert(std::string_view key, T &&value)
+        requires std::convertible_to<T, std::string_view> &&
+                 (!std::is_integral_v<std::remove_cvref_t<T>>) &&
+                 (!std::is_floating_point_v<std::remove_cvref_t<T>>)
+    {
+        return insert(key, owned_object::make_string(
+                               std::string_view(std::forward<T>(value)), attributes_.alloc()));
     }
 
     bool insert(std::string_view key, owned_object &&object);

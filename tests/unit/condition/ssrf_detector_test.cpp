@@ -8,6 +8,7 @@
 #include "condition/ssrf_detector.hpp"
 
 using namespace ddwaf;
+using namespace ddwaf::test;
 using namespace std::literals;
 
 namespace {
@@ -48,7 +49,7 @@ void match_path_and_input(const std::vector<std::pair<std::string, ssrf_sample>>
     }
 
     for (const auto &[path, sample] : samples) {
-        auto root = object_builder::map({{"server.io.net.url", path},
+        auto root = object_builder_da::map({{"server.io.net.url", path},
             {"server.request.query", yaml_to_object<owned_object>(sample.yaml)}});
 
         object_store store;

@@ -18,6 +18,7 @@ using ::testing::ByMove;
 using ::testing::Return;
 
 using namespace ddwaf;
+using namespace ddwaf::test;
 using namespace std::literals;
 
 namespace {
@@ -47,7 +48,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalUnconditional)
 
     owned_object output = test::ddwaf_object_da::make_string("output_string");
 
-    auto input_map = object_builder::map({{"input_address", "input_string"}});
+    auto input_map = object_builder_da::map({{"input_address", "input_string"}});
     object_store store;
     store.insert(input_map);
 
@@ -86,7 +87,7 @@ TEST(TestProcessor, MultiMappingOutputNoEvalUnconditional)
     owned_object first_output = test::ddwaf_object_da::make_string("first_output_string");
     owned_object second_output = test::ddwaf_object_da::make_string("second_output_string");
 
-    auto input_map = object_builder::map(
+    auto input_map = object_builder_da::map(
         {{"input_address", "first_input_string"}, {"input_address.second", "second_input_string"}});
 
     object_store store;
@@ -140,7 +141,8 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalTrue)
 
     owned_object output = test::ddwaf_object_da::make_string("output_string");
 
-    auto input_map = object_builder::map({{"input_address", "input_string"}, {"enabled?", true}});
+    auto input_map =
+        object_builder_da::map({{"input_address", "input_string"}, {"enabled?", true}});
 
     object_store store;
     store.insert(input_map);
@@ -184,7 +186,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalCached)
 
     owned_object output = test::ddwaf_object_da::make_string("output_string");
 
-    auto input_map = object_builder::map({{"enabled?", true}});
+    auto input_map = object_builder_da::map({{"enabled?", true}});
 
     object_store store;
     store.insert(std::move(input_map));
@@ -218,7 +220,7 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalCached)
     auto attributes = collector.get_available_attributes_and_reset();
     EXPECT_EQ(attributes.size(), 0);
 
-    input_map = object_builder::map({
+    input_map = object_builder_da::map({
         {"input_address", "input_string"},
     });
 
@@ -239,7 +241,8 @@ TEST(TestProcessor, SingleMappingOutputNoEvalConditionalFalse)
 
     owned_object output = test::ddwaf_object_da::make_string("output_string");
 
-    auto input_map = object_builder::map({{"input_address", "input_string"}, {"enabled?", false}});
+    auto input_map =
+        object_builder_da::map({{"input_address", "input_string"}, {"enabled?", false}});
 
     object_store store;
     store.insert(std::move(input_map));
@@ -277,7 +280,7 @@ TEST(TestProcessor, SingleMappingNoOutputEvalUnconditional)
 
     owned_object output = test::ddwaf_object_da::make_string("output_string");
 
-    auto input_map = object_builder::map({
+    auto input_map = object_builder_da::map({
         {"input_address", "input_string"},
     });
 
@@ -301,7 +304,7 @@ TEST(TestProcessor, SingleMappingNoOutputEvalUnconditional)
     processor_cache cache;
     timer deadline{2s};
 
-    owned_object attributes;
+    owned_object attributes = ddwaf::test::ddwaf_object_da::make_uninit();
 
     {
         auto obtained = store.get_target("output_address");
@@ -324,7 +327,8 @@ TEST(TestProcessor, SingleMappingNoOutputEvalConditionalTrue)
 
     owned_object output = test::ddwaf_object_da::make_string("output_string");
 
-    auto input_map = object_builder::map({{"input_address", "input_string"}, {"enabled?", true}});
+    auto input_map =
+        object_builder_da::map({{"input_address", "input_string"}, {"enabled?", true}});
 
     object_store store;
     store.insert(std::move(input_map));
@@ -352,7 +356,7 @@ TEST(TestProcessor, SingleMappingNoOutputEvalConditionalTrue)
 
     timer deadline{2s};
 
-    owned_object attributes;
+    owned_object attributes = ddwaf::test::ddwaf_object_da::make_uninit();
 
     EXPECT_FALSE(store.get_target("output_address").has_value());
 
@@ -372,7 +376,8 @@ TEST(TestProcessor, SingleMappingNoOutputEvalConditionalFalse)
 
     owned_object output = test::ddwaf_object_da::make_string("output_string");
 
-    auto input_map = object_builder::map({{"input_address", "input_string"}, {"enabled?", false}});
+    auto input_map =
+        object_builder_da::map({{"input_address", "input_string"}, {"enabled?", false}});
 
     object_store store;
     store.insert(std::move(input_map));
@@ -397,7 +402,7 @@ TEST(TestProcessor, SingleMappingNoOutputEvalConditionalFalse)
     processor_cache cache;
     timer deadline{2s};
 
-    owned_object attributes;
+    owned_object attributes = ddwaf::test::ddwaf_object_da::make_uninit();
 
     EXPECT_FALSE(store.get_target("output_address").has_value());
     attribute_collector collector;
@@ -413,7 +418,7 @@ TEST(TestProcessor, MultiMappingNoOutputEvalUnconditional)
     owned_object first_output = test::ddwaf_object_da::make_string("first_output_string");
     owned_object second_output = test::ddwaf_object_da::make_string("second_output_string");
 
-    auto input_map = object_builder::map(
+    auto input_map = object_builder_da::map(
         {{"input_address", "first_input_string"}, {"input_address.second", "second_input_string"}});
 
     object_store store;
@@ -442,7 +447,7 @@ TEST(TestProcessor, MultiMappingNoOutputEvalUnconditional)
 
     processor_cache cache;
     timer deadline{2s};
-    owned_object attributes;
+    owned_object attributes = ddwaf::test::ddwaf_object_da::make_uninit();
 
     EXPECT_FALSE(store.get_target("output_address").has_value());
     EXPECT_FALSE(store.get_target("output_address.second").has_value());
@@ -469,7 +474,7 @@ TEST(TestProcessor, SingleMappingOutputEvalUnconditional)
 
     owned_object output = test::ddwaf_object_da::make_string("output_string");
 
-    auto input_map = object_builder::map({
+    auto input_map = object_builder_da::map({
         {"input_address", "input_string"},
     });
 
@@ -520,7 +525,7 @@ TEST(TestProcessor, OutputAlreadyAvailableInStore)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto input_map = object_builder::map(
+    auto input_map = object_builder_da::map(
         {{"input_address", "input_string"}, {"output_address", owned_object::make_null()}});
 
     object_store store;
@@ -550,7 +555,9 @@ TEST(TestProcessor, OutputAlreadyGenerated)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto input_map = object_builder::map({
+    owned_object output = test::ddwaf_object_da::make_string("output_string");
+
+    auto input_map = object_builder_da::map({
         {"input_address", "input_string"},
     });
 
@@ -568,7 +575,9 @@ TEST(TestProcessor, OutputAlreadyGenerated)
     mock::processor proc{"id", std::make_shared<expression>(), std::move(mappings), false, true};
     EXPECT_STREQ(proc.get_id().c_str(), "id");
 
-    EXPECT_CALL(proc, eval_impl(_, _, _, _)).Times(1);
+    EXPECT_CALL(proc, eval_impl(_, _, _, _))
+        .Times(1)
+        .WillOnce(Return(ByMove(owned_object{std::move(output)})));
 
     processor_cache cache;
     timer deadline{2s};
@@ -582,7 +591,7 @@ TEST(TestProcessor, EvalAlreadyAvailableInStore)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto input_map = object_builder::map(
+    auto input_map = object_builder_da::map(
         {{"input_address", "input_string"}, {"output_address", owned_object::make_null()}});
 
     object_store store;
@@ -603,7 +612,7 @@ TEST(TestProcessor, EvalAlreadyAvailableInStore)
 
     processor_cache cache;
     timer deadline{2s};
-    owned_object attributes;
+    owned_object attributes = ddwaf::test::ddwaf_object_da::make_uninit();
 
     attribute_collector collector;
     proc.eval(store, collector, cache, alloc, deadline);
@@ -615,7 +624,7 @@ TEST(TestProcessor, OutputEvalWithoutattributesMap)
 
     owned_object output = test::ddwaf_object_da::make_string("output_string");
 
-    auto input_map = object_builder::map({
+    auto input_map = object_builder_da::map({
         {"input_address", "input_string"},
     });
 
@@ -639,7 +648,7 @@ TEST(TestProcessor, OutputEvalWithoutattributesMap)
     processor_cache cache;
     timer deadline{2s};
 
-    owned_object attributes;
+    owned_object attributes = ddwaf::test::ddwaf_object_da::make_uninit();
 
     {
         auto obtained = store.get_target("output_address");
@@ -677,7 +686,7 @@ TEST(TestProcessor, Timeout)
 
     processor_cache cache;
     timer deadline{0s};
-    owned_object attributes;
+    owned_object attributes = ddwaf::test::ddwaf_object_da::make_uninit();
 
     attribute_collector collector;
     EXPECT_THROW(proc.eval(store, collector, cache, alloc, deadline), ddwaf::timeout_exception);

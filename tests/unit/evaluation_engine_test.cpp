@@ -17,6 +17,7 @@
 #include <gmock/gmock.h>
 
 using namespace ddwaf;
+using namespace ddwaf::test;
 using namespace std::literals;
 
 namespace {
@@ -37,7 +38,7 @@ TEST(TestEvaluationEngine, MatchTimeout)
     ddwaf::timer deadline{0s};
     context ctx{rbuilder.build()};
 
-    auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
+    auto root = object_builder_da::map({{"http.client_ip", "192.168.0.1"}});
 
     ctx.insert(std::move(root));
 
@@ -61,7 +62,7 @@ TEST(TestEvaluationEngine, NoMatch)
     ddwaf::timer deadline{2s};
     context ctx{rbuilder.build()};
 
-    auto root = object_builder::map({{"http.client_ip", "192.168.0.2"}});
+    auto root = object_builder_da::map({{"http.client_ip", "192.168.0.2"}});
 
     ctx.insert(std::move(root));
 
@@ -86,7 +87,7 @@ TEST(TestEvaluationEngine, Match)
     ddwaf::timer deadline{2s};
     context ctx{rbuilder.build()};
 
-    auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
+    auto root = object_builder_da::map({{"http.client_ip", "192.168.0.1"}});
 
     ctx.insert(std::move(root));
 
@@ -127,7 +128,7 @@ TEST(TestEvaluationEngine, MatchMultipleRulesInCollectionSingleRun)
     ddwaf::timer deadline{2s};
     context ctx{rbuilder.build()};
 
-    auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
+    auto root = object_builder_da::map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
 
     ctx.insert(std::move(root));
 
@@ -191,7 +192,8 @@ TEST(TestEvaluationEngine, MatchMultipleRulesWithPrioritySingleRun)
     {
         context ctx{ruleset};
 
-        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
+        auto root =
+            object_builder_da::map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
 
         ctx.insert(std::move(root));
 
@@ -211,7 +213,8 @@ TEST(TestEvaluationEngine, MatchMultipleRulesWithPrioritySingleRun)
     {
         context ctx{ruleset};
 
-        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
+        auto root =
+            object_builder_da::map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
 
         ctx.insert(std::move(root));
 
@@ -264,7 +267,7 @@ TEST(TestEvaluationEngine, MatchMultipleRulesInCollectionDoubleRun)
     context ctx{rbuilder.build()};
 
     {
-        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder_da::map({{"http.client_ip", "192.168.0.1"}});
         ctx.insert(std::move(root));
 
         std::vector<rule_result> results;
@@ -292,7 +295,7 @@ TEST(TestEvaluationEngine, MatchMultipleRulesInCollectionDoubleRun)
     }
 
     {
-        auto root = object_builder::map({{"usr.id", "admin"}});
+        auto root = object_builder_da::map({{"usr.id", "admin"}});
         ctx.insert(std::move(root));
 
         std::vector<rule_result> results;
@@ -336,7 +339,7 @@ TEST(TestEvaluationEngine, MatchMultipleRulesWithPriorityDoubleRunPriorityLast)
     context ctx{rbuilder.build()};
 
     {
-        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder_da::map({{"http.client_ip", "192.168.0.1"}});
         ctx.insert(std::move(root));
 
         std::vector<rule_result> results;
@@ -366,7 +369,7 @@ TEST(TestEvaluationEngine, MatchMultipleRulesWithPriorityDoubleRunPriorityLast)
     {
         // An existing match in a collection will not inhibit a match in a
         // priority collection.
-        auto root = object_builder::map({{"usr.id", "admin"}});
+        auto root = object_builder_da::map({{"usr.id", "admin"}});
         ctx.insert(std::move(root));
 
         std::vector<rule_result> results;
@@ -431,7 +434,7 @@ TEST(TestEvaluationEngine, MatchMultipleRulesWithPriorityDoubleRunPriorityFirst)
     context ctx{rbuilder.build()};
 
     {
-        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder_da::map({{"http.client_ip", "192.168.0.1"}});
         ctx.insert(std::move(root));
 
         std::vector<rule_result> results;
@@ -461,7 +464,7 @@ TEST(TestEvaluationEngine, MatchMultipleRulesWithPriorityDoubleRunPriorityFirst)
     {
         // An existing match in a collection will not inhibit a match in a
         // priority collection.
-        auto root = object_builder::map({{"usr.id", "admin"}});
+        auto root = object_builder_da::map({{"usr.id", "admin"}});
         ctx.insert(std::move(root));
 
         std::vector<rule_result> results;
@@ -503,7 +506,7 @@ TEST(TestEvaluationEngine, MatchMultipleCollectionsSingleRun)
     ddwaf::timer deadline{2s};
     context ctx{rbuilder.build()};
 
-    auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
+    auto root = object_builder_da::map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
 
     ctx.insert(std::move(root));
 
@@ -548,7 +551,7 @@ TEST(TestEvaluationEngine, MatchPriorityCollectionsSingleRun)
     ddwaf::timer deadline{2s};
     context ctx{rbuilder.build()};
 
-    auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
+    auto root = object_builder_da::map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
 
     ctx.insert(std::move(root));
 
@@ -591,7 +594,7 @@ TEST(TestEvaluationEngine, MatchMultipleCollectionsDoubleRun)
     context ctx{rbuilder.build()};
 
     {
-        auto root = object_builder::map({{"usr.id", "admin"}});
+        auto root = object_builder_da::map({{"usr.id", "admin"}});
         ctx.insert(std::move(root));
 
         std::vector<rule_result> results;
@@ -600,7 +603,7 @@ TEST(TestEvaluationEngine, MatchMultipleCollectionsDoubleRun)
     }
 
     {
-        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder_da::map({{"http.client_ip", "192.168.0.1"}});
         ctx.insert(std::move(root));
 
         std::vector<rule_result> results;
@@ -646,7 +649,7 @@ TEST(TestEvaluationEngine, MatchMultiplePriorityCollectionsDoubleRun)
     context ctx{rbuilder.build()};
 
     {
-        auto root = object_builder::map({{"usr.id", "admin"}});
+        auto root = object_builder_da::map({{"usr.id", "admin"}});
         ctx.insert(std::move(root));
 
         std::vector<rule_result> results;
@@ -655,7 +658,7 @@ TEST(TestEvaluationEngine, MatchMultiplePriorityCollectionsDoubleRun)
     }
 
     {
-        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder_da::map({{"http.client_ip", "192.168.0.1"}});
         ctx.insert(std::move(root));
 
         std::vector<rule_result> results;
@@ -698,7 +701,7 @@ TEST(TestEvaluationEngine, RuleFilterWithCondition)
     ddwaf::timer deadline{2s};
     context ctx{rbuilder.build()};
 
-    auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
+    auto root = object_builder_da::map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
 
     ctx.insert(std::move(root));
 
@@ -745,8 +748,8 @@ TEST(TestEvaluationEngine, RuleFilterWithSubcontextConditionMatch)
     context ctx{rbuilder.build()};
 
     {
-        auto persistent = object_builder::map({{"usr.id", "admin"}});
-        auto ephemeral = object_builder::map({{"http.client_ip", "192.168.0.1"}});
+        auto persistent = object_builder_da::map({{"usr.id", "admin"}});
+        auto ephemeral = object_builder_da::map({{"http.client_ip", "192.168.0.1"}});
 
         EXPECT_TRUE(ctx.insert(std::move(persistent)));
 
@@ -759,7 +762,7 @@ TEST(TestEvaluationEngine, RuleFilterWithSubcontextConditionMatch)
     }
 
     {
-        auto root = object_builder::map({{"usr.id", "admin"}});
+        auto root = object_builder_da::map({{"usr.id", "admin"}});
         EXPECT_TRUE(ctx.insert(std::move(root)));
         timer deadline{std::chrono::microseconds(LONG_TIME)};
         auto [code, res] = ctx.eval(deadline);
@@ -814,8 +817,8 @@ TEST(TestEvaluationEngine, OverlappingRuleFiltersSubcontextBypassPersistentMonit
     context ctx{rbuilder.build()};
 
     {
-        auto persistent = object_builder::map({{"usr.id", "admin"}, {"http.route", "unrouted"}});
-        auto ephemeral = object_builder::map({{"http.client_ip", "192.168.0.1"}});
+        auto persistent = object_builder_da::map({{"usr.id", "admin"}, {"http.route", "unrouted"}});
+        auto ephemeral = object_builder_da::map({{"http.client_ip", "192.168.0.1"}});
 
         EXPECT_TRUE(ctx.insert(std::move(persistent)));
 
@@ -828,7 +831,7 @@ TEST(TestEvaluationEngine, OverlappingRuleFiltersSubcontextBypassPersistentMonit
     }
 
     {
-        auto root = object_builder::map({{"usr.id", "admin"}});
+        auto root = object_builder_da::map({{"usr.id", "admin"}});
         EXPECT_TRUE(ctx.insert(std::move(root)));
 
         timer deadline{std::chrono::microseconds(LONG_TIME)};
@@ -886,8 +889,8 @@ TEST(TestEvaluationEngine, OverlappingRuleFiltersSubcontextMonitorPersistentBypa
     context ctx{rbuilder.build()};
 
     {
-        auto persistent = object_builder::map({{"usr.id", "admin"}, {"http.route", "unrouted"}});
-        auto ephemeral = object_builder::map({{"http.client_ip", "192.168.0.1"}});
+        auto persistent = object_builder_da::map({{"usr.id", "admin"}, {"http.route", "unrouted"}});
+        auto ephemeral = object_builder_da::map({{"http.client_ip", "192.168.0.1"}});
 
         EXPECT_TRUE(ctx.insert(std::move(persistent)));
 
@@ -900,7 +903,7 @@ TEST(TestEvaluationEngine, OverlappingRuleFiltersSubcontextMonitorPersistentBypa
     }
 
     {
-        auto root = object_builder::map({{"usr.id", "admin"}});
+        auto root = object_builder_da::map({{"usr.id", "admin"}});
         EXPECT_TRUE(ctx.insert(std::move(root)));
 
         timer deadline{std::chrono::microseconds(LONG_TIME)};
@@ -943,7 +946,7 @@ TEST(TestEvaluationEngine, RuleFilterTimeout)
     ddwaf::timer deadline{0s};
     context ctx{rbuilder.build()};
 
-    auto root = object_builder::map({{"usr.id", "admin"}, {"http.client_ip", "192.168.0.1"}});
+    auto root = object_builder_da::map({{"usr.id", "admin"}, {"http.client_ip", "192.168.0.1"}});
 
     ctx.insert(std::move(root));
 
@@ -984,7 +987,7 @@ TEST(TestEvaluationEngine, NoRuleFilterWithCondition)
     ddwaf::timer deadline{2s};
     context ctx{rbuilder.build()};
 
-    auto root = object_builder::map({{"usr.id", "admin"}, {"http.client_ip", "192.168.0.2"}});
+    auto root = object_builder_da::map({{"usr.id", "admin"}, {"http.client_ip", "192.168.0.2"}});
 
     ctx.insert(std::move(root));
 
@@ -1217,7 +1220,7 @@ TEST(TestEvaluationEngine, MultipleRuleFiltersNonOverlappingRulesWithConditions)
     context ctx{rbuilder.build()};
 
     {
-        auto root = object_builder::map({{"usr.id", "admin"}});
+        auto root = object_builder_da::map({{"usr.id", "admin"}});
         ctx.insert(std::move(root));
 
         auto rules_to_exclude = ctx.eval_filters(deadline);
@@ -1230,7 +1233,7 @@ TEST(TestEvaluationEngine, MultipleRuleFiltersNonOverlappingRulesWithConditions)
     }
 
     {
-        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder_da::map({{"http.client_ip", "192.168.0.1"}});
         ctx.insert(std::move(root));
 
         auto rules_to_exclude = ctx.eval_filters(deadline);
@@ -1294,7 +1297,7 @@ TEST(TestEvaluationEngine, MultipleRuleFiltersOverlappingRulesWithConditions)
     context ctx{rbuilder.build()};
 
     {
-        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder_da::map({{"http.client_ip", "192.168.0.1"}});
         ctx.insert(std::move(root));
 
         auto rules_to_exclude = ctx.eval_filters(deadline);
@@ -1309,7 +1312,7 @@ TEST(TestEvaluationEngine, MultipleRuleFiltersOverlappingRulesWithConditions)
     }
 
     {
-        auto root = object_builder::map({{"usr.id", "admin"}});
+        auto root = object_builder_da::map({{"usr.id", "admin"}});
         ctx.insert(std::move(root));
 
         auto rules_to_exclude = ctx.eval_filters(deadline);
@@ -1350,7 +1353,7 @@ TEST(TestEvaluationEngine, InputFilterExclude)
     ddwaf::timer deadline{2s};
     context ctx{rbuilder.build()};
 
-    auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
+    auto root = object_builder_da::map({{"http.client_ip", "192.168.0.1"}});
 
     ctx.insert(std::move(root));
 
@@ -1386,7 +1389,7 @@ TEST(TestEvaluationEngine, InputFilterExcludeSubcontext)
     context ctx{rbuilder.build()};
 
     {
-        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder_da::map({{"http.client_ip", "192.168.0.1"}});
 
         auto sctx = ctx.create_subcontext();
 
@@ -1397,7 +1400,7 @@ TEST(TestEvaluationEngine, InputFilterExcludeSubcontext)
     }
 
     {
-        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder_da::map({{"http.client_ip", "192.168.0.1"}});
 
         auto sctx = ctx.create_subcontext();
 
@@ -1408,7 +1411,7 @@ TEST(TestEvaluationEngine, InputFilterExcludeSubcontext)
     }
 
     {
-        auto root = object_builder::map({{"http.peer_ip", "192.168.0.1"}});
+        auto root = object_builder_da::map({{"http.peer_ip", "192.168.0.1"}});
 
         auto sctx = ctx.create_subcontext();
 
@@ -1443,7 +1446,7 @@ TEST(TestEvaluationEngine, InputFilterExcludeRule)
     ddwaf::timer deadline{2s};
     context ctx{rbuilder.build()};
 
-    auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
+    auto root = object_builder_da::map({{"http.client_ip", "192.168.0.1"}});
 
     ctx.insert(std::move(root));
 
@@ -1486,7 +1489,7 @@ TEST(TestEvaluationEngine, InputFilterExcludeRuleSubcontext)
     ddwaf::timer deadline{2s};
     context ctx{rbuilder.build()};
 
-    auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
+    auto root = object_builder_da::map({{"http.client_ip", "192.168.0.1"}});
 
     auto sctx = ctx.create_subcontext();
 
@@ -1524,7 +1527,7 @@ TEST(TestEvaluationEngine, InputFilterMonitorRuleSubcontext)
     ddwaf::timer deadline{2s};
     context ctx{rbuilder.build()};
 
-    auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
+    auto root = object_builder_da::map({{"http.client_ip", "192.168.0.1"}});
 
     auto sctx = ctx.create_subcontext();
 
@@ -1563,14 +1566,14 @@ TEST(TestEvaluationEngine, InputFilterExcluderRuleSubcontextAndPersistent)
     context ctx{rbuilder.build()};
 
     {
-        auto root = object_builder::map({{"usr.id", "admin"}});
+        auto root = object_builder_da::map({{"usr.id", "admin"}});
         ctx.insert(std::move(root));
     }
 
     auto sctx = ctx.create_subcontext();
 
     {
-        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder_da::map({{"http.client_ip", "192.168.0.1"}});
         sctx.insert(std::move(root));
     }
 
@@ -1607,14 +1610,14 @@ TEST(TestEvaluationEngine, InputFilterMonitorRuleSubcontextAndPersistent)
     context ctx{rbuilder.build()};
 
     {
-        auto root = object_builder::map({{"usr.id", "admin"}});
+        auto root = object_builder_da::map({{"usr.id", "admin"}});
         ctx.insert(std::move(root));
     }
 
     auto sctx = ctx.create_subcontext();
 
     {
-        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder_da::map({{"http.client_ip", "192.168.0.1"}});
         sctx.insert(std::move(root));
     }
 
@@ -1663,7 +1666,7 @@ TEST(TestEvaluationEngine, InputFilterWithCondition)
         ddwaf::timer deadline{2s};
         context ctx{rbuilder.build()};
 
-        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder_da::map({{"http.client_ip", "192.168.0.1"}});
 
         ctx.insert(std::move(root));
 
@@ -1679,7 +1682,8 @@ TEST(TestEvaluationEngine, InputFilterWithCondition)
         ddwaf::timer deadline{2s};
         context ctx{rbuilder.build()};
 
-        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admino"}});
+        auto root =
+            object_builder_da::map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admino"}});
 
         ctx.insert(std::move(root));
 
@@ -1695,7 +1699,8 @@ TEST(TestEvaluationEngine, InputFilterWithCondition)
         ddwaf::timer deadline{2s};
         context ctx{rbuilder.build()};
 
-        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
+        auto root =
+            object_builder_da::map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
 
         ctx.insert(std::move(root));
 
@@ -1743,8 +1748,8 @@ TEST(TestEvaluationEngine, InputFilterWithSubcontextCondition)
     context ctx{rbuilder.build()};
 
     {
-        auto persistent = object_builder::map({{"http.client_ip", "192.168.0.1"}});
-        auto ephemeral = object_builder::map({{"usr.id", "admin"}});
+        auto persistent = object_builder_da::map({{"http.client_ip", "192.168.0.1"}});
+        auto ephemeral = object_builder_da::map({{"usr.id", "admin"}});
 
         EXPECT_TRUE(ctx.insert(std::move(persistent)));
 
@@ -1757,7 +1762,7 @@ TEST(TestEvaluationEngine, InputFilterWithSubcontextCondition)
     }
 
     {
-        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder_da::map({{"http.client_ip", "192.168.0.1"}});
         EXPECT_TRUE(ctx.insert(std::move(root)));
         timer deadline{std::chrono::microseconds(LONG_TIME)};
         auto [code, res] = ctx.eval(deadline);
@@ -1811,7 +1816,7 @@ TEST(TestEvaluationEngine, InputFilterMultipleRules)
         ddwaf::timer deadline{2s};
         context ctx{rbuilder.build()};
 
-        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder_da::map({{"http.client_ip", "192.168.0.1"}});
         ctx.insert(std::move(root));
 
         auto objects_to_exclude = ctx.eval_filters(deadline);
@@ -1830,7 +1835,8 @@ TEST(TestEvaluationEngine, InputFilterMultipleRules)
         ddwaf::timer deadline{2s};
         context ctx{rbuilder.build()};
 
-        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admino"}});
+        auto root =
+            object_builder_da::map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admino"}});
         ctx.insert(std::move(root));
 
         auto objects_to_exclude = ctx.eval_filters(deadline);
@@ -1849,7 +1855,8 @@ TEST(TestEvaluationEngine, InputFilterMultipleRules)
         ddwaf::timer deadline{2s};
         context ctx{rbuilder.build()};
 
-        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
+        auto root =
+            object_builder_da::map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
         ctx.insert(std::move(root));
 
         auto objects_to_exclude = ctx.eval_filters(deadline);
@@ -1917,7 +1924,7 @@ TEST(TestEvaluationEngine, InputFilterMultipleRulesMultipleFilters)
         ddwaf::timer deadline{2s};
         context ctx{rbuilder.build()};
 
-        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder_da::map({{"http.client_ip", "192.168.0.1"}});
         ctx.insert(std::move(root));
 
         auto objects_to_exclude = ctx.eval_filters(deadline);
@@ -1937,7 +1944,8 @@ TEST(TestEvaluationEngine, InputFilterMultipleRulesMultipleFilters)
         ddwaf::timer deadline{2s};
         context ctx{rbuilder.build()};
 
-        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admino"}});
+        auto root =
+            object_builder_da::map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admino"}});
         ctx.insert(std::move(root));
 
         auto objects_to_exclude = ctx.eval_filters(deadline);
@@ -1957,7 +1965,8 @@ TEST(TestEvaluationEngine, InputFilterMultipleRulesMultipleFilters)
         ddwaf::timer deadline{2s};
         context ctx{rbuilder.build()};
 
-        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
+        auto root =
+            object_builder_da::map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
         ctx.insert(std::move(root));
 
         auto objects_to_exclude = ctx.eval_filters(deadline);
@@ -2056,7 +2065,7 @@ TEST(TestEvaluationEngine, InputFilterMultipleRulesMultipleFiltersMultipleObject
         ddwaf::timer deadline{2s};
         context ctx{rbuilder.build()};
 
-        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder_da::map({{"http.client_ip", "192.168.0.1"}});
         ctx.insert(object_view{root});
 
         auto objects_to_exclude = ctx.eval_filters(deadline);
@@ -2076,7 +2085,7 @@ TEST(TestEvaluationEngine, InputFilterMultipleRulesMultipleFiltersMultipleObject
         ddwaf::timer deadline{2s};
         context ctx{rbuilder.build()};
 
-        auto root = object_builder::map({{"usr.id", "admin"}});
+        auto root = object_builder_da::map({{"usr.id", "admin"}});
         ctx.insert(object_view{root});
 
         auto objects_to_exclude = ctx.eval_filters(deadline);
@@ -2096,8 +2105,8 @@ TEST(TestEvaluationEngine, InputFilterMultipleRulesMultipleFiltersMultipleObject
         ddwaf::timer deadline{2s};
         context ctx{rbuilder.build()};
 
-        auto root = object_builder::map(
-            {{"server.request.headers", object_builder::map({{"cookie", "mycookie"}})}});
+        auto root = object_builder_da::map(
+            {{"server.request.headers", object_builder_da::map({{"cookie", "mycookie"}})}});
         ctx.insert(object_view{root});
 
         auto objects_to_exclude = ctx.eval_filters(deadline);
@@ -2117,7 +2126,8 @@ TEST(TestEvaluationEngine, InputFilterMultipleRulesMultipleFiltersMultipleObject
         ddwaf::timer deadline{2s};
         context ctx{rbuilder.build()};
 
-        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
+        auto root =
+            object_builder_da::map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
         ctx.insert(object_view{root});
 
         auto objects_to_exclude = ctx.eval_filters(deadline);
@@ -2137,8 +2147,8 @@ TEST(TestEvaluationEngine, InputFilterMultipleRulesMultipleFiltersMultipleObject
         ddwaf::timer deadline{2s};
         context ctx{rbuilder.build()};
 
-        auto root = object_builder::map(
-            {{"server.request.headers", object_builder::map({{"cookie", "mycookie"}})},
+        auto root = object_builder_da::map(
+            {{"server.request.headers", object_builder_da::map({{"cookie", "mycookie"}})},
                 {"usr.id", "admin"}});
         ctx.insert(object_view{root});
 
@@ -2159,8 +2169,8 @@ TEST(TestEvaluationEngine, InputFilterMultipleRulesMultipleFiltersMultipleObject
         ddwaf::timer deadline{2s};
         context ctx{rbuilder.build()};
 
-        auto root = object_builder::map(
-            {{"server.request.headers", object_builder::map({{"cookie", "mycookie"}})},
+        auto root = object_builder_da::map(
+            {{"server.request.headers", object_builder_da::map({{"cookie", "mycookie"}})},
                 {"usr.id", "admin"}, {"http.client_ip", "192.168.0.1"}});
         ctx.insert(object_view{root});
 

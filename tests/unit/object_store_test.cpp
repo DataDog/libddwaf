@@ -10,6 +10,7 @@
 #include "common/gtest_utils.hpp"
 
 using namespace ddwaf;
+using namespace ddwaf::test;
 
 namespace {
 
@@ -19,7 +20,7 @@ TEST(TestObjectStore, InsertInvalidObject)
     auto url = get_target_index("url");
 
     object_store store;
-    store.insert(owned_object{});
+    store.insert(ddwaf::test::ddwaf_object_da::make_uninit());
 
     EXPECT_TRUE(store.empty());
     EXPECT_FALSE(store.has_new_targets());
@@ -104,7 +105,7 @@ TEST(TestObjectStore, InsertMultipleUniqueObjects)
     object_store ctx_store;
 
     {
-        ctx_store.insert(object_builder::map({{"query", "hello"}}));
+        ctx_store.insert(object_builder_da::map({{"query", "hello"}}));
 
         EXPECT_FALSE(ctx_store.empty());
         EXPECT_TRUE(ctx_store.has_new_targets());
@@ -116,7 +117,7 @@ TEST(TestObjectStore, InsertMultipleUniqueObjects)
 
     {
         auto sctx_store = object_store::from_upstream_store(ctx_store);
-        sctx_store.insert(object_builder::map({{"url", "hello"}}));
+        sctx_store.insert(object_builder_da::map({{"url", "hello"}}));
 
         EXPECT_FALSE(sctx_store.empty());
         EXPECT_TRUE(sctx_store.has_new_targets());
@@ -127,7 +128,7 @@ TEST(TestObjectStore, InsertMultipleUniqueObjects)
     }
 
     {
-        ctx_store.insert(owned_object{});
+        ctx_store.insert(ddwaf::test::ddwaf_object_da::make_uninit());
 
         EXPECT_FALSE(ctx_store.empty());
         EXPECT_TRUE(ctx_store.has_new_targets());
@@ -188,7 +189,7 @@ TEST(TestObjectStore, InsertMultipleUniqueObjectBatches)
     {
         defer cleanup{[&]() { store.clear_last_batch(); }};
 
-        owned_object third;
+        owned_object third = ddwaf::test::ddwaf_object_da::make_uninit();
         store.insert(std::move(third));
         EXPECT_FALSE(store.empty());
         EXPECT_FALSE(store.has_new_targets());
