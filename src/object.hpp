@@ -391,8 +391,7 @@ public:
     // Convert the underlying type to the requested type
     template <typename T> T convert() const;
 
-    [[nodiscard]] owned_object clone(
-        nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource()) const;
+    [[nodiscard]] owned_object clone(nonnull_ptr<memory::memory_resource> alloc) const;
 
 private:
     readable_object() = default;
@@ -790,20 +789,6 @@ private:
 class borrowed_object final : public readable_object<borrowed_object>,
                               public writable_object<borrowed_object> {
 public:
-    explicit borrowed_object(detail::object *obj,
-        nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
-        : obj_(obj), alloc_(alloc)
-    {
-        if (obj_ == nullptr) {
-            throw std::invalid_argument("invalid borrowed object (null)");
-        }
-    }
-
-    explicit borrowed_object(detail::object &obj,
-        nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
-        : obj_(&obj), alloc_(alloc)
-    {}
-
     explicit borrowed_object(owned_object &obj);
     borrowed_object &operator=(owned_object &&obj);
 
@@ -813,67 +798,40 @@ public:
     [[nodiscard]] const detail::object *ptr() const noexcept { return obj_; }
     [[nodiscard]] nonnull_ptr<memory::memory_resource> alloc() const noexcept { return alloc_; }
 
+    // UNSAFE: Caller must ensure the object's memory is compatible with the allocator
+    static borrowed_object create_unchecked(
+        detail::object *obj, nonnull_ptr<memory::memory_resource> alloc)
+    {
+        if (obj == nullptr) {
+            throw std::invalid_argument("invalid borrowed object (null)");
+        }
+        return borrowed_object{obj, alloc};
+    }
+
+    // UNSAFE: Caller must ensure the object's memory is compatible with the allocator
+    static borrowed_object create_unchecked(
+        detail::object &obj, nonnull_ptr<memory::memory_resource> alloc)
+    {
+        return borrowed_object{&obj, alloc};
+    }
+
 protected:
     detail::object *obj_;
-    nonnull_ptr<memory::memory_resource> alloc_{memory::get_default_resource()};
+    nonnull_ptr<memory::memory_resource> alloc_;
 
     friend class owned_object;
     friend class object_view;
+
+private:
+    explicit borrowed_object(detail::object *obj, nonnull_ptr<memory::memory_resource> alloc)
+        : obj_(obj), alloc_(alloc)
+    {}
 };
 
 // NOLINTNEXTLINE(fuchsia-multiple-inheritance)
 class owned_object final : public readable_object<owned_object>,
                            public writable_object<owned_object> {
 public:
-    owned_object() = default;
-    explicit owned_object(detail::object obj,
-        nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
-        : obj_(obj), alloc_(alloc)
-    {}
-
-    explicit owned_object(bool value) { *this = make_boolean(value); }
-
-    template <typename T>
-    explicit owned_object(T value)
-        requires std::is_integral_v<T> && std::is_signed_v<T>
-    {
-        *this = make_signed(value);
-    }
-
-    template <typename T>
-    explicit owned_object(T value)
-        requires(!std::is_same_v<T, bool>) && std::is_unsigned_v<T>
-    {
-        *this = make_unsigned(value);
-    }
-
-    template <typename T>
-    explicit owned_object(T value)
-        requires std::is_floating_point_v<T>
-    {
-        *this = make_float(value);
-    }
-
-    explicit owned_object(const char *value,
-        nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
-    {
-        *this = make_string(std::string_view{value}, alloc);
-    }
-
-    template <typename T>
-    explicit owned_object(
-        const T &value, nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
-        requires is_type_in_set_v<T, std::string, std::string_view, dynamic_string>
-    {
-        *this = make_string(std::string_view{value}, alloc);
-    }
-
-    explicit owned_object(const char *data, std::size_t size,
-        nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
-    {
-        *this = make_string(data, size, alloc);
-    }
-
     ~owned_object() { detail::object_destroy(obj_, alloc_); }
 
     owned_object(const owned_object &) = delete;
@@ -881,7 +839,7 @@ public:
 
     owned_object(owned_object &&other) noexcept : obj_(other.obj_), alloc_(other.alloc_)
     {
-        other.obj_ = detail::object{};
+        other.obj_ = detail::object{.type = object_type::invalid};
     }
 
     owned_object &operator=(owned_object &&other) noexcept
@@ -890,7 +848,7 @@ public:
 
         obj_ = other.obj_;
         alloc_ = other.alloc_;
-        other.obj_ = detail::object{};
+        other.obj_ = detail::object{.type = object_type::invalid};
         return *this;
     }
 
@@ -900,61 +858,91 @@ public:
     [[nodiscard]] const detail::object *ptr() const noexcept { return &obj_; }
     [[nodiscard]] nonnull_ptr<memory::memory_resource> alloc() const noexcept { return alloc_; }
 
-    static owned_object make_null() { return owned_object{{.type = object_type::null}}; }
-
-    static owned_object make_boolean(bool value)
+    static owned_object make_invalid()
     {
-        return owned_object{{.via{.b8{.type = object_type::boolean, .val = value}}}};
+        return create_unchecked(
+            {.type = object_type::invalid}, memory::get_default_null_resource());
     }
 
-    static owned_object make_signed(int64_t value)
+    // variant of make_invalid() for subsequent assignment
+    static owned_object make_uninit(nonnull_ptr<memory::memory_resource> alloc)
     {
-        return owned_object{{.via{.i64{.type = object_type::int64, .val = value}}}};
+        return create_unchecked({.type = object_type::invalid}, alloc);
     }
 
-    static owned_object make_unsigned(uint64_t value)
+    // the variants that don't take a memory resource can't be written to
+    // (have their value replaced)
+
+    static owned_object make_null(
+        nonnull_ptr<memory::memory_resource> alloc = memory::get_default_null_resource())
     {
-        return owned_object{{.via{.u64{.type = object_type::uint64, .val = value}}}};
+        return create_unchecked({.type = object_type::null}, alloc);
     }
 
-    static owned_object make_float(double value)
+    static owned_object make_boolean(bool value,
+        nonnull_ptr<memory::memory_resource> alloc = memory::get_default_null_resource())
     {
-        return owned_object{{.via{.f64{.type = object_type::float64, .val = value}}}};
+        return create_unchecked({.via{.b8{.type = object_type::boolean, .val = value}}}, alloc);
     }
 
-    static owned_object make_string_literal(const char *str, std::uint32_t len)
+    static owned_object make_signed(int64_t value,
+        nonnull_ptr<memory::memory_resource> alloc = memory::get_default_null_resource())
     {
-        return owned_object{{.via{.str{.type = object_type::literal_string,
-            .size = static_cast<uint32_t>(len),
-            // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
-            .ptr = const_cast<char *>(str)}}}};
+        return create_unchecked({.via{.i64{.type = object_type::int64, .val = value}}}, alloc);
     }
 
-    static owned_object make_string_nocopy(const char *str, std::uint32_t len,
-        nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
+    static owned_object make_unsigned(uint64_t value,
+        nonnull_ptr<memory::memory_resource> alloc = memory::get_default_null_resource())
     {
-        return owned_object{{.via{.str{.type = object_type::string,
-                                .size = len,
-                                // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
-                                .ptr = const_cast<char *>(str)}}},
-            alloc};
+        return create_unchecked({.via{.u64{.type = object_type::uint64, .val = value}}}, alloc);
     }
 
-    template <typename T>
-    static owned_object make_string_nocopy(
-        T str, nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
-        requires std::is_same_v<T, std::string_view> || std::is_same_v<T, object_view>
+    static owned_object make_float(double value,
+        nonnull_ptr<memory::memory_resource> alloc = memory::get_default_null_resource())
     {
-        return make_string_nocopy(str.data(), str.size(), alloc);
+        return create_unchecked({.via{.f64{.type = object_type::float64, .val = value}}}, alloc);
     }
 
-    static owned_object make_string(const char *str, std::uint32_t len,
-        nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
+    // Unsafe insofar as the string is not copied - the caller must ensure
+    // the string memory remains valid for the lifetime of the object
+    static owned_object make_string_literal(const char *str, std::uint32_t len,
+        nonnull_ptr<memory::memory_resource> alloc = memory::get_default_null_resource())
+    {
+        return create_unchecked({.via{.str{.type = object_type::literal_string,
+                                    .size = static_cast<uint32_t>(len),
+                                    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
+                                    .ptr = const_cast<char *>(str)}}},
+            alloc);
+    }
+
+    // UNSAFE: Does not copy the string - caller must ensure the string memory
+    // can be deallocated by alloc
+    static owned_object unsafe_make_string_nocopy(
+        const char *str, std::uint32_t len, nonnull_ptr<memory::memory_resource> alloc)
+    {
+        return create_unchecked({.via{.str{.type = object_type::string,
+                                    .size = len,
+                                    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
+                                    .ptr = const_cast<char *>(str)}}},
+            alloc);
+    }
+
+    // UNSAFE: Does not copy the string - caller must ensure the string memory
+    // can be deallocated by alloc
+    static owned_object unsafe_make_string_nocopy(
+        std::same_as<std::string_view> auto str, nonnull_ptr<memory::memory_resource> alloc)
+    {
+        return unsafe_make_string_nocopy(str.data(), str.size(), alloc);
+    }
+
+    static owned_object make_string(
+        const char *str, std::uint32_t len, nonnull_ptr<memory::memory_resource> alloc)
     {
         if (len <= detail::small_string_size) {
-            owned_object obj{{.via{.sstr{.type = object_type::small_string,
-                .size = static_cast<uint8_t>(len),
-                .data = {}}}}};
+            owned_object obj = create_unchecked({.via{.sstr{.type = object_type::small_string,
+                                                    .size = static_cast<uint8_t>(len),
+                                                    .data = {}}}},
+                alloc);
 
             if (str != nullptr && len > 0) {
                 memcpy(obj.obj_.via.sstr.data.data(), str, len);
@@ -963,69 +951,84 @@ public:
             return obj;
         }
 
-        return owned_object{{.via{.str{.type = object_type::string,
-                                .size = len,
-                                .ptr = detail::copy_string(str, len, *alloc)}}},
-            alloc};
+        return create_unchecked({.via{.str{.type = object_type::string,
+                                    .size = len,
+                                    .ptr = detail::copy_string(str, len, *alloc)}}},
+            alloc);
     }
 
-    static owned_object make_string(std::string_view str,
-        nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
+    static owned_object make_string(
+        std::string_view str, nonnull_ptr<memory::memory_resource> alloc)
     {
         if (str.empty()) {
-            return make_string("", 0);
+            return make_string("", 0, alloc);
         }
         return make_string(str.data(), str.size(), alloc);
     }
 
-    static owned_object make_array(uint16_t capacity = 0,
-        nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
+    static owned_object make_array(uint16_t capacity, nonnull_ptr<memory::memory_resource> alloc)
     {
         if (capacity == 0) {
-            return owned_object{
+            return create_unchecked(
                 {.via{
                     .array{.type = object_type::array, .size = 0, .capacity = 0, .ptr = nullptr}}},
-                alloc};
+                alloc);
         }
 
-        return owned_object{
+        return create_unchecked(
             {.via{.array{.type = object_type::array,
                 .size = 0,
                 .capacity = capacity,
                 .ptr = detail::alloc_helper<detail::object, uint16_t>(capacity, *alloc)}}},
-            alloc};
+            alloc);
     }
 
-    static owned_object make_map(uint16_t capacity = 0,
-        nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
+    static owned_object make_map(uint16_t capacity, nonnull_ptr<memory::memory_resource> alloc)
     {
         if (capacity == 0) {
-            return owned_object{
+            return create_unchecked(
                 {.via{.map{.type = object_type::map, .size = 0, .capacity = 0, .ptr = nullptr}}},
-                alloc};
+                alloc);
         }
 
-        return owned_object{
+        return create_unchecked(
             {.via{.map{.type = object_type::map,
                 .size = 0,
                 .capacity = capacity,
                 .ptr = detail::alloc_helper<detail::object_kv, uint16_t>(capacity, *alloc)}}},
-            alloc};
+            alloc);
     }
 
     detail::object move()
     {
         detail::object copy = obj_;
-        obj_ = detail::object{};
+        obj_ = detail::object{.type = object_type::invalid};
         return copy;
     }
 
+    // UNSAFE: Caller must ensure the object's memory is compatible with the
+    // allocator. In particular:
+    // 1) if it needs to be deallocated, alloc must be able to do so
+    // 2) if it is a map or array that requires resizing, allow must be able to
+    //    free the current chunk and allocate a new one
+    // 3) if it contains sub-objects, the requirements apply transitively
+    static owned_object create_unchecked(
+        detail::object obj, nonnull_ptr<memory::memory_resource> alloc)
+    {
+        return owned_object{obj, alloc};
+    }
+
 protected:
-    detail::object obj_{.type = object_type::invalid};
-    nonnull_ptr<memory::memory_resource> alloc_{memory::get_default_resource()};
+    detail::object obj_;
+    nonnull_ptr<memory::memory_resource> alloc_;
 
     friend class borrowed_object;
     friend class object_view;
+
+private:
+    explicit owned_object(detail::object obj, nonnull_ptr<memory::memory_resource> alloc)
+        : obj_(obj), alloc_(alloc)
+    {}
 };
 
 inline object_view::object_view(const owned_object &ow) : obj_(&ow.obj_) {}
@@ -1092,7 +1095,7 @@ template <typename Derived>
         default:
             break;
         }
-        return {};
+        return owned_object::make_uninit(alloc);
     };
 
     std::deque<std::pair<object_view, borrowed_object>> queue;
@@ -1160,11 +1163,11 @@ template <typename Derived>
 
     if (container.type == object_type::map) {
         assert(idx < static_cast<std::size_t>(container.via.map.size));
-        return borrowed_object{&container.via.map.ptr[idx].val, alloc()};
+        return borrowed_object::create_unchecked(&container.via.map.ptr[idx].val, alloc());
     }
 
     assert(idx < static_cast<std::size_t>(container.via.array.size));
-    return borrowed_object{&container.via.array.ptr[idx], alloc()};
+    return borrowed_object::create_unchecked(&container.via.array.ptr[idx], alloc());
 }
 
 template <typename Derived>
@@ -1190,8 +1193,11 @@ borrowed_object writable_object<Derived>::emplace_back(owned_object &&value)
         container.via.array.capacity = new_capacity;
     }
 
-    borrowed_object slot{&container.via.array.ptr[container.via.array.size++], alloc()};
-    slot = std::move(value);
+    borrowed_object slot = borrowed_object::create_unchecked(
+        &container.via.array.ptr[container.via.array.size++], alloc());
+    // don't do slot = std::move(value) as that would attempt to destroy slot
+    // (but slot is uninitialized memory)
+    *slot.ptr() = value.move();
     return slot;
 }
 
@@ -1199,7 +1205,7 @@ template <typename Derived>
 // NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved)
 borrowed_object writable_object<Derived>::emplace(std::string_view key, owned_object &&value)
 {
-    return emplace(owned_object{key, alloc()}, std::move(value));
+    return emplace(owned_object::make_string(key, alloc()), std::move(value));
 }
 
 template <typename Derived>
@@ -1227,12 +1233,16 @@ borrowed_object writable_object<Derived>::emplace(owned_object &&key, owned_obje
         container.via.map.capacity = new_capacity;
     }
 
-    borrowed_object key_slot{container.via.map.ptr[container.via.map.size].key, alloc()};
-    borrowed_object val_slot{container.via.map.ptr[container.via.map.size].val, alloc()};
+    borrowed_object key_slot = borrowed_object::create_unchecked(
+        container.via.map.ptr[container.via.map.size].key, alloc());
+    borrowed_object val_slot = borrowed_object::create_unchecked(
+        container.via.map.ptr[container.via.map.size].val, alloc());
     ++container.via.map.size;
 
-    key_slot = std::move(key);
-    val_slot = std::move(value);
+    // key_slot / val_slot are uninitialized memory, so don't do
+    // key_slot = std::move(key) or val_slot = std::move(value)
+    *key_slot.ptr() = key.move();
+    *val_slot.ptr() = value.move();
 
     return val_slot;
 }
@@ -1241,10 +1251,21 @@ template <typename Derived>
 template <typename T>
 borrowed_object writable_object<Derived>::emplace_back(T &&value)
 {
-    if constexpr (is_type_in_set_v<std::decay_t<T>, std::string, std::string_view>) {
-        return emplace_back(owned_object{std::forward<T>(value), alloc()});
+    if constexpr (std::same_as<std::remove_cvref_t<T>, bool>) {
+        return emplace_back(owned_object::make_boolean(std::forward<T>(value), alloc()));
+    } else if constexpr (std::is_integral_v<std::remove_cvref_t<T>> &&
+                         std::is_signed_v<std::remove_cvref_t<T>>) {
+        return emplace_back(owned_object::make_signed(std::forward<T>(value), alloc()));
+    } else if constexpr (std::is_integral_v<std::remove_cvref_t<T>> &&
+                         std::is_unsigned_v<std::remove_cvref_t<T>>) {
+        return emplace_back(owned_object::make_unsigned(std::forward<T>(value), alloc()));
+    } else if constexpr (std::is_floating_point_v<std::remove_cvref_t<T>>) {
+        return emplace_back(owned_object::make_float(std::forward<T>(value), alloc()));
+    } else if constexpr (std::convertible_to<T, std::string_view>) {
+        return emplace_back(
+            owned_object::make_string(std::string_view(std::forward<T>(value)), alloc()));
     } else {
-        return emplace_back(owned_object{std::forward<T>(value)});
+        return emplace_back(std::forward<T>(value));
     }
 }
 
@@ -1252,10 +1273,21 @@ template <typename Derived>
 template <typename T>
 borrowed_object writable_object<Derived>::emplace(std::string_view key, T &&value)
 {
-    if constexpr (is_type_in_set_v<std::decay_t<T>, std::string, std::string_view>) {
-        return emplace(key, owned_object{std::forward<T>(value), alloc()});
+    if constexpr (std::same_as<std::remove_cvref_t<T>, bool>) {
+        return emplace(key, owned_object::make_boolean(std::forward<T>(value), alloc()));
+    } else if constexpr (std::is_integral_v<std::remove_cvref_t<T>> &&
+                         std::is_signed_v<std::remove_cvref_t<T>>) {
+        return emplace(key, owned_object::make_signed(std::forward<T>(value), alloc()));
+    } else if constexpr (std::is_integral_v<std::remove_cvref_t<T>> &&
+                         std::is_unsigned_v<std::remove_cvref_t<T>>) {
+        return emplace(key, owned_object::make_unsigned(std::forward<T>(value), alloc()));
+    } else if constexpr (std::is_floating_point_v<std::remove_cvref_t<T>>) {
+        return emplace(key, owned_object::make_float(std::forward<T>(value), alloc()));
+    } else if constexpr (std::convertible_to<T, std::string_view>) {
+        return emplace(
+            key, owned_object::make_string(std::string_view(std::forward<T>(value)), alloc()));
     } else {
-        return emplace(key, owned_object{std::forward<T>(value)});
+        return emplace(key, std::forward<T>(value));
     }
 }
 
@@ -1264,7 +1296,23 @@ inline borrowed_object::borrowed_object(owned_object &obj) : obj_(obj.ptr()), al
 // NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved)
 inline borrowed_object &borrowed_object::operator=(owned_object &&obj)
 {
-    alloc_ = obj.alloc();
+    if (this->obj_ == obj.ptr()) {
+        return *this;
+    }
+
+    const bool moved_from_req_alloc = detail::requires_allocator(obj.type());
+
+    // the borrowed_object is likely part of a larger owned_object, so we must
+    // ensure that the allocators are the same for types that require allocation
+    if (moved_from_req_alloc && !detail::alloc_equal(alloc_, obj.alloc())) {
+        throw std::runtime_error("borrowed_object assignment: incompatible allocators");
+    }
+
+    {
+        // destroy current object
+        detail::object_destroy(*obj_, alloc_);
+    }
+
     *obj_ = obj.move();
     return *this;
 }
@@ -1305,33 +1353,34 @@ using all_types = std::variant<bool, int16_t, int32_t, int64_t, uint16_t, uint32
     double, const char *, std::string_view, std::string, movable_object>;
 using key_value = std::pair<std::string_view, all_types>;
 
-inline owned_object array(std::initializer_list<all_types> list = {},
-    nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
+inline owned_object array(
+    std::initializer_list<all_types> list, nonnull_ptr<memory::memory_resource> alloc)
 {
     auto container = owned_object::make_array(static_cast<uint16_t>(list.size()), alloc);
     for (const auto &value : list) {
         if (std::holds_alternative<bool>(value)) {
-            container.emplace_back(owned_object{std::get<bool>(value)});
+            container.emplace_back(owned_object::make_boolean(std::get<bool>(value), alloc));
         } else if (std::holds_alternative<int16_t>(value)) {
-            container.emplace_back(owned_object{std::get<int16_t>(value)});
+            container.emplace_back(owned_object::make_signed(std::get<int16_t>(value), alloc));
         } else if (std::holds_alternative<uint16_t>(value)) {
-            container.emplace_back(owned_object{std::get<uint16_t>(value)});
+            container.emplace_back(owned_object::make_unsigned(std::get<uint16_t>(value), alloc));
         } else if (std::holds_alternative<int32_t>(value)) {
-            container.emplace_back(owned_object{std::get<int32_t>(value)});
+            container.emplace_back(owned_object::make_signed(std::get<int32_t>(value), alloc));
         } else if (std::holds_alternative<uint32_t>(value)) {
-            container.emplace_back(owned_object{std::get<uint32_t>(value)});
+            container.emplace_back(owned_object::make_unsigned(std::get<uint32_t>(value), alloc));
         } else if (std::holds_alternative<int64_t>(value)) {
-            container.emplace_back(owned_object{std::get<int64_t>(value)});
+            container.emplace_back(owned_object::make_signed(std::get<int64_t>(value), alloc));
         } else if (std::holds_alternative<uint64_t>(value)) {
-            container.emplace_back(owned_object{std::get<uint64_t>(value)});
+            container.emplace_back(owned_object::make_unsigned(std::get<uint64_t>(value), alloc));
         } else if (std::holds_alternative<double>(value)) {
-            container.emplace_back(owned_object{std::get<double>(value)});
+            container.emplace_back(owned_object::make_float(std::get<double>(value), alloc));
         } else if (std::holds_alternative<const char *>(value)) {
-            container.emplace_back(owned_object{std::get<const char *>(value), alloc});
+            container.emplace_back(owned_object::make_string(std::get<const char *>(value), alloc));
         } else if (std::holds_alternative<std::string_view>(value)) {
-            container.emplace_back(owned_object{std::get<std::string_view>(value), alloc});
+            container.emplace_back(
+                owned_object::make_string(std::get<std::string_view>(value), alloc));
         } else if (std::holds_alternative<std::string>(value)) {
-            container.emplace_back(owned_object{std::get<std::string>(value), alloc});
+            container.emplace_back(owned_object::make_string(std::get<std::string>(value), alloc));
         } else {
             container.emplace_back(std::move(std::get<movable_object>(value).object));
         }
@@ -1339,33 +1388,34 @@ inline owned_object array(std::initializer_list<all_types> list = {},
     return container;
 }
 
-inline owned_object map(std::initializer_list<key_value> list = {},
-    nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
+inline owned_object map(
+    std::initializer_list<key_value> list, nonnull_ptr<memory::memory_resource> alloc)
 {
     auto container = owned_object::make_map(static_cast<uint16_t>(list.size()), alloc);
     for (const auto &[key, value] : list) {
         if (std::holds_alternative<bool>(value)) {
-            container.emplace(key, owned_object{std::get<bool>(value)});
+            container.emplace(key, owned_object::make_boolean(std::get<bool>(value), alloc));
         } else if (std::holds_alternative<int16_t>(value)) {
-            container.emplace(key, owned_object{std::get<int16_t>(value)});
+            container.emplace(key, owned_object::make_signed(std::get<int16_t>(value), alloc));
         } else if (std::holds_alternative<uint16_t>(value)) {
-            container.emplace(key, owned_object{std::get<uint16_t>(value)});
+            container.emplace(key, owned_object::make_unsigned(std::get<uint16_t>(value), alloc));
         } else if (std::holds_alternative<int32_t>(value)) {
-            container.emplace(key, owned_object{std::get<int32_t>(value)});
+            container.emplace(key, owned_object::make_signed(std::get<int32_t>(value), alloc));
         } else if (std::holds_alternative<uint32_t>(value)) {
-            container.emplace(key, owned_object{std::get<uint32_t>(value)});
+            container.emplace(key, owned_object::make_unsigned(std::get<uint32_t>(value), alloc));
         } else if (std::holds_alternative<int64_t>(value)) {
-            container.emplace(key, owned_object{std::get<int64_t>(value)});
+            container.emplace(key, owned_object::make_signed(std::get<int64_t>(value), alloc));
         } else if (std::holds_alternative<uint64_t>(value)) {
-            container.emplace(key, owned_object{std::get<uint64_t>(value)});
+            container.emplace(key, owned_object::make_unsigned(std::get<uint64_t>(value), alloc));
         } else if (std::holds_alternative<double>(value)) {
-            container.emplace(key, owned_object{std::get<double>(value)});
+            container.emplace(key, owned_object::make_float(std::get<double>(value), alloc));
         } else if (std::holds_alternative<const char *>(value)) {
-            container.emplace(key, owned_object{std::get<const char *>(value), alloc});
+            container.emplace(key, owned_object::make_string(std::get<const char *>(value), alloc));
         } else if (std::holds_alternative<std::string_view>(value)) {
-            container.emplace(key, owned_object{std::get<std::string_view>(value), alloc});
+            container.emplace(
+                key, owned_object::make_string(std::get<std::string_view>(value), alloc));
         } else if (std::holds_alternative<std::string>(value)) {
-            container.emplace(key, owned_object{std::get<std::string>(value), alloc});
+            container.emplace(key, owned_object::make_string(std::get<std::string>(value), alloc));
         } else {
             container.emplace(key, std::move(std::get<movable_object>(value).object));
         }

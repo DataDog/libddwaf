@@ -12,6 +12,7 @@
 #include "common/gtest_utils.hpp"
 
 using namespace ddwaf;
+using namespace ddwaf::test;
 using namespace std::literals;
 
 namespace {
@@ -40,7 +41,8 @@ TEST(TestScalarCondition, NoMatch)
     scalar_condition cond{std::make_unique<matcher::regex_match>(".*", 0, true), {},
         {gen_variadic_param("server.request.uri.raw")}};
 
-    auto root = object_builder::map({{"server.request.uri.raw", owned_object{}}});
+    auto root = object_builder_da::map(
+        {{"server.request.uri.raw", ddwaf::test::ddwaf_object_da::make_uninit()}});
 
     object_store store;
     store.insert(std::move(root));
@@ -55,7 +57,8 @@ TEST(TestScalarCondition, Timeout)
     scalar_condition cond{std::make_unique<matcher::regex_match>(".*", 0, true), {},
         {gen_variadic_param("server.request.uri.raw")}};
 
-    auto root = object_builder::map({{"server.request.uri.raw", owned_object{}}});
+    auto root = object_builder_da::map(
+        {{"server.request.uri.raw", ddwaf::test::ddwaf_object_da::make_uninit()}});
 
     object_store store;
     store.insert(std::move(root));
@@ -70,7 +73,7 @@ TEST(TestScalarCondition, SimpleMatch)
     scalar_condition cond{std::make_unique<matcher::regex_match>(".*", 0, true), {},
         {gen_variadic_param("server.request.uri.raw")}};
 
-    auto root = object_builder::map({{"server.request.uri.raw", "hello"}});
+    auto root = object_builder_da::map({{"server.request.uri.raw", "hello"}});
 
     object_store store;
     store.insert(std::move(root));
@@ -88,7 +91,7 @@ TEST(TestScalarCondition, CachedMatch)
     ddwaf::timer deadline{2s};
     condition_cache cache;
 
-    auto root = object_builder::map({{"server.request.uri.raw", "hello"}});
+    auto root = object_builder_da::map({{"server.request.uri.raw", "hello"}});
 
     {
         object_store store;
@@ -113,8 +116,8 @@ TEST(TestScalarCondition, SimpleMatchOnKeys)
     scalar_condition cond{
         std::make_unique<matcher::regex_match>(".*", 0, true), {}, {std::move(param)}};
 
-    auto root = object_builder::map(
-        {{"server.request.uri.raw", object_builder::map({{"hello", "hello"}})}});
+    auto root = object_builder_da::map(
+        {{"server.request.uri.raw", object_builder_da::map({{"hello", "hello"}})}});
 
     object_store store;
     store.insert(std::move(root));

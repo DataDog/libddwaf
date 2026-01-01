@@ -8,6 +8,7 @@
 #include "condition/shi_detector.hpp"
 
 using namespace ddwaf;
+using namespace ddwaf::test;
 using namespace std::literals;
 
 namespace {
@@ -21,8 +22,8 @@ TEST(TestShiDetectorArray, InvalidType)
 {
     shi_detector cond{{gen_param_def("server.sys.shell.cmd", "server.request.query")}};
 
-    auto root = object_builder::map(
-        {{"server.sys.shell.cmd", object_builder::map()}, {"server.request.query", "whatever"}});
+    auto root = object_builder_da::map(
+        {{"server.sys.shell.cmd", object_builder_da::map()}, {"server.request.query", "whatever"}});
 
     object_store store;
     store.insert(std::move(root));
@@ -36,8 +37,8 @@ TEST(TestShiDetectorArray, EmptyResource)
 {
     shi_detector cond{{gen_param_def("server.sys.shell.cmd", "server.request.query")}};
 
-    auto root = object_builder::map(
-        {{"server.sys.shell.cmd", object_builder::array()}, {"server.request.query", "whatever"}});
+    auto root = object_builder_da::map({{"server.sys.shell.cmd", object_builder_da::array()},
+        {"server.request.query", "whatever"}});
 
     object_store store;
     store.insert(std::move(root));
@@ -50,9 +51,9 @@ TEST(TestShiDetectorArray, EmptyResource)
 TEST(TestShiDetectorArray, InvalidTypeWithinArray)
 {
     shi_detector cond{{gen_param_def("server.sys.shell.cmd", "server.request.query")}};
-    auto root = object_builder::map({{"server.request.query", "cat /etc/passwd"},
-        {"server.sys.shell.cmd", object_builder::array({"ls", "-l", ";", 22, object_builder::map(),
-                                     "cat /etc/passwd"})}});
+    auto root = object_builder_da::map({{"server.request.query", "cat /etc/passwd"},
+        {"server.sys.shell.cmd", object_builder_da::array({"ls", "-l", ";", 22,
+                                     object_builder_da::map(), "cat /etc/passwd"})}});
 
     object_store store;
     store.insert(std::move(root));
@@ -105,9 +106,9 @@ TEST(TestShiDetectorArray, NoMatchAndFalsePositives)
     };
 
     for (const auto &[resource, param] : samples) {
-        auto root = object_builder::map();
+        auto root = object_builder_da::map();
         root.emplace("server.request.query", param);
-        auto array = root.emplace("server.sys.shell.cmd", object_builder::array());
+        auto array = root.emplace("server.sys.shell.cmd", object_builder_da::array());
         for (const auto &arg : resource) { array.emplace_back(arg); }
 
         object_store store;
@@ -141,9 +142,9 @@ TEST(TestShiDetectorArray, ExecutablesAndRedirections)
     };
 
     for (const auto &[resource, param] : samples) {
-        auto root = object_builder::map();
+        auto root = object_builder_da::map();
         root.emplace("server.request.query", param);
-        auto array = root.emplace("server.sys.shell.cmd", object_builder::array());
+        auto array = root.emplace("server.sys.shell.cmd", object_builder_da::array());
         std::string resource_str;
         for (const auto &arg : resource) {
             array.emplace_back(arg);
@@ -193,9 +194,9 @@ TEST(TestShiDetectorArray, OverlappingInjections)
     };
 
     for (const auto &[resource, param] : samples) {
-        auto root = object_builder::map();
+        auto root = object_builder_da::map();
         root.emplace("server.request.query", param);
-        auto array = root.emplace("server.sys.shell.cmd", object_builder::array());
+        auto array = root.emplace("server.sys.shell.cmd", object_builder_da::array());
 
         std::string resource_str;
         for (const auto &arg : resource) {
@@ -232,9 +233,9 @@ TEST(TestShiDetectorArray, InjectionsWithinCommandSubstitution)
     };
 
     for (const auto &[resource, param] : samples) {
-        auto root = object_builder::map();
+        auto root = object_builder_da::map();
         root.emplace("server.request.query", param);
-        auto array = root.emplace("server.sys.shell.cmd", object_builder::array());
+        auto array = root.emplace("server.sys.shell.cmd", object_builder_da::array());
 
         std::string resource_str;
         for (const auto &arg : resource) {
@@ -275,9 +276,9 @@ TEST(TestShiDetectorArray, InjectionsWithinProcessSubstitution)
     };
 
     for (const auto &[resource, param] : samples) {
-        auto root = object_builder::map();
+        auto root = object_builder_da::map();
         root.emplace("server.request.query", param);
-        auto array = root.emplace("server.sys.shell.cmd", object_builder::array());
+        auto array = root.emplace("server.sys.shell.cmd", object_builder_da::array());
 
         std::string resource_str;
         for (const auto &arg : resource) {
@@ -324,9 +325,9 @@ TEST(TestShiDetectorArray, OffByOnePayloadsMatch)
         {{"l", "-l", "-a", ";", "l -l"}, "l -l"}};
 
     for (const auto &[resource, param] : samples) {
-        auto root = object_builder::map();
+        auto root = object_builder_da::map();
         root.emplace("server.request.query", param);
-        auto array = root.emplace("server.sys.shell.cmd", object_builder::array());
+        auto array = root.emplace("server.sys.shell.cmd", object_builder_da::array());
 
         std::string resource_str;
         for (const auto &arg : resource) {

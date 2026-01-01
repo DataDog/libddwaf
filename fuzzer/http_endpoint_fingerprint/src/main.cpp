@@ -17,7 +17,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
 {
     random_buffer buffer{bytes, size};
 
-    auto query = owned_object::make_map();
+    auto query = owned_object::make_map(0, ddwaf::memory::get_default_resource());
     auto query_size = buffer.get<uint8_t>();
     for (uint8_t i = 0; i < query_size; ++i) {
         auto key = buffer.get<std::string_view>();
@@ -25,7 +25,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
         query.emplace(key, value);
     }
 
-    auto body = owned_object::make_map();
+    auto body = owned_object::make_map(0, ddwaf::memory::get_default_resource());
     auto body_size = buffer.get<uint8_t>();
     for (uint8_t i = 0; i < body_size; ++i) {
         auto key = buffer.get<std::string_view>();
@@ -41,8 +41,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
         gen.eval_impl({.address = {}, .key_path = {}, .value = buffer.get<std::string_view>()},
             {.address = {}, .key_path = {}, .value = buffer.get<std::string_view>()},
             {{.address = {}, .key_path = {}, .value = query}},
-            {{.address = {}, .key_path = {}, .value = body}}, cache, memory::get_default_resource(),
-            deadline);
+            {{.address = {}, .key_path = {}, .value = body}}, cache,
+            ddwaf::memory::get_default_resource(), deadline);
 
     return 0;
 }

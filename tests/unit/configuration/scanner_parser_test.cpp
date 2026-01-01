@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include "common/ddwaf_object_da.hpp"
 #include "common/gtest_utils.hpp"
 #include "configuration/common/common.hpp"
 #include "configuration/common/configuration.hpp"
@@ -11,6 +12,7 @@
 #include "configuration/scanner_parser.hpp"
 
 using namespace ddwaf;
+using namespace ddwaf::test;
 
 namespace {
 
@@ -54,11 +56,11 @@ TEST(TestScannerParser, ParseKeyOnlyScanner)
     std::unordered_map<std::string, std::string> tags{{"type", "email"}, {"category", "pii"}};
     EXPECT_EQ(scnr.get_tags(), tags);
 
-    owned_object value{"dog@datadoghq.com"};
+    owned_object value = test::ddwaf_object_da::make_string("dog@datadoghq.com");
     EXPECT_TRUE(scnr.eval("email", value));
     EXPECT_FALSE(scnr.eval("mail", value));
 
-    value = owned_object::make_string("ansodinsod");
+    value = test::ddwaf_object_da::make_string("ansodinsod");
     EXPECT_TRUE(scnr.eval("email", value));
 }
 
@@ -102,11 +104,11 @@ TEST(TestScannerParser, ParseValueOnlyScanner)
     std::unordered_map<std::string, std::string> tags{{"type", "email"}, {"category", "pii"}};
     EXPECT_EQ(scnr.get_tags(), tags);
 
-    owned_object value{"dog@datadoghq.com"};
+    owned_object value = test::ddwaf_object_da::make_string("dog@datadoghq.com");
     EXPECT_TRUE(scnr.eval("email", value));
     EXPECT_TRUE(scnr.eval("mail", value));
 
-    value = owned_object::make_string("ansodinsod");
+    value = test::ddwaf_object_da::make_string("ansodinsod");
     EXPECT_FALSE(scnr.eval("email", value));
 }
 
@@ -150,11 +152,11 @@ TEST(TestScannerParser, ParseKeyValueScanner)
     std::unordered_map<std::string, std::string> tags{{"type", "email"}, {"category", "pii"}};
     EXPECT_EQ(scnr.get_tags(), tags);
 
-    owned_object value{"dog@datadoghq.com"};
+    owned_object value = test::ddwaf_object_da::make_string("dog@datadoghq.com");
     EXPECT_TRUE(scnr.eval("email", value));
     EXPECT_FALSE(scnr.eval("mail", value));
 
-    value = owned_object::make_string("ansodinsod");
+    value = test::ddwaf_object_da::make_string("ansodinsod");
     EXPECT_FALSE(scnr.eval("email", value));
 }
 

@@ -219,10 +219,9 @@ typedef void (*ddwaf_log_cb)(
  *
  * @return Handle to the WAF instance or NULL on error.
  *
- * @note If config is NULL, default values will be used, including the default
- *       free function (ddwaf_object_free).
- *
  * @note If ruleset is NULL, the diagnostics object will not be initialised.
+ *
+ * @note The deallocation of the diagnostics must be made with default allocator.
  **/
 ddwaf_handle ddwaf_init(const ddwaf_object *ruleset,  ddwaf_object *diagnostics);
 
@@ -279,6 +278,7 @@ const char *const *ddwaf_known_actions(const ddwaf_handle handle, uint32_t *size
  * Context object to perform matching using the provided WAF instance.
  *
  * @param handle Handle of the WAF instance containing the ruleset definition. (nonnull)
+ * @param output Allocator used to serve output objects created during evaluation (nonnull)
 
  * @return Handle to the context instance.
  *
@@ -304,6 +304,9 @@ ddwaf_context ddwaf_context_init(const ddwaf_handle handle, ddwaf_allocator outp
  *    relevant address associated to the value, which can be of an arbitrary
  *    type.
  *
+ * @param alloc (nullable) Allocator used to free the data provided. If NULL,
+ *              the data will not be freed.
+ *
  * @param result (nullable) Object map containing the following items:
  *               - events: an array of the generated events.
  *               - actions: a map of the generated actions in the format:
@@ -318,6 +321,9 @@ ddwaf_context ddwaf_context_init(const ddwaf_handle handle, ddwaf_allocator outp
  *               This structure must be freed by the caller and will contain all
  *               specified keys when the value returned by ddwaf_context_eval is either
  *               DDWAF_OK or DDWAF_MATCH and will be empty otherwise.
+ *               IMPORTANT: This object is not allocated with the allocator
+ *               passed in this call. It uses the allocator given to
+ *               ddwaf_context_init instead.
  * @param timeout Maximum time budget in microseconds.
  *
  * @return Return code of the operation.
@@ -380,6 +386,9 @@ ddwaf_subcontext ddwaf_subcontext_init(ddwaf_context context);
  *    {string, <value>} in which each key represents the  relevant address
  *    associated to the value, which can be of an arbitrary type.
  *
+ * @param alloc (nullable) Allocator used to free the data provided. If NULL,
+ *              the data will not be freed.
+ *
  * @param result (nullable) Object map containing the following items:
  *               - events: an array of the generated events.
  *               - actions: a map of the generated actions in the format:
@@ -394,6 +403,9 @@ ddwaf_subcontext ddwaf_subcontext_init(ddwaf_context context);
  *               This structure must be freed by the caller and will contain all
  *               specified keys when the value returned by ddwaf_subcontext_eval is either
  *               DDWAF_OK or DDWAF_MATCH and will be empty otherwise.
+ *               IMPORTANT: This object is not allocated with the allocator
+ *               passed in this call. It uses the allocator given to
+ *               ddwaf_context_init instead.
  * @param timeout Maximum time budget in microseconds.
  *
  * @return Return code of the operation.
@@ -509,7 +521,7 @@ ddwaf_handle ddwaf_builder_build_instance(ddwaf_builder builder);
  *         of those matching the filter.
  *
  * @note This function is not thread-safe and the memory of the paths object must
- *       be freed by the caller.
+ *       be freed by the caller using the default allocator.
  **/
 uint32_t ddwaf_builder_get_config_paths(ddwaf_builder builder, ddwaf_object *paths, const char *filter, uint32_t filter_len);
 

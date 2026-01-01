@@ -25,8 +25,7 @@ public:
     waf &operator=(waf &&) = default;
     ~waf() = default;
 
-    context create_context(
-        nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
+    context create_context(nonnull_ptr<memory::memory_resource> alloc)
     {
         return context(ruleset_, alloc);
     }

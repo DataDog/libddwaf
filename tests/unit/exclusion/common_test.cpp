@@ -9,6 +9,7 @@
 #include "object_store.hpp"
 
 using namespace ddwaf;
+using namespace ddwaf::test;
 using namespace std::literals;
 
 namespace {
@@ -21,7 +22,7 @@ TEST(ExclusionObjectSet, Empty)
 
 TEST(ExclusionObjectSet, NonEmpty)
 {
-    auto root = object_builder::map({{"value", "node"}});
+    auto root = object_builder_da::map({{"value", "node"}});
 
     object_set excluded{root.at(0)};
     EXPECT_FALSE(excluded.empty());
@@ -45,7 +46,7 @@ TEST(ExclusionObjectSetRef, Empty)
 
 TEST(ExclusionObjectSetRef, NonEmpty)
 {
-    auto root = object_builder::map({{"value", "node"}});
+    auto root = object_builder_da::map({{"value", "node"}});
 
     std::unordered_set<object_cache_key> persistent{root.at(0)};
     object_set_ref excluded{persistent};

@@ -10,6 +10,7 @@
 #include "common/gtest_utils.hpp"
 
 using namespace ddwaf;
+using namespace ddwaf::test;
 using namespace std::literals;
 
 using rule_tag_map = ddwaf::multi_key_map<std::string_view, core_rule *>;

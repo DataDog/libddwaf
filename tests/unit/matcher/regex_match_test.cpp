@@ -7,9 +7,11 @@
 #include "configuration/common/parser_exception.hpp"
 #include "matcher/regex_match.hpp"
 
+#include "common/ddwaf_object_da.hpp"
 #include "common/gtest_utils.hpp"
 
 using namespace ddwaf;
+using namespace ddwaf::test;
 using namespace ddwaf::matcher;
 
 namespace {
@@ -24,7 +26,7 @@ TEST(TestRegexMatch, TestBasicCaseInsensitive)
     EXPECT_STRV(matcher.to_string(), "^rEgEx$");
     EXPECT_STRV(matcher.name(), "match_regex");
 
-    owned_object param{"regex"};
+    owned_object param = test::ddwaf_object_da::make_string("regex");
 
     auto [res, highlight] = matcher.match(param);
     EXPECT_TRUE(res);
@@ -35,11 +37,11 @@ TEST(TestRegexMatch, TestBasicCaseSensitive)
 {
     regex_match matcher("^rEgEx$", 0, true);
 
-    owned_object param{"regex"};
+    owned_object param = test::ddwaf_object_da::make_string("regex");
 
     EXPECT_FALSE(matcher.match(param).first);
 
-    owned_object param2{"rEgEx"};
+    owned_object param2 = test::ddwaf_object_da::make_string("rEgEx");
 
     auto [res, highlight] = matcher.match(param2);
     EXPECT_TRUE(res);
@@ -50,8 +52,8 @@ TEST(TestRegexMatch, TestMinLength)
 {
     regex_match matcher("^rEgEx.*$", 6, true);
 
-    owned_object param{"rEgEx"};
-    owned_object param2{"rEgExe"};
+    owned_object param = test::ddwaf_object_da::make_string("rEgEx");
+    owned_object param2 = test::ddwaf_object_da::make_string("rEgExe");
 
     EXPECT_FALSE(matcher.match(param).first);
 

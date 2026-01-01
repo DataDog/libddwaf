@@ -11,6 +11,7 @@
 #include "utils.hpp"
 
 using namespace ddwaf;
+using namespace ddwaf::test;
 using namespace std::literals;
 
 TEST(TestExpression, SimpleMatch)
@@ -23,7 +24,7 @@ TEST(TestExpression, SimpleMatch)
 
     auto expr = builder.build();
 
-    auto root = object_builder::map({{"server.request.query", "value"}});
+    auto root = object_builder_da::map({{"server.request.query", "value"}});
 
     object_store store;
     store.insert(std::move(root));
@@ -54,7 +55,7 @@ TEST(TestExpression, SimpleNegatedMatch)
 
     auto expr = builder.build();
 
-    auto root = object_builder::map({{"server.request.query", "val"}});
+    auto root = object_builder_da::map({{"server.request.query", "val"}});
 
     object_store store;
     store.insert(std::move(root));
@@ -92,7 +93,7 @@ TEST(TestExpression, MultiInputMatchOnSecondEval)
     {
         defer cleanup{[&]() { store.clear_last_batch(); }};
 
-        auto root = object_builder::map({{"server.request.query", "bad"}});
+        auto root = object_builder_da::map({{"server.request.query", "bad"}});
 
         store.insert(std::move(root));
 
@@ -104,7 +105,7 @@ TEST(TestExpression, MultiInputMatchOnSecondEval)
     {
         defer cleanup{[&]() { store.clear_last_batch(); }};
 
-        auto root = object_builder::map({{"server.request.body", "value"}});
+        auto root = object_builder_da::map({{"server.request.body", "value"}});
 
         store.insert(std::move(root));
 
@@ -139,7 +140,7 @@ TEST(TestExpression, DuplicateInput)
     {
         defer cleanup{[&]() { store.clear_last_batch(); }};
 
-        auto root = object_builder::map({{"server.request.query", "bad"}});
+        auto root = object_builder_da::map({{"server.request.query", "bad"}});
 
         store.insert(std::move(root));
 
@@ -151,7 +152,7 @@ TEST(TestExpression, DuplicateInput)
     {
         defer cleanup{[&]() { store.clear_last_batch(); }};
 
-        auto root = object_builder::map({{"server.request.query", "value"}});
+        auto root = object_builder_da::map({{"server.request.query", "value"}});
 
         store.insert(std::move(root));
 
@@ -175,7 +176,7 @@ TEST(TestExpression, MatchDuplicateInputNoCache)
     {
         defer cleanup{[&]() { store.clear_last_batch(); }};
 
-        auto root = object_builder::map({{"server.request.query", "bad"}});
+        auto root = object_builder_da::map({{"server.request.query", "bad"}});
 
         store.insert(std::move(root));
 
@@ -188,7 +189,7 @@ TEST(TestExpression, MatchDuplicateInputNoCache)
     {
         defer cleanup{[&]() { store.clear_last_batch(); }};
 
-        auto root = object_builder::map({{"server.request.query", "value"}});
+        auto root = object_builder_da::map({{"server.request.query", "value"}});
 
         store.insert(std::move(root));
 
@@ -230,7 +231,7 @@ TEST(TestExpression, TwoConditionsSingleInputNoMatch)
     {
         defer cleanup{[&]() { store.clear_last_batch(); }};
 
-        auto root = object_builder::map({{"server.request.query", "bad_value"}});
+        auto root = object_builder_da::map({{"server.request.query", "bad_value"}});
 
         store.insert(std::move(root));
 
@@ -242,7 +243,7 @@ TEST(TestExpression, TwoConditionsSingleInputNoMatch)
     {
         defer cleanup{[&]() { store.clear_last_batch(); }};
 
-        auto root = object_builder::map({{"server.request.query", "value"}});
+        auto root = object_builder_da::map({{"server.request.query", "value"}});
 
         store.insert(std::move(root));
 
@@ -267,7 +268,7 @@ TEST(TestExpression, TwoConditionsSingleInputMatch)
 
     auto expr = builder.build();
 
-    auto root = object_builder::map({{"server.request.query", "value"}});
+    auto root = object_builder_da::map({{"server.request.query", "value"}});
 
     object_store store;
     store.insert(std::move(root));
@@ -296,8 +297,8 @@ TEST(TestExpression, TwoConditionsMultiInputSingleEvalMatch)
     object_store store;
     expression::cache_type cache;
 
-    auto root =
-        object_builder::map({{"server.request.query", "query"}, {"server.request.body", "body"}});
+    auto root = object_builder_da::map(
+        {{"server.request.query", "query"}, {"server.request.body", "body"}});
 
     store.insert(std::move(root));
 
@@ -327,7 +328,7 @@ TEST(TestExpression, TwoConditionsMultiInputMultiEvalMatch)
     {
         defer cleanup{[&]() { store.clear_last_batch(); }};
 
-        auto root = object_builder::map({{"server.request.query", "query"}});
+        auto root = object_builder_da::map({{"server.request.query", "query"}});
 
         store.insert(std::move(root));
 
@@ -339,7 +340,7 @@ TEST(TestExpression, TwoConditionsMultiInputMultiEvalMatch)
     {
         defer cleanup{[&]() { store.clear_last_batch(); }};
 
-        auto root = object_builder::map(
+        auto root = object_builder_da::map(
             {{"server.request.query", "red-herring"}, {"server.request.body", "body"}});
 
         store.insert(std::move(root));
@@ -359,8 +360,8 @@ TEST(TestExpression, MatchWithKeyPath)
     builder.end_condition<matcher::regex_match>(".*", 0, true);
     auto expr = builder.build();
 
-    auto root =
-        object_builder::map({{"server.request.query", object_builder::map({{"key", "value"}})}});
+    auto root = object_builder_da::map(
+        {{"server.request.query", object_builder_da::map({{"key", "value"}})}});
 
     object_store store;
     store.insert(std::move(root));
@@ -389,7 +390,7 @@ TEST(TestExpression, MatchWithTransformer)
     builder.end_condition<matcher::regex_match>("value", 0, true);
     auto expr = builder.build();
 
-    auto root = object_builder::map({{"server.request.query", "VALUE"}});
+    auto root = object_builder_da::map({{"server.request.query", "VALUE"}});
 
     object_store store;
     store.insert(std::move(root));
@@ -418,7 +419,7 @@ TEST(TestExpression, MatchWithMultipleTransformers)
     builder.end_condition<matcher::regex_match>("^ value $", 0, true);
     auto expr = builder.build();
 
-    auto root = object_builder::map({{"server.request.query", "    VALUE    "}});
+    auto root = object_builder_da::map({{"server.request.query", "    VALUE    "}});
 
     object_store store;
     store.insert(std::move(root));
@@ -446,8 +447,8 @@ TEST(TestExpression, MatchOnKeys)
     builder.end_condition<matcher::regex_match>("value", 0, true);
     auto expr = builder.build();
 
-    auto root =
-        object_builder::map({{"server.request.query", object_builder::map({{"value", "1729"}})}});
+    auto root = object_builder_da::map(
+        {{"server.request.query", object_builder_da::map({{"value", "1729"}})}});
 
     object_store store;
     store.insert(std::move(root));
@@ -476,8 +477,8 @@ TEST(TestExpression, MatchOnKeysWithTransformer)
     builder.end_condition<matcher::regex_match>("value", 0, true);
     auto expr = builder.build();
 
-    auto root =
-        object_builder::map({{"server.request.query", object_builder::map({{"VALUE", "1729"}})}});
+    auto root = object_builder_da::map(
+        {{"server.request.query", object_builder_da::map({{"VALUE", "1729"}})}});
 
     object_store store;
     store.insert(std::move(root));
@@ -506,7 +507,7 @@ TEST(TestExpression, ExcludeInput)
     builder.end_condition<matcher::regex_match>(".*", 0, true);
     auto expr = builder.build();
 
-    auto root = object_builder::map({{"server.request.query", "value"}});
+    auto root = object_builder_da::map({{"server.request.query", "value"}});
 
     object_store store;
     store.insert(std::move(root));
@@ -527,8 +528,8 @@ TEST(TestExpression, ExcludeKeyPath)
     builder.end_condition<matcher::regex_match>(".*", 0, true);
     auto expr = builder.build();
 
-    auto root =
-        object_builder::map({{"server.request.query", object_builder::map({{"key", "value"}})}});
+    auto root = object_builder_da::map(
+        {{"server.request.query", object_builder_da::map({{"key", "value"}})}});
 
     object_store store;
     store.insert(std::move(root));
