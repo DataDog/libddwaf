@@ -8,6 +8,7 @@
 #include "tokenizer/generic_sql.hpp"
 
 using namespace ddwaf;
+using namespace ddwaf::test;
 using namespace std::literals;
 
 namespace {

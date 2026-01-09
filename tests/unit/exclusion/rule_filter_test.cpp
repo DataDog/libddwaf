@@ -11,6 +11,7 @@
 #include "matcher/ip_match.hpp"
 
 using namespace ddwaf;
+using namespace ddwaf::test;
 using namespace std::literals;
 
 namespace {
@@ -31,7 +32,7 @@ TEST(TestRuleFilter, Match)
     EXPECT_EQ(addresses.size(), 1);
     EXPECT_STREQ(addresses.begin()->second.c_str(), "http.client_ip");
 
-    auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
+    auto root = object_builder_da::map({{"http.client_ip", "192.168.0.1"}});
 
     object_store store;
     store.insert(std::move(root));
@@ -63,7 +64,7 @@ TEST(TestRuleFilter, MatchWithDynamicMatcher)
     EXPECT_STREQ(addresses.begin()->second.c_str(), "http.client_ip");
 
     {
-        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder_da::map({{"http.client_ip", "192.168.0.1"}});
 
         object_store store;
         store.insert(std::move(root));
@@ -76,7 +77,7 @@ TEST(TestRuleFilter, MatchWithDynamicMatcher)
     }
 
     {
-        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder_da::map({{"http.client_ip", "192.168.0.1"}});
 
         object_store store;
         store.insert(std::move(root));
@@ -106,7 +107,7 @@ TEST(TestRuleFilter, NoMatch)
 
     ddwaf::rule_filter filter{"filter", builder.build(), {}};
 
-    auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
+    auto root = object_builder_da::map({{"http.client_ip", "192.168.0.1"}});
 
     object_store store;
     store.insert(std::move(root));
@@ -140,7 +141,7 @@ TEST(TestRuleFilter, ValidateCachedMatch)
     // only the latest address. This ensures that the IP condition can't be
     // matched on the second run.
     {
-        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder_da::map({{"http.client_ip", "192.168.0.1"}});
 
         object_store store;
         store.insert(std::move(root));
@@ -150,7 +151,7 @@ TEST(TestRuleFilter, ValidateCachedMatch)
     }
 
     {
-        auto root = object_builder::map({{"usr.id", "admin"}});
+        auto root = object_builder_da::map({{"usr.id", "admin"}});
 
         object_store store;
         store.insert(std::move(root));
@@ -191,14 +192,14 @@ TEST(TestRuleFilter, CachedMatchAndSubcontextMatch)
     {
         defer cleanup{[&]() { store.clear_last_batch(); }};
 
-        store.insert(object_builder::map({{"http.client_ip", "192.168.0.1"}}));
+        store.insert(object_builder_da::map({{"http.client_ip", "192.168.0.1"}}));
 
         ddwaf::timer deadline{2s};
         EXPECT_FALSE(filter.match(store, cache, {}, deadline));
     }
 
     {
-        auto root = object_builder::map({{"usr.id", "admin"}});
+        auto root = object_builder_da::map({{"usr.id", "admin"}});
 
         auto sctx_store = object_store::from_upstream_store(store);
         sctx_store.insert(std::move(root));
@@ -235,7 +236,7 @@ TEST(TestRuleFilter, MatchWithoutCache)
     object_store store;
     {
         ddwaf::rule_filter::cache_type cache;
-        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder_da::map({{"http.client_ip", "192.168.0.1"}});
 
         store.insert(std::move(root));
 
@@ -245,7 +246,7 @@ TEST(TestRuleFilter, MatchWithoutCache)
 
     {
         ddwaf::rule_filter::cache_type cache;
-        auto root = object_builder::map({{"usr.id", "admin"}});
+        auto root = object_builder_da::map({{"usr.id", "admin"}});
 
         store.insert(std::move(root));
 
@@ -275,7 +276,7 @@ TEST(TestRuleFilter, NoMatchWithoutCache)
     // address is passed, the filter doesn't match (as it should be).
     {
         ddwaf::rule_filter::cache_type cache;
-        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder_da::map({{"http.client_ip", "192.168.0.1"}});
 
         object_store store;
         store.insert(std::move(root));
@@ -286,7 +287,7 @@ TEST(TestRuleFilter, NoMatchWithoutCache)
 
     {
         ddwaf::rule_filter::cache_type cache;
-        auto root = object_builder::map({{"usr.id", "admin"}});
+        auto root = object_builder_da::map({{"usr.id", "admin"}});
 
         object_store store;
         store.insert(std::move(root));
@@ -319,7 +320,8 @@ TEST(TestRuleFilter, FullCachedMatchSecondRun)
     // In this test we validate that when a match has already occurred, the
     // second run for the same filter returns nothing.
     {
-        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
+        auto root =
+            object_builder_da::map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
 
         store.insert(std::move(root));
 
@@ -329,7 +331,7 @@ TEST(TestRuleFilter, FullCachedMatchSecondRun)
     }
 
     {
-        auto root = object_builder::map({{"random", "random"}});
+        auto root = object_builder_da::map({{"random", "random"}});
 
         store.insert(std::move(root));
 

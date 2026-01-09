@@ -22,7 +22,8 @@ void ruleset_info::section_info::add_failed(
                                auto &failed_array) {
         auto it = cache.find(error);
         if (it == cache.end()) {
-            auto array = diagnostics_array.emplace(error, owned_object::make_array());
+            auto array = diagnostics_array.emplace(
+                error, owned_object::make_array(diagnostics_array.alloc()));
             auto index = diagnostics_array.size() - 1;
 
             auto key = object_view{diagnostics_array}.at_key(index);

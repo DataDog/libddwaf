@@ -7,7 +7,6 @@
 #include <atomic>
 #include <cerrno>
 #include <chrono>
-
 #ifdef __linux__
 
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage)

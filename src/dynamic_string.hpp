@@ -122,8 +122,7 @@ public:
     }
 
     // This method moves the contents of the string into the resulting object
-    owned_object to_object(
-        nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource());
+    owned_object to_object(nonnull_ptr<memory::memory_resource> alloc);
 
     [[nodiscard]] size_type size() const noexcept { return size_; }
     [[nodiscard]] bool empty() const noexcept { return size_ == 0; }

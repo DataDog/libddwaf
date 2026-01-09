@@ -17,7 +17,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
 {
     random_buffer buffer{bytes, size};
 
-    auto cookies = owned_object::make_map();
+    auto cookies = owned_object::make_map(0, ddwaf::memory::get_default_resource());
     auto cookies_size = buffer.get<uint8_t>();
     for (uint8_t i = 0; i < cookies_size; ++i) {
         auto key = buffer.get<std::string_view>();
@@ -34,7 +34,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
     auto output = gen.eval_impl({{.address = {}, .key_path = {}, .value = cookies}},
         {{.address = {}, .key_path = {}, .value = buffer.get<std::string_view>()}},
         {{.address = {}, .key_path = {}, .value = buffer.get<std::string_view>()}}, cache,
-        memory::get_default_resource(), deadline);
+        ddwaf::memory::get_default_resource(), deadline);
 
     return 0;
 }

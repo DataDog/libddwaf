@@ -360,20 +360,21 @@ void result_serializer::serialize(const object_store &store, std::vector<rule_re
     // Using the interface functions would replace the key contained within the
     // object. This will not be an issue in v2.
     output.duration = owned_object::make_unsigned(deadline.elapsed().count());
-    output.timeout = owned_object{deadline.expired_before()};
-    output.keep = owned_object{final_keep};
+    output.timeout = owned_object::make_boolean(deadline.expired_before());
+    output.keep = owned_object::make_boolean(final_keep);
     output.attributes = collector.get_available_attributes_and_reset();
     serialize_actions(actions, output.actions);
 }
 
 std::pair<owned_object, result_components> result_serializer::initialise_result_object()
 {
-    auto object =
-        object_builder::map({{"events", object_builder::array({}, alloc_)},
-                                {"actions", object_builder::map({}, alloc_)},
-                                {"duration", owned_object::make_unsigned(0)}, {"timeout", false},
-                                {"attributes", object_builder::map({}, alloc_)}, {"keep", false}},
-            alloc_);
+    auto object = object_builder::map({{"events", object_builder::array({}, alloc_)},
+                                          {"actions", object_builder::map({}, alloc_)},
+                                          {"duration", owned_object::make_unsigned(0)},
+                                          {"timeout", owned_object::make_boolean(false)},
+                                          {"attributes", object_builder::map({}, alloc_)},
+                                          {"keep", owned_object::make_boolean(false)}},
+        alloc_);
 
     const result_components res{.events = object.at(0),
         .actions = object.at(1),

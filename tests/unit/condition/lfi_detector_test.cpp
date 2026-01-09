@@ -10,6 +10,7 @@
 #include "common/gtest_utils.hpp"
 
 using namespace ddwaf;
+using namespace ddwaf::test;
 using namespace std::literals;
 
 namespace {
@@ -35,7 +36,7 @@ TEST(TestLFIDetector, MatchBasicUnix)
 
     for (const auto &[path, input] : samples) {
         auto root =
-            object_builder::map({{"server.io.fs.file", path}, {"server.request.query", input}});
+            object_builder_da::map({{"server.io.fs.file", path}, {"server.request.query", input}});
 
         object_store store;
         store.insert(std::move(root));
@@ -97,7 +98,7 @@ TEST(TestLFIDetector, MatchBasicWindows)
 
     for (const auto &[path, input] : samples) {
         auto root =
-            object_builder::map({{"server.io.fs.file", path}, {"server.request.query", input}});
+            object_builder_da::map({{"server.io.fs.file", path}, {"server.request.query", input}});
 
         object_store store;
         store.insert(std::move(root));
@@ -153,13 +154,13 @@ TEST(TestLFIDetector, PartialSubcontextMatch)
     object_store ctx_store;
     {
         auto root =
-            object_builder::map({{"server.io.fs.file", "/var/www/html/../../../etc/passwd"}});
+            object_builder_da::map({{"server.io.fs.file", "/var/www/html/../../../etc/passwd"}});
         ctx_store.insert(std::move(root));
     }
 
     auto sctx_store = object_store::from_upstream_store(ctx_store);
     {
-        auto root = object_builder::map({{"server.request.query", "../../../etc/passwd"}});
+        auto root = object_builder_da::map({{"server.request.query", "../../../etc/passwd"}});
         sctx_store.insert(std::move(root));
     }
 
@@ -195,7 +196,7 @@ TEST(TestLFIDetector, NoMatchUnix)
 
     for (const auto &[path, input] : samples) {
         auto root =
-            object_builder::map({{"server.io.fs.file", path}, {"server.request.query", input}});
+            object_builder_da::map({{"server.io.fs.file", path}, {"server.request.query", input}});
 
         object_store store;
         store.insert(std::move(root));
@@ -232,7 +233,7 @@ TEST(TestLFIDetector, NoMatchWindows)
 
     for (const auto &[path, input] : samples) {
         auto root =
-            object_builder::map({{"server.io.fs.file", path}, {"server.request.query", input}});
+            object_builder_da::map({{"server.io.fs.file", path}, {"server.request.query", input}});
 
         object_store store;
         store.insert(std::move(root));
@@ -248,11 +249,11 @@ TEST(TestLFIDetector, NoMatchExcludedPath)
 {
     lfi_detector cond{{gen_param_def("server.io.fs.file", "server.request.query")}};
 
-    auto root = object_builder::map({
+    auto root = object_builder_da::map({
         {"server.io.fs.file", "/var/www/html/../../../etc/passwd"},
     });
     auto params_map = root.emplace(
-        "server.request.query", object_builder::map({{"endpoint", "../../../etc/passwd"}}));
+        "server.request.query", object_builder_da::map({{"endpoint", "../../../etc/passwd"}}));
 
     std::unordered_set<object_cache_key> exclusion{params_map.at(0)};
 
@@ -269,8 +270,8 @@ TEST(TestLFIDetector, NoMatchExcludedAddress)
 {
     lfi_detector cond{{gen_param_def("server.io.fs.file", "server.request.query")}};
 
-    auto root = object_builder::map({{"server.io.fs.file", "/var/www/html/../../../etc/passwd"},
-        {"server.request.query", object_builder::map({{"endpoint", "../../../etc/passwd"}})}});
+    auto root = object_builder_da::map({{"server.io.fs.file", "/var/www/html/../../../etc/passwd"},
+        {"server.request.query", object_builder_da::map({{"endpoint", "../../../etc/passwd"}})}});
 
     std::unordered_set<object_cache_key> exclusion{root.at(1)};
 
@@ -287,8 +288,8 @@ TEST(TestLFIDetector, Timeout)
 {
     lfi_detector cond{{gen_param_def("server.io.fs.file", "server.request.query")}};
 
-    auto root = object_builder::map({{"server.io.fs.file", "/var/www/html/../../../etc/passwd"},
-        {"server.request.query", object_builder::map({{"endpoint", "../../../etc/passwd"}})}});
+    auto root = object_builder_da::map({{"server.io.fs.file", "/var/www/html/../../../etc/passwd"},
+        {"server.request.query", object_builder_da::map({{"endpoint", "../../../etc/passwd"}})}});
 
     std::unordered_set<object_cache_key> exclusion{root.at(1)};
 
@@ -305,7 +306,7 @@ TEST(TestLFIDetector, NoParams)
 {
     lfi_detector cond{{gen_param_def("server.io.fs.file", "server.request.query")}};
 
-    auto root = object_builder::map({
+    auto root = object_builder_da::map({
         {"server.io.fs.file", "/var/www/html/../../../etc/passwd"},
     });
 

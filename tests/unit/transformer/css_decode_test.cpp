@@ -8,6 +8,7 @@
 #include "transformer_utils.hpp"
 
 using namespace ddwaf;
+using namespace ddwaf::test;
 
 namespace {
 TEST(TestCssDecode, NameAndID)

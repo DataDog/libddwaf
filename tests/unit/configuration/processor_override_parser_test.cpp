@@ -11,6 +11,7 @@
 #include "configuration/processor_override_parser.hpp"
 
 using namespace ddwaf;
+using namespace ddwaf::test;
 
 namespace {
 

@@ -13,6 +13,7 @@
 #include "utils.hpp"
 
 using namespace ddwaf;
+using namespace ddwaf::test;
 using namespace std::literals;
 
 namespace {
@@ -28,7 +29,7 @@ TEST(TestRule, Match)
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
     core_rule rule("id", "name", std::move(tags), builder.build(), {"update", "block", "passlist"});
 
-    auto root = object_builder::map();
+    auto root = object_builder_da::map();
     root.emplace("http.client_ip", "192.168.0.1");
 
     object_store store;
@@ -38,7 +39,7 @@ TEST(TestRule, Match)
     core_rule::cache_type cache;
     {
         defer cleanup{[&]() { store.clear_last_batch(); }};
-        store.insert(root.clone());
+        store.insert(root.clone(memory::get_default_resource()));
 
         auto [verdict, result] = rule.match(store, cache, {}, {}, deadline);
         ASSERT_TRUE(result.has_value());
@@ -82,7 +83,7 @@ TEST(TestRule, NoMatch)
     std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
     core_rule rule("id", "name", std::move(tags), builder.build());
 
-    auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
+    auto root = object_builder_da::map({{"http.client_ip", "192.168.0.1"}});
 
     object_store store;
     store.insert(std::move(root));
@@ -116,7 +117,7 @@ TEST(TestRule, ValidateCachedMatch)
     // only the latest address. This ensures that the IP condition can't be
     // matched on the second run.
     {
-        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder_da::map({{"http.client_ip", "192.168.0.1"}});
 
         object_store store;
         store.insert(std::move(root));
@@ -127,7 +128,7 @@ TEST(TestRule, ValidateCachedMatch)
     }
 
     {
-        auto root = object_builder::map({{"usr.id", "admin"}});
+        auto root = object_builder_da::map({{"usr.id", "admin"}});
 
         object_store store;
         store.insert(std::move(root));
@@ -188,7 +189,7 @@ TEST(TestRule, MatchWithoutCache)
     // the second run when there isn't a cached match.
     object_store store;
     {
-        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder_da::map({{"http.client_ip", "192.168.0.1"}});
         store.insert(std::move(root));
 
         ddwaf::timer deadline{2s};
@@ -198,7 +199,7 @@ TEST(TestRule, MatchWithoutCache)
     }
 
     {
-        auto root = object_builder::map({{"usr.id", "admin"}});
+        auto root = object_builder_da::map({{"usr.id", "admin"}});
 
         store.insert(std::move(root));
 
@@ -250,7 +251,7 @@ TEST(TestRule, NoMatchWithoutCache)
     // In this test we validate that when the cache is empty and only one
     // address is passed, the filter doesn't match (as it should be).
     {
-        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
+        auto root = object_builder_da::map({{"http.client_ip", "192.168.0.1"}});
 
         object_store store;
         store.insert(std::move(root));
@@ -262,7 +263,7 @@ TEST(TestRule, NoMatchWithoutCache)
     }
 
     {
-        auto root = object_builder::map({{"usr.id", "admin"}});
+        auto root = object_builder_da::map({{"usr.id", "admin"}});
 
         object_store store;
         store.insert(std::move(root));
@@ -296,7 +297,8 @@ TEST(TestRule, FullCachedMatchSecondRun)
 
     core_rule::cache_type cache;
     {
-        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
+        auto root =
+            object_builder_da::map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
 
         object_store store;
         store.insert(std::move(root));
@@ -308,7 +310,8 @@ TEST(TestRule, FullCachedMatchSecondRun)
     }
 
     {
-        auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
+        auto root =
+            object_builder_da::map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
 
         object_store store;
         store.insert(std::move(root));
@@ -331,7 +334,7 @@ TEST(TestRule, ExcludeObject)
 
     core_rule rule("id", "name", std::move(tags), builder.build(), {"update", "block", "passlist"});
 
-    auto root = object_builder::map({{"http.client_ip", "192.168.0.1"}});
+    auto root = object_builder_da::map({{"http.client_ip", "192.168.0.1"}});
     object_store store;
     store.insert(std::move(root));
 

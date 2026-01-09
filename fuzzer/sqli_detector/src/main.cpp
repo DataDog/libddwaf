@@ -126,10 +126,13 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
 
     auto dialect_str = ddwaf::sql_dialect_to_string(dialect);
 
-    auto root = owned_object::make_map();
-    root.emplace("server.request.query", owned_object::make_string(param));
-    root.emplace("server.db.system", owned_object::make_string(dialect_str));
-    root.emplace("server.db.statement", owned_object::make_string(resource));
+    auto root = owned_object::make_map(0, ddwaf::memory::get_default_resource());
+    root.emplace("server.request.query",
+        owned_object::make_string(param, ddwaf::memory::get_default_resource()));
+    root.emplace("server.db.system",
+        owned_object::make_string(dialect_str, ddwaf::memory::get_default_resource()));
+    root.emplace("server.db.statement",
+        owned_object::make_string(resource, ddwaf::memory::get_default_resource()));
 
     object_store store;
     store.insert(std::move(root));

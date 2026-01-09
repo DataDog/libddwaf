@@ -36,10 +36,8 @@ std::string generate_random_ip()
     std::array<char, INET6_ADDRSTRLEN> str{};
 
     sa.sin6_family = AF_INET6;
-    sa.sin6_addr.s6_addr32[0] = rng();
-    sa.sin6_addr.s6_addr32[1] = rng();
-    sa.sin6_addr.s6_addr32[2] = rng();
-    sa.sin6_addr.s6_addr32[3] = rng();
+    std::array<uint32_t, 4> addr_parts{rng(), rng(), rng(), rng()};
+    std::memcpy(&sa.sin6_addr.s6_addr, addr_parts.data(), sizeof(addr_parts));
 
     inet_ntop(AF_INET6, &(sa.sin6_addr), str.data(), INET6_ADDRSTRLEN);
 
@@ -57,35 +55,45 @@ std::vector<std::string> generate_ip_set(std::size_t length)
 
 ddwaf_object generate_rule_data(const std::vector<std::string>& ip_set)
 {
-    ddwaf_object tmp;
+    auto alloc = ddwaf_get_default_allocator();
     ddwaf_object data;
 
-    ddwaf_object_array(&data);
+    ddwaf_object_set_array(&data, ip_set.size(), alloc);
 
     for (const auto& ip : ip_set) {
-        ddwaf_object data_point;
-        ddwaf_object_map(&data_point);
-        ddwaf_object_map_add(&data_point, "expiration", ddwaf_object_set_unsigned_force(&tmp, 0));
+        ddwaf_object *data_point = ddwaf_object_insert(&data, alloc);
+        ddwaf_object_set_map(data_point, 2, alloc);
 
-        ddwaf_object_map_add(&data_point, "value", ddwaf_object_stringl(&tmp, ip.c_str(), ip.size()));
+        ddwaf_object *expiration = ddwaf_object_insert_literal_key(data_point, "expiration", 10, alloc);
+        ddwaf_object_set_unsigned(expiration, 0);
 
-        ddwaf_object_array_add(&data, &data_point);
+        ddwaf_object *value = ddwaf_object_insert_literal_key(data_point, "value", 5, alloc);
+        ddwaf_object_set_string(value, ip.c_str(), ip.size(), alloc);
     }
 
     ddwaf_object rule_data;
-    ddwaf_object_map(&rule_data);
-    ddwaf_object_map_add(&rule_data, "id", ddwaf_object_string(&tmp, "blocked_ips"));
-    ddwaf_object_map_add(&rule_data, "type", ddwaf_object_string(&tmp, "ip_with_expiration"));
-    ddwaf_object_map_add(&rule_data, "data", &data);
+    ddwaf_object_set_map(&rule_data, 3, alloc);
+
+    ddwaf_object *id = ddwaf_object_insert_literal_key(&rule_data, "id", 2, alloc);
+    ddwaf_object_set_string_literal(id, "blocked_ips", 11);
+
+    ddwaf_object *type = ddwaf_object_insert_literal_key(&rule_data, "type", 4, alloc);
+    ddwaf_object_set_string_literal(type, "ip_with_expiration", 18);
+
+    ddwaf_object *data_ptr = ddwaf_object_insert_literal_key(&rule_data, "data", 4, alloc);
+    *data_ptr = data;
 
     ddwaf_object rule_data_array;
-    ddwaf_object_array(&rule_data_array);
-    ddwaf_object_array_add(&rule_data_array, &rule_data);
+    ddwaf_object_set_array(&rule_data_array, 1, alloc);
 
+    ddwaf_object *rule_data_item = ddwaf_object_insert(&rule_data_array, alloc);
+    *rule_data_item = rule_data;
 
     ddwaf_object root;
-    ddwaf_object_map(&root);
-    ddwaf_object_map_add(&root, "rules_data", &rule_data_array);
+    ddwaf_object_set_map(&root, 1, alloc);
+
+    ddwaf_object *rules_data = ddwaf_object_insert_literal_key(&root, "rules_data", 10, alloc);
+    *rules_data = rule_data_array;
 
     return root;
 }
@@ -98,11 +106,12 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
+    auto alloc = ddwaf_get_default_allocator();
+
     std::string rule_str = read_file(argv[1]);
     auto rule = YAML::Load(rule_str).as<ddwaf_object>();
 
-    ddwaf_config config{{nullptr, nullptr}, nullptr};
-    ddwaf_handle handle = ddwaf_init(&rule, &config, nullptr);
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
     ddwaf_object_destroy(&rule, alloc);
     if (handle == nullptr) {
         std::cout << "Failed to load " << argv[1] << '\n';
@@ -119,41 +128,40 @@ int main(int argc, char *argv[])
         for (unsigned run = 0; run < runs_per_size; ++run) {
             auto ip_set = generate_ip_set(size);
 
-            auto update = generate_rule_data(ip_set);
-            ddwaf_handle updated_handle = ddwaf_update(handle, &update, nullptr);
-            ddwaf_object_destroy(&update, alloc);
+            auto rule_data = generate_rule_data(ip_set);
+            ddwaf_destroy(handle);
+            handle = ddwaf_init(&rule_data, nullptr);
+            ddwaf_object_destroy(&rule_data, alloc);
 
-            if (updated_handle == nullptr) {
+            if (handle == nullptr) {
                 std::cout << "Failed to load rule data\n";
                 return EXIT_FAILURE;
             }
 
-            ddwaf_destroy(handle);
-            handle = updated_handle;
-
             for (uint64_t i = 0 ; i < ips_per_size; i++) {
-                ddwaf_context context = ddwaf_context_init(handle);
+                ddwaf_context context = ddwaf_context_init(handle, alloc);
 
                 if (context == nullptr) {
                     ddwaf_destroy(handle);
                     return EXIT_FAILURE;
                 }
 
-                ddwaf_object tmp;
                 ddwaf_object input;
-                ddwaf_object_map(&input);
+                ddwaf_object_set_map(&input, 1, alloc);
 
                 if (i % 2 == 0) {
                     const auto &ip = ip_set[i % size];
-                    ddwaf_object_map_add(&input, "http.client_ip", ddwaf_object_stringl(&tmp, ip.c_str(), ip.size()));
+                    ddwaf_object *client_ip = ddwaf_object_insert_literal_key(&input, "http.client_ip", 14, alloc);
+                    ddwaf_object_set_string(client_ip, ip.c_str(), ip.size(), alloc);
                 } else {
                     auto ip = generate_random_ip();
-                    ddwaf_object_map_add(&input, "http.client_ip", ddwaf_object_stringl(&tmp, ip.c_str(), ip.size()));
+                    ddwaf_object *client_ip = ddwaf_object_insert_literal_key(&input, "http.client_ip", 14, alloc);
+                    ddwaf_object_set_string(client_ip, ip.c_str(), ip.size(), alloc);
                 }
 
 
                 auto start = std::chrono::system_clock::now();
-                ddwaf_context_eval(context, &input, nullptr, nullptr, std::numeric_limits<uint32_t>::max());
+                ddwaf_context_eval(context, &input, alloc, nullptr, std::numeric_limits<uint32_t>::max());
                 auto count = (std::chrono::system_clock::now() - start).count();
 
                 ddwaf_object_destroy(&input, alloc);

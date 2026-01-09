@@ -13,6 +13,7 @@
 #include <yaml-cpp/yaml.h>
 
 #include "common/base_utils.hpp"
+#include "common/ddwaf_object_da.hpp"
 #include "common/json_utils.hpp"
 #include "common/yaml_utils.hpp"
 
