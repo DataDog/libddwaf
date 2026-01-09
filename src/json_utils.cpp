@@ -66,8 +66,7 @@ class object_reader_handler
     : public rapidjson::BaseReaderHandler<rapidjson::UTF8<>, object_reader_handler> {
 public:
     explicit object_reader_handler(nonnull_ptr<memory::memory_resource> alloc)
-        : alloc_(alloc), root_(owned_object::make_uninit(alloc)),
-          key_(owned_object::make_uninit(alloc))
+        : alloc_(alloc), root_(alloc), key_(alloc)
     {
         stack_.reserve(max_depth + 1);
     }
@@ -169,7 +168,7 @@ public:
             return true;
         }
 
-        return emplace(owned_object::make_map(0, alloc_));
+        return emplace(owned_object::make_map(alloc_));
     }
 
     // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
@@ -190,7 +189,7 @@ public:
             return true;
         }
 
-        return emplace(owned_object::make_array(0, alloc_));
+        return emplace(owned_object::make_array(alloc_));
     }
 
     // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
@@ -261,7 +260,7 @@ owned_object json_to_object(std::string_view json, nonnull_ptr<memory::memory_re
     const rapidjson::ParseResult res = reader.Parse(ss, handler);
     if (res.IsError()) {
         // Not interested in partial JSON for now
-        return owned_object::make_uninit(alloc);
+        return owned_object{alloc};
     }
 
     return handler.finalize();

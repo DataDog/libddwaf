@@ -14,10 +14,7 @@ namespace ddwaf::test {
 
 class ddwaf_object_da {
 public:
-    static owned_object make_uninit()
-    {
-        return owned_object::make_uninit(memory::get_default_resource());
-    }
+    static owned_object make_uninit() { return owned_object{memory::get_default_resource()}; }
     static owned_object make_null() { return owned_object::make_null(); }
 
     static owned_object make_boolean(bool value) { return owned_object::make_boolean(value); }
@@ -38,15 +35,15 @@ public:
         return owned_object::make_string_literal(str.data(), str.size());
     }
 
-    static owned_object unsafe_make_string_nocopy(
+    static owned_object make_string_nocopy(
         const char *str, std::uint32_t len, nonnull_ptr<memory::memory_resource> alloc)
     {
-        return owned_object::unsafe_make_string_nocopy(str, len, alloc);
+        return owned_object::make_string_nocopy(str, len, alloc);
     }
 
-    static owned_object unsafe_make_string_nocopy(const char *str, std::uint32_t len)
+    static owned_object make_string_nocopy(const char *str, std::uint32_t len)
     {
-        return owned_object::unsafe_make_string_nocopy(str, len, memory::get_default_resource());
+        return owned_object::make_string_nocopy(str, len, memory::get_default_resource());
     }
 
     static owned_object make_string(

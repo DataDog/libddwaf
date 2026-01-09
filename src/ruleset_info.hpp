@@ -28,11 +28,11 @@ public:
     class section_info {
     public:
         section_info()
-            : loaded_(owned_object::make_array(0, memory::get_default_resource())),
-              failed_(owned_object::make_array(0, memory::get_default_resource())),
-              skipped_(owned_object::make_array(0, memory::get_default_resource())),
-              errors_(owned_object::make_map(0, memory::get_default_resource())),
-              warnings_(owned_object::make_map(0, memory::get_default_resource()))
+            : loaded_(owned_object::make_array(memory::get_default_resource())),
+              failed_(owned_object::make_array(memory::get_default_resource())),
+              skipped_(owned_object::make_array(memory::get_default_resource())),
+              errors_(owned_object::make_map(memory::get_default_resource())),
+              warnings_(owned_object::make_map(memory::get_default_resource()))
         {}
 
         ~section_info() = default;
@@ -144,7 +144,7 @@ public:
     // This method effectively moves the contents
     owned_object to_object()
     {
-        auto output = owned_object::make_map(0, memory::get_default_resource());
+        auto output = owned_object::make_map(memory::get_default_resource());
         if (!error_.empty()) {
             output.emplace("error", error_);
             error_.clear();

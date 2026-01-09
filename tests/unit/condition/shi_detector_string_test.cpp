@@ -23,8 +23,8 @@ TEST(TestShiDetectorString, InvalidType)
     shi_detector cond{{gen_param_def("server.sys.shell.cmd", "server.request.query")}};
 
     auto root = object_builder_da::map(
-        {{"server.sys.shell.cmd", owned_object::create_unchecked({.type = object_type::invalid},
-                                      memory::get_default_resource())},
+        {{"server.sys.shell.cmd",
+             owned_object{{.type = object_type::invalid}, memory::get_default_resource()}},
             {"server.request.query", "whatever"}});
 
     object_store store;

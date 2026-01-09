@@ -19,7 +19,7 @@ owned_object dynamic_string::to_object(nonnull_ptr<memory::memory_resource> allo
                                         // this means alloc (the deallocator for the owned_object)
                                         // can deallocate memory from alloc_ (the allocator for
                                         // this dynamic_string)
-                              owned_object::unsafe_make_string_nocopy(buffer_, size_, alloc);
+                              owned_object::make_string_nocopy(buffer_, size_, alloc);
 
     if (should_copy) {
         alloc_->deallocate(buffer_, capacity_, alignof(char));

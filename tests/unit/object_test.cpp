@@ -70,8 +70,7 @@ private:
 
 TEST(TestObject, NullBorrowedObject)
 {
-    EXPECT_THROW(borrowed_object::create_unchecked(nullptr, memory::get_default_resource()),
-        std::invalid_argument);
+    EXPECT_THROW(borrowed_object(nullptr, memory::get_default_resource()), std::invalid_argument);
 }
 
 TEST(TestObject, InvalidObject)
@@ -257,7 +256,7 @@ TEST(TestObject, EmptyArrayObjectWithAllocator)
     counting_resource alloc;
 
     {
-        auto root = owned_object::make_array(0, &alloc);
+        auto root = owned_object::make_array(&alloc);
         EXPECT_EQ(root.type(), object_type::array);
         EXPECT_TRUE(root.is_valid());
         EXPECT_TRUE(root.is_array());
@@ -340,7 +339,7 @@ TEST(TestObject, ArrayObjectEmplaceBackWithAllocator)
     counting_resource alloc;
 
     {
-        auto root = owned_object::make_array(0, &alloc);
+        auto root = owned_object::make_array(&alloc);
         EXPECT_EQ(root.type(), object_type::array);
         EXPECT_TRUE(root.is_valid());
 
@@ -496,7 +495,7 @@ TEST(TestObject, EmptyMapObjectWithAllocator)
     counting_resource alloc;
 
     {
-        auto root = owned_object::make_map(0, &alloc);
+        auto root = owned_object::make_map(&alloc);
         EXPECT_EQ(root.type(), object_type::map);
         EXPECT_TRUE(root.is_valid());
         EXPECT_TRUE(root.empty());
@@ -574,7 +573,7 @@ TEST(TestObject, MapObjectEmplaceWithAllocator)
     counting_resource alloc;
 
     {
-        auto root = owned_object::make_map(0, &alloc);
+        auto root = owned_object::make_map(&alloc);
         EXPECT_EQ(root.type(), object_type::map);
         EXPECT_TRUE(root.is_valid());
 
@@ -959,7 +958,7 @@ TEST(TestObject, ObjectWithNullAllocator)
     {
         null_counting_resource alloc;
         {
-            owned_object other = owned_object::create_unchecked(root.ref(), &alloc);
+            owned_object other = owned_object{root.ref(), &alloc};
         }
         EXPECT_EQ(alloc.deallocations(), 0);
     }

@@ -404,7 +404,7 @@ TEST(TestParameter, ToSemanticVersion)
     }
 
     {
-        auto root = test::ddwaf_object_da::unsafe_make_string_nocopy(nullptr, 0);
+        auto root = test::ddwaf_object_da::make_string_nocopy(nullptr, 0);
 
         raw_configuration param{root};
         EXPECT_THROW(param.operator semantic_version(), std::invalid_argument);

@@ -528,7 +528,7 @@ owned_object http_endpoint_fingerprint::eval_impl(const unary_argument<std::stri
             optional_generator<key_hash_field>{query}, optional_generator<key_hash_field>{body});
     } catch (const std::out_of_range &e) {
         DDWAF_WARN("Failed to generate http endpoint fingerprint: {}", e.what());
-        return owned_object::make_uninit(alloc);
+        return owned_object{alloc};
     }
 }
 
@@ -569,7 +569,7 @@ owned_object http_header_fingerprint::eval_impl(const unary_argument<map_view> &
             vector_hash_field{std::move(unknown_headers)});
     } catch (const std::out_of_range &e) {
         DDWAF_WARN("Failed to generate http header fingerprint: {}", e.what());
-        return owned_object::make_uninit(alloc);
+        return owned_object{alloc};
     }
 }
 
@@ -619,7 +619,7 @@ owned_object http_network_fingerprint::eval_impl(const unary_argument<map_view> 
             "net", alloc, unsigned_field{ip_count}, string_field{ip_origin_bitset});
     } catch (const std::out_of_range &e) {
         DDWAF_WARN("Failed to generate http network fingerprint: {}", e.what());
-        return owned_object::make_uninit(alloc);
+        return owned_object{alloc};
     }
 }
 
@@ -641,7 +641,7 @@ owned_object session_fingerprint::eval_impl(const optional_argument<map_view> &c
             optional_generator<string_hash_field>{session_id});
     } catch (const std::out_of_range &e) {
         DDWAF_WARN("Failed to generate session fingerprint: {}", e.what());
-        return owned_object::make_uninit(alloc);
+        return owned_object{alloc};
     }
 }
 

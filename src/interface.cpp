@@ -153,7 +153,7 @@ borrowed_object to_borrowed(ddwaf_object *ptr, nonnull_ptr<memory::memory_resour
 {
     // safety: caller is responsible for ensuring allocator matches object's memory
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-    return borrowed_object::create_unchecked(reinterpret_cast<detail::object *>(ptr), alloc);
+    return borrowed_object{reinterpret_cast<detail::object *>(ptr), alloc};
 }
 
 memory::memory_resource *to_alloc_ptr(ddwaf_allocator alloc)
@@ -266,7 +266,7 @@ DDWAF_RET_CODE ddwaf_context_eval(ddwaf_context context, ddwaf_object *data,
             if (!context->insert(
                     // safety: caller is responsible to ensure that the passed
                     // allocator can deallocate memory allocated for `data`
-                    owned_object::create_unchecked(to_ref(data), to_alloc_ptr(alloc)))) {
+                    owned_object{to_ref(data), to_alloc_ptr(alloc)})) {
                 return DDWAF_ERR_INVALID_OBJECT;
             }
         } else {
@@ -338,7 +338,7 @@ DDWAF_RET_CODE ddwaf_subcontext_eval(ddwaf_subcontext subcontext, ddwaf_object *
             if (!subcontext->insert(
                     // safety: caller is responsible to ensure that the passed
                     // allocator can deallocate memory allocated for `data`
-                    owned_object::create_unchecked(to_ref(data), to_alloc_ptr(alloc)))) {
+                    owned_object{to_ref(data), to_alloc_ptr(alloc)})) {
                 return DDWAF_ERR_INVALID_OBJECT;
             }
         } else {
@@ -651,7 +651,7 @@ ddwaf_object *ddwaf_object_set_string_nocopy(
     // allocate from it and we forget it afterwards (we just care about the
     // detail::object part of the owned_object)
     to_ref(object) =
-        owned_object::unsafe_make_string_nocopy(string, length, memory::get_default_null_resource())
+        owned_object::make_string_nocopy(string, length, memory::get_default_null_resource())
             .move();
     return object;
 }
@@ -784,7 +784,7 @@ ddwaf_object *ddwaf_object_insert(ddwaf_object *array, ddwaf_allocator alloc)
     try {
         auto *alloc_ptr = to_alloc_ptr(alloc);
         borrowed_object container = to_borrowed(array, alloc_ptr);
-        owned_object new_element = owned_object::make_uninit(alloc_ptr);
+        owned_object new_element = owned_object{alloc_ptr};
         borrowed_object inserted = container.emplace_back(std::move(new_element));
 
         // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
@@ -802,7 +802,7 @@ ddwaf_object *ddwaf_object_insert_key(
     try {
         auto *alloc_ptr = to_alloc_ptr(alloc);
         borrowed_object container = to_borrowed(map, alloc_ptr);
-        owned_object new_value = owned_object::make_uninit(alloc_ptr);
+        owned_object new_value = owned_object{alloc_ptr};
         borrowed_object inserted =
             container.emplace(std::string_view{key, length}, std::move(new_value));
 
@@ -821,8 +821,8 @@ ddwaf_object *ddwaf_object_insert_key_nocopy(
 
     try {
         auto *alloc_ptr = to_alloc_ptr(alloc);
-        auto key_obj = owned_object::unsafe_make_string_nocopy(key, length, alloc_ptr);
-        auto value_obj = owned_object::make_uninit(alloc_ptr);
+        auto key_obj = owned_object::make_string_nocopy(key, length, alloc_ptr);
+        auto value_obj = owned_object{alloc_ptr};
 
         // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
         return reinterpret_cast<ddwaf_object *>(
@@ -844,8 +844,8 @@ ddwaf_object *ddwaf_object_insert_literal_key(
 
     try {
         auto *alloc_ptr = to_alloc_ptr(alloc);
-        auto key_obj = owned_object::make_string_literal(key, length, alloc_ptr);
-        auto value_obj = owned_object::make_uninit(alloc_ptr);
+        auto key_obj = owned_object::make_string_literal(key, length);
+        auto value_obj = owned_object{alloc_ptr};
 
         // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
         return reinterpret_cast<ddwaf_object *>(
