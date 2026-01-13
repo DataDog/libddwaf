@@ -72,7 +72,7 @@ owned_object decode_and_parse(std::string_view source, nonnull_ptr<memory::memor
 {
     cow_string cstr{source};
     if (!transformer::base64url_decode::transform(cstr)) {
-        return owned_object{alloc};
+        return owned_object{};
     }
 
     return json_to_object(static_cast<std::string_view>(cstr), alloc);
@@ -112,13 +112,13 @@ owned_object jwt_decode::eval_impl(const unary_argument<object_view> &input,
 {
     std::string_view token = find_token(input.value, input.key_path);
     if (token.empty()) {
-        return owned_object{alloc};
+        return owned_object{};
     }
 
     static const std::string_view prefix = "Bearer";
     if (!token.starts_with(prefix)) {
         // Unlikely to be a JWT
-        return owned_object{alloc};
+        return owned_object{};
     }
 
     // Remove prefix and spaces
@@ -133,7 +133,7 @@ owned_object jwt_decode::eval_impl(const unary_argument<object_view> &input,
     auto [valid, jwt] = split_token(token);
     if (!valid) {
         // Not a valid JWT
-        return owned_object{alloc};
+        return owned_object{};
     }
 
     // Decode header and payload and generate output

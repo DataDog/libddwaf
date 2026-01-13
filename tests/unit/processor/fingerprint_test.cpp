@@ -17,15 +17,14 @@ TEST(TestHttpEndpointFingerprint, Basic)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto query = object_builder_da::map({{"Key1", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"KEY2", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"key,3", ddwaf::test::ddwaf_object_da::make_uninit()}});
+    auto query = object_builder_da::map(
+        {{"Key1", owned_object{}}, {"KEY2", owned_object{}}, {"key,3", owned_object{}}});
 
     auto body = object_builder_da::map({
-        {"KEY1", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"KEY2", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"KEY", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"3", ddwaf::test::ddwaf_object_da::make_uninit()},
+        {"KEY1", owned_object{}},
+        {"KEY2", owned_object{}},
+        {"KEY", owned_object{}},
+        {"3", owned_object{}},
     });
 
     http_endpoint_fingerprint gen{"id", {}, {}, false, true};
@@ -49,10 +48,10 @@ TEST(TestHttpEndpointFingerprint, EmptyQuery)
     auto query = object_builder_da::map();
 
     auto body = object_builder_da::map({
-        {"KEY1", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"KEY2", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"KEY", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"3", ddwaf::test::ddwaf_object_da::make_uninit()},
+        {"KEY1", owned_object{}},
+        {"KEY2", owned_object{}},
+        {"KEY", owned_object{}},
+        {"3", owned_object{}},
     });
 
     http_endpoint_fingerprint gen{"id", {}, {}, false, true};
@@ -74,9 +73,9 @@ TEST(TestHttpEndpointFingerprint, EmptyBody)
     auto *alloc = memory::get_default_resource();
 
     auto query = object_builder_da::map({
-        {"Key1", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"KEY2", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"key,3", ddwaf::test::ddwaf_object_da::make_uninit()},
+        {"Key1", owned_object{}},
+        {"KEY2", owned_object{}},
+        {"key,3", owned_object{}},
     });
 
     auto body = object_builder_da::map();
@@ -119,16 +118,16 @@ TEST(TestHttpEndpointFingerprint, KeyConsistency)
     auto *alloc = memory::get_default_resource();
 
     auto query = object_builder_da::map({
-        {"Key1", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"KEY2", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"key3,Key4", ddwaf::test::ddwaf_object_da::make_uninit()},
+        {"Key1", owned_object{}},
+        {"KEY2", owned_object{}},
+        {"key3,Key4", owned_object{}},
     });
 
     auto body = object_builder_da::map({
-        {"KeY1", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"kEY2", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"KEY3", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"KeY4", ddwaf::test::ddwaf_object_da::make_uninit()},
+        {"KeY1", owned_object{}},
+        {"kEY2", owned_object{}},
+        {"KEY3", owned_object{}},
+        {"KeY4", owned_object{}},
     });
 
     http_endpoint_fingerprint gen{"id", {}, {}, false, true};
@@ -150,16 +149,16 @@ TEST(TestHttpEndpointFingerprint, UriRawConsistency)
     auto *alloc = memory::get_default_resource();
 
     auto query = object_builder_da::map({
-        {"Key1", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"KEY2", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"key,3", ddwaf::test::ddwaf_object_da::make_uninit()},
+        {"Key1", owned_object{}},
+        {"KEY2", owned_object{}},
+        {"key,3", owned_object{}},
     });
 
     auto body = object_builder_da::map({
-        {"KEY1", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"KEY2", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"KEY", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"3", ddwaf::test::ddwaf_object_da::make_uninit()},
+        {"KEY1", owned_object{}},
+        {"KEY2", owned_object{}},
+        {"KEY", owned_object{}},
+        {"3", owned_object{}},
     });
 
     http_endpoint_fingerprint gen{"id", {}, {}, false, true};
@@ -237,9 +236,9 @@ TEST(TestHttpEndpointFingerprint, Regeneration)
     auto *alloc = memory::get_default_resource();
 
     auto query = object_builder_da::map({
-        {"Key1", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"KEY2", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"key,3", ddwaf::test::ddwaf_object_da::make_uninit()},
+        {"Key1", owned_object{}},
+        {"KEY2", owned_object{}},
+        {"key,3", owned_object{}},
     });
 
     http_endpoint_fingerprint gen{"id", {}, {}, false, true};
@@ -259,10 +258,10 @@ TEST(TestHttpEndpointFingerprint, Regeneration)
 
     {
         auto body = object_builder_da::map({
-            {"KEY1", ddwaf::test::ddwaf_object_da::make_uninit()},
-            {"KEY2", ddwaf::test::ddwaf_object_da::make_uninit()},
-            {"KEY", ddwaf::test::ddwaf_object_da::make_uninit()},
-            {"3", ddwaf::test::ddwaf_object_da::make_uninit()},
+            {"KEY1", owned_object{}},
+            {"KEY2", owned_object{}},
+            {"KEY", owned_object{}},
+            {"3", owned_object{}},
         });
 
         ddwaf::timer deadline{2s};
@@ -282,16 +281,16 @@ TEST(TestHttpHeaderFingerprint, AllKnownHeaders)
     auto *alloc = memory::get_default_resource();
 
     auto headers = object_builder_da::map({
-        {"referer", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"CONNECTION", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"Accept_Encoding", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"CONTENT-encoding", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"cache-CONTROL", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"tE", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"ACCEPT_CHARSET", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"content-type", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"accepT", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"accept_language", ddwaf::test::ddwaf_object_da::make_uninit()},
+        {"referer", owned_object{}},
+        {"CONNECTION", owned_object{}},
+        {"Accept_Encoding", owned_object{}},
+        {"CONTENT-encoding", owned_object{}},
+        {"cache-CONTROL", owned_object{}},
+        {"tE", owned_object{}},
+        {"ACCEPT_CHARSET", owned_object{}},
+        {"content-type", owned_object{}},
+        {"accepT", owned_object{}},
+        {"accept_language", owned_object{}},
     });
 
     http_header_fingerprint gen{"id", {}, {}, false, true};
@@ -328,12 +327,12 @@ TEST(TestHttpHeaderFingerprint, SomeKnownHeaders)
     auto *alloc = memory::get_default_resource();
 
     auto headers = object_builder_da::map({
-        {"referer", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"accept-encoding", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"cache-control", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"accept-charset", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"accept", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"accept-language", ddwaf::test::ddwaf_object_da::make_uninit()},
+        {"referer", owned_object{}},
+        {"accept-encoding", owned_object{}},
+        {"cache-control", owned_object{}},
+        {"accept-charset", owned_object{}},
+        {"accept", owned_object{}},
+        {"accept-language", owned_object{}},
     });
 
     http_header_fingerprint gen{"id", {}, {}, false, true};
@@ -353,16 +352,16 @@ TEST(TestHttpHeaderFingerprint, UserAgent)
     auto *alloc = memory::get_default_resource();
 
     auto headers = object_builder_da::map({
-        {"referer", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"connection", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"accept-encoding", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"content-encoding", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"cache-control", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"te", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"accept-charset", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"content-type", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"accept", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"accept-language", ddwaf::test::ddwaf_object_da::make_uninit()},
+        {"referer", owned_object{}},
+        {"connection", owned_object{}},
+        {"accept-encoding", owned_object{}},
+        {"content-encoding", owned_object{}},
+        {"cache-control", owned_object{}},
+        {"te", owned_object{}},
+        {"accept-charset", owned_object{}},
+        {"content-type", owned_object{}},
+        {"accept", owned_object{}},
+        {"accept-language", owned_object{}},
         {"user-agent", "Random"},
     });
 
@@ -383,16 +382,16 @@ TEST(TestHttpHeaderFingerprint, UserAgentAsArray)
     auto *alloc = memory::get_default_resource();
 
     auto headers = object_builder_da::map({
-        {"referer", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"connection", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"accept-encoding", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"content-encoding", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"cache-control", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"te", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"accept-charset", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"content-type", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"accept", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"accept-language", ddwaf::test::ddwaf_object_da::make_uninit()},
+        {"referer", owned_object{}},
+        {"connection", owned_object{}},
+        {"accept-encoding", owned_object{}},
+        {"content-encoding", owned_object{}},
+        {"cache-control", owned_object{}},
+        {"te", owned_object{}},
+        {"accept-charset", owned_object{}},
+        {"content-type", owned_object{}},
+        {"accept", owned_object{}},
+        {"accept-language", owned_object{}},
         {"user-agent", object_builder_da::array({"Random"})},
     });
 
@@ -413,16 +412,16 @@ TEST(TestHttpHeaderFingerprint, UserAgentAsArrayInvalidType)
     auto *alloc = memory::get_default_resource();
 
     auto headers = object_builder_da::map({
-        {"referer", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"connection", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"accept-encoding", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"content-encoding", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"cache-control", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"te", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"accept-charset", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"content-type", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"accept", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"accept-language", ddwaf::test::ddwaf_object_da::make_uninit()},
+        {"referer", owned_object{}},
+        {"connection", owned_object{}},
+        {"accept-encoding", owned_object{}},
+        {"content-encoding", owned_object{}},
+        {"cache-control", owned_object{}},
+        {"te", owned_object{}},
+        {"accept-charset", owned_object{}},
+        {"content-type", owned_object{}},
+        {"accept", owned_object{}},
+        {"accept-language", owned_object{}},
         {"user-agent", object_builder_da::array({42})},
     });
     http_header_fingerprint gen{"id", {}, {}, false, true};
@@ -442,16 +441,16 @@ TEST(TestHttpHeaderFingerprint, MultipleUserAgents)
     auto *alloc = memory::get_default_resource();
 
     auto headers = object_builder_da::map({
-        {"referer", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"connection", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"accept-encoding", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"content-encoding", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"cache-control", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"te", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"accept-charset", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"content-type", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"accept", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"accept-language", ddwaf::test::ddwaf_object_da::make_uninit()},
+        {"referer", owned_object{}},
+        {"connection", owned_object{}},
+        {"accept-encoding", owned_object{}},
+        {"content-encoding", owned_object{}},
+        {"cache-control", owned_object{}},
+        {"te", owned_object{}},
+        {"accept-charset", owned_object{}},
+        {"content-type", owned_object{}},
+        {"accept", owned_object{}},
+        {"accept-language", owned_object{}},
         {"user-agent", object_builder_da::array({"Random", "Bot"})},
     });
     http_header_fingerprint gen{"id", {}, {}, false, true};
@@ -471,30 +470,30 @@ TEST(TestHttpHeaderFingerprint, ExcludedUnknownHeaders)
     auto *alloc = memory::get_default_resource();
 
     auto headers = object_builder_da::map({
-        {"referer", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"connection", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"accept-encoding", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"content-encoding", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"cache-control", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"te", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"accept-charset", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"content-type", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"accept", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"accept-language", ddwaf::test::ddwaf_object_da::make_uninit()},
+        {"referer", owned_object{}},
+        {"connection", owned_object{}},
+        {"accept-encoding", owned_object{}},
+        {"content-encoding", owned_object{}},
+        {"cache-control", owned_object{}},
+        {"te", owned_object{}},
+        {"accept-charset", owned_object{}},
+        {"content-type", owned_object{}},
+        {"accept", owned_object{}},
+        {"accept-language", owned_object{}},
         {"user-agent", "Random"},
 
         // Should be excluded
-        {"x-datadog-trace-id", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"x-forwarded-for", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"x-real-ip", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"true-client-ip", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"x-client-ip", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"x-forwarded", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"forwarded-for", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"x-cluster-client-ip", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"fastly-client-ip", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"cf-connecting-ip", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"cf-connecting-ipv6", ddwaf::test::ddwaf_object_da::make_uninit()},
+        {"x-datadog-trace-id", owned_object{}},
+        {"x-forwarded-for", owned_object{}},
+        {"x-real-ip", owned_object{}},
+        {"true-client-ip", owned_object{}},
+        {"x-client-ip", owned_object{}},
+        {"x-forwarded", owned_object{}},
+        {"forwarded-for", owned_object{}},
+        {"x-cluster-client-ip", owned_object{}},
+        {"fastly-client-ip", owned_object{}},
+        {"cf-connecting-ip", owned_object{}},
+        {"cf-connecting-ipv6", owned_object{}},
     });
 
     http_header_fingerprint gen{"id", {}, {}, false, true};
@@ -514,34 +513,34 @@ TEST(TestHttpHeaderFingerprint, UnknownHeaders)
     auto *alloc = memory::get_default_resource();
 
     auto headers = object_builder_da::map({
-        {"referer", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"connection", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"accept-encoding", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"content-encoding", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"cache-control", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"te", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"accept-charset", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"content-type", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"accept", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"accept-language", ddwaf::test::ddwaf_object_da::make_uninit()},
+        {"referer", owned_object{}},
+        {"connection", owned_object{}},
+        {"accept-encoding", owned_object{}},
+        {"content-encoding", owned_object{}},
+        {"cache-control", owned_object{}},
+        {"te", owned_object{}},
+        {"accept-charset", owned_object{}},
+        {"content-type", owned_object{}},
+        {"accept", owned_object{}},
+        {"accept-language", owned_object{}},
         {"user-agent", "Random"},
-        {"unknown_header", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"Authorization", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"WWW-Authenticate", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"Allow", ddwaf::test::ddwaf_object_da::make_uninit()},
+        {"unknown_header", owned_object{}},
+        {"Authorization", owned_object{}},
+        {"WWW-Authenticate", owned_object{}},
+        {"Allow", owned_object{}},
 
         // Should be excluded
-        {"x-datadog-trace-id", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"x-forwarded-for", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"x-real-ip", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"true-client-ip", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"x-client-ip", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"x-forwarded", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"forwarded-for", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"x-cluster-client-ip", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"fastly-client-ip", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"cf-connecting-ip", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"cf-connecting-ipv6", ddwaf::test::ddwaf_object_da::make_uninit()},
+        {"x-datadog-trace-id", owned_object{}},
+        {"x-forwarded-for", owned_object{}},
+        {"x-real-ip", owned_object{}},
+        {"true-client-ip", owned_object{}},
+        {"x-client-ip", owned_object{}},
+        {"x-forwarded", owned_object{}},
+        {"forwarded-for", owned_object{}},
+        {"x-cluster-client-ip", owned_object{}},
+        {"fastly-client-ip", owned_object{}},
+        {"cf-connecting-ip", owned_object{}},
+        {"cf-connecting-ipv6", owned_object{}},
     });
 
     http_header_fingerprint gen{"id", {}, {}, false, true};
@@ -562,15 +561,15 @@ TEST(TestHttpNetworkFingerprint, AllXFFHeaders)
 
     auto headers = object_builder_da::map({
         {"x-forwarded-for", "192.168.1.1"},
-        {"x-real-ip", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"true-client-ip", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"x-client-ip", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"x-forwarded", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"forwarded-for", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"x-cluster-client-ip", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"fastly-client-ip", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"cf-connecting-ip", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"cf-connecting-ipv6", ddwaf::test::ddwaf_object_da::make_uninit()},
+        {"x-real-ip", owned_object{}},
+        {"true-client-ip", owned_object{}},
+        {"x-client-ip", owned_object{}},
+        {"x-forwarded", owned_object{}},
+        {"forwarded-for", owned_object{}},
+        {"x-cluster-client-ip", owned_object{}},
+        {"fastly-client-ip", owned_object{}},
+        {"cf-connecting-ip", owned_object{}},
+        {"cf-connecting-ipv6", owned_object{}},
     });
 
     http_network_fingerprint gen{"id", {}, {}, false, true};
@@ -607,15 +606,15 @@ TEST(TestHttpNetworkFingerprint, AllXFFHeadersMultipleChosenIPs)
 
     auto headers = object_builder_da::map({
         {"x-forwarded-for", "192.168.1.1,::1,8.7.6.5"},
-        {"x-real-ip", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"true-client-ip", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"x-client-ip", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"x-forwarded", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"forwarded-for", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"x-cluster-client-ip", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"fastly-client-ip", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"cf-connecting-ip", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"cf-connecting-ipv6", ddwaf::test::ddwaf_object_da::make_uninit()},
+        {"x-real-ip", owned_object{}},
+        {"true-client-ip", owned_object{}},
+        {"x-client-ip", owned_object{}},
+        {"x-forwarded", owned_object{}},
+        {"forwarded-for", owned_object{}},
+        {"x-cluster-client-ip", owned_object{}},
+        {"fastly-client-ip", owned_object{}},
+        {"cf-connecting-ip", owned_object{}},
+        {"cf-connecting-ipv6", owned_object{}},
     });
 
     http_network_fingerprint gen{"id", {}, {}, false, true};
@@ -636,15 +635,15 @@ TEST(TestHttpNetworkFingerprint, AllXFFHeadersMultipleChosenIPsAsArray)
 
     auto headers = object_builder_da::map({
         {"x-forwarded-for", object_builder_da::array({"192.168.1.1,::1,8.7.6.5"})},
-        {"x-real-ip", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"true-client-ip", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"x-client-ip", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"x-forwarded", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"forwarded-for", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"x-cluster-client-ip", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"fastly-client-ip", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"cf-connecting-ip", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"cf-connecting-ipv6", ddwaf::test::ddwaf_object_da::make_uninit()},
+        {"x-real-ip", owned_object{}},
+        {"true-client-ip", owned_object{}},
+        {"x-client-ip", owned_object{}},
+        {"x-forwarded", owned_object{}},
+        {"forwarded-for", owned_object{}},
+        {"x-cluster-client-ip", owned_object{}},
+        {"fastly-client-ip", owned_object{}},
+        {"cf-connecting-ip", owned_object{}},
+        {"cf-connecting-ipv6", owned_object{}},
     });
     http_network_fingerprint gen{"id", {}, {}, false, true};
 
@@ -664,15 +663,15 @@ TEST(TestHttpNetworkFingerprint, AllXFFHeadersMultipleChosenIPsAsArrayInvalidTyp
 
     auto headers = object_builder_da::map({
         {"x-forwarded-for", object_builder_da::array({42})},
-        {"x-real-ip", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"true-client-ip", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"x-client-ip", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"x-forwarded", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"forwarded-for", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"x-cluster-client-ip", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"fastly-client-ip", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"cf-connecting-ip", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"cf-connecting-ipv6", ddwaf::test::ddwaf_object_da::make_uninit()},
+        {"x-real-ip", owned_object{}},
+        {"true-client-ip", owned_object{}},
+        {"x-client-ip", owned_object{}},
+        {"x-forwarded", owned_object{}},
+        {"forwarded-for", owned_object{}},
+        {"x-cluster-client-ip", owned_object{}},
+        {"fastly-client-ip", owned_object{}},
+        {"cf-connecting-ip", owned_object{}},
+        {"cf-connecting-ipv6", owned_object{}},
     });
 
     http_network_fingerprint gen{"id", {}, {}, false, true};
@@ -693,15 +692,15 @@ TEST(TestHttpNetworkFingerprint, AllXFFHeadersMultipleChosenIPsDuplicateXFF)
 
     auto headers = object_builder_da::map({
         {"x-forwarded-for", object_builder_da::array({"192.168.1.1,::1,8.7.6.5", "192.168.1.44"})},
-        {"x-real-ip", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"true-client-ip", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"x-client-ip", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"x-forwarded", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"forwarded-for", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"x-cluster-client-ip", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"fastly-client-ip", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"cf-connecting-ip", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"cf-connecting-ipv6", ddwaf::test::ddwaf_object_da::make_uninit()},
+        {"x-real-ip", owned_object{}},
+        {"true-client-ip", owned_object{}},
+        {"x-client-ip", owned_object{}},
+        {"x-forwarded", owned_object{}},
+        {"forwarded-for", owned_object{}},
+        {"x-cluster-client-ip", owned_object{}},
+        {"fastly-client-ip", owned_object{}},
+        {"cf-connecting-ip", owned_object{}},
+        {"cf-connecting-ipv6", owned_object{}},
     });
 
     http_network_fingerprint gen{"id", {}, {}, false, true};
@@ -721,16 +720,16 @@ TEST(TestHttpNetworkFingerprint, AllXFFHeadersRandomChosenHeader)
     auto *alloc = memory::get_default_resource();
 
     auto headers = object_builder_da::map({
-        {"x-forwarded-for", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"x-real-ip", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"true-client-ip", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"x-client-ip", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"x-forwarded", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"forwarded-for", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"x-cluster-client-ip", ddwaf::test::ddwaf_object_da::make_uninit()},
+        {"x-forwarded-for", owned_object{}},
+        {"x-real-ip", owned_object{}},
+        {"true-client-ip", owned_object{}},
+        {"x-client-ip", owned_object{}},
+        {"x-forwarded", owned_object{}},
+        {"forwarded-for", owned_object{}},
+        {"x-cluster-client-ip", owned_object{}},
         {"fastly-client-ip", "192.168.1.1,::1,8.7.6.5"},
-        {"cf-connecting-ip", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"cf-connecting-ipv6", ddwaf::test::ddwaf_object_da::make_uninit()},
+        {"cf-connecting-ip", owned_object{}},
+        {"cf-connecting-ipv6", owned_object{}},
     });
 
     http_network_fingerprint gen{"id", {}, {}, false, true};
@@ -1030,13 +1029,13 @@ TEST(TestSessionFingerprint, CookieEmptyValues)
     auto *alloc = memory::get_default_resource();
 
     auto cookies = object_builder_da::map({
-        {"name", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"theme", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"language", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"tracking_id", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"gdpr_consent", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"session_id", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"last_visit", ddwaf::test::ddwaf_object_da::make_uninit()},
+        {"name", owned_object{}},
+        {"theme", owned_object{}},
+        {"language", owned_object{}},
+        {"tracking_id", owned_object{}},
+        {"gdpr_consent", owned_object{}},
+        {"session_id", owned_object{}},
+        {"last_visit", owned_object{}},
     });
 
     session_fingerprint gen{"id", {}, {}, false, true};

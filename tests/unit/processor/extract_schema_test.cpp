@@ -20,7 +20,7 @@ TEST(TestExtractSchema, UnknownScalarSchema)
 {
     auto *alloc = memory::get_default_resource();
 
-    owned_object input = ddwaf::test::ddwaf_object_da::make_uninit();
+    owned_object input = owned_object{};
 
     extract_schema gen{"id", {}, {}, {}, false, true};
 
@@ -139,7 +139,7 @@ TEST(TestExtractSchema, ArraySchema)
     auto *alloc = memory::get_default_resource();
 
     auto input = object_builder_da::array({test::ddwaf_object_da::make_signed(22), "string",
-        ddwaf::test::ddwaf_object_da::make_uninit(), owned_object::make_null()});
+        owned_object{}, owned_object::make_null()});
 
     extract_schema gen{"id", {}, {}, {}, false, true};
 
@@ -248,8 +248,7 @@ TEST(TestExtractSchema, MapSchema)
     auto *alloc = memory::get_default_resource();
 
     auto input = object_builder_da::map({{"unsigned", test::ddwaf_object_da::make_signed(22)},
-        {"string", "string"}, {"invalid", ddwaf::test::ddwaf_object_da::make_uninit()},
-        {"null", owned_object::make_null()},
+        {"string", "string"}, {"invalid", owned_object{}}, {"null", owned_object::make_null()},
         {"map", object_builder_da::map(
                     {{"unsigned", test::ddwaf_object_da::make_signed(5)}, {"string", "str"}})},
         {"array", object_builder_da::array({test::ddwaf_object_da::make_signed(-5)})}});

@@ -304,7 +304,7 @@ TEST(TestProcessor, SingleMappingNoOutputEvalUnconditional)
     processor_cache cache;
     timer deadline{2s};
 
-    owned_object attributes = ddwaf::test::ddwaf_object_da::make_uninit();
+    owned_object attributes = owned_object{};
 
     {
         auto obtained = store.get_target("output_address");
@@ -356,7 +356,7 @@ TEST(TestProcessor, SingleMappingNoOutputEvalConditionalTrue)
 
     timer deadline{2s};
 
-    owned_object attributes = ddwaf::test::ddwaf_object_da::make_uninit();
+    owned_object attributes = owned_object{};
 
     EXPECT_FALSE(store.get_target("output_address").has_value());
 
@@ -402,7 +402,7 @@ TEST(TestProcessor, SingleMappingNoOutputEvalConditionalFalse)
     processor_cache cache;
     timer deadline{2s};
 
-    owned_object attributes = ddwaf::test::ddwaf_object_da::make_uninit();
+    owned_object attributes = owned_object{};
 
     EXPECT_FALSE(store.get_target("output_address").has_value());
     attribute_collector collector;
@@ -447,7 +447,7 @@ TEST(TestProcessor, MultiMappingNoOutputEvalUnconditional)
 
     processor_cache cache;
     timer deadline{2s};
-    owned_object attributes = ddwaf::test::ddwaf_object_da::make_uninit();
+    owned_object attributes = owned_object{};
 
     EXPECT_FALSE(store.get_target("output_address").has_value());
     EXPECT_FALSE(store.get_target("output_address.second").has_value());
@@ -612,7 +612,7 @@ TEST(TestProcessor, EvalAlreadyAvailableInStore)
 
     processor_cache cache;
     timer deadline{2s};
-    owned_object attributes = ddwaf::test::ddwaf_object_da::make_uninit();
+    owned_object attributes = owned_object{};
 
     attribute_collector collector;
     proc.eval(store, collector, cache, alloc, deadline);
@@ -648,7 +648,7 @@ TEST(TestProcessor, OutputEvalWithoutattributesMap)
     processor_cache cache;
     timer deadline{2s};
 
-    owned_object attributes = ddwaf::test::ddwaf_object_da::make_uninit();
+    owned_object attributes = owned_object{};
 
     {
         auto obtained = store.get_target("output_address");
@@ -686,7 +686,7 @@ TEST(TestProcessor, Timeout)
 
     processor_cache cache;
     timer deadline{0s};
-    owned_object attributes = ddwaf::test::ddwaf_object_da::make_uninit();
+    owned_object attributes = owned_object{};
 
     attribute_collector collector;
     EXPECT_THROW(proc.eval(store, collector, cache, alloc, deadline), ddwaf::timeout_exception);

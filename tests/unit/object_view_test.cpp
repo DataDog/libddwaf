@@ -22,7 +22,7 @@ TEST(TestObjectView, DefaultObject)
 
 TEST(TestObjectView, InvalidObject)
 {
-    owned_object original = ddwaf::test::ddwaf_object_da::make_uninit();
+    owned_object original = owned_object{};
     object_view view(original);
 
     ASSERT_TRUE(view.has_value());
@@ -392,7 +392,7 @@ TEST(TestObjectView, MapObject)
 
 TEST(TestObjectView, Equality)
 {
-    owned_object root = ddwaf::test::ddwaf_object_da::make_uninit();
+    owned_object root = owned_object{};
     object_view view(root);
 
     {
@@ -402,7 +402,7 @@ TEST(TestObjectView, Equality)
     }
 
     {
-        owned_object other = ddwaf::test::ddwaf_object_da::make_uninit();
+        owned_object other = owned_object{};
         object_view view2(other);
 
         EXPECT_FALSE(view == view2);
@@ -418,7 +418,7 @@ TEST(TestObjectView, Equality)
 
 TEST(TestObjectView, Inequality)
 {
-    owned_object root = ddwaf::test::ddwaf_object_da::make_uninit();
+    owned_object root = owned_object{};
     object_view view(root);
 
     {
@@ -428,7 +428,7 @@ TEST(TestObjectView, Inequality)
     }
 
     {
-        owned_object other = ddwaf::test::ddwaf_object_da::make_uninit();
+        owned_object other = owned_object{};
         object_view view2(other);
 
         EXPECT_TRUE(view != view2);
@@ -550,7 +550,7 @@ TEST(TestObjectView, LiteralAndLongStringHandling)
 
 TEST(TestObjectView, AsOrDefault)
 {
-    owned_object original = ddwaf::test::ddwaf_object_da::make_uninit();
+    owned_object original = owned_object{};
     object_view view(original);
 
     EXPECT_EQ(view.as_or_default<std::string_view>({}), std::string_view{});
@@ -820,7 +820,7 @@ TEST(TestObjectView, FindKeyPathVariantPositiveIndexWithExclusion)
 
 TEST(TestObjectView, CloneInvalid)
 {
-    owned_object input_data = ddwaf::test::ddwaf_object_da::make_uninit();
+    owned_object input_data = owned_object{};
     object_view input{input_data};
     auto output = input.clone(memory::get_default_resource());
     EXPECT_TRUE(output.is_invalid());

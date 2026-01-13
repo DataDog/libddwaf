@@ -16,7 +16,7 @@ namespace {
 
 TEST(TestKVIterator, TestInvalidIterator)
 {
-    owned_object object = ddwaf::test::ddwaf_object_da::make_uninit();
+    owned_object object = owned_object{};
 
     object_set_ref exclude;
     ddwaf::kv_iterator it(object, {}, exclude);
@@ -123,7 +123,7 @@ TEST(TestKVIterator, TestArrayMultipleNullAndInvalid)
     auto object = object_builder_da::array();
     for (unsigned i = 0; i < 25; i++) {
         object.emplace_back(std::to_string(i));
-        object.emplace_back(ddwaf::test::ddwaf_object_da::make_uninit());
+        object.emplace_back(owned_object{});
         object.emplace_back(owned_object::make_null());
     }
 
@@ -269,7 +269,7 @@ TEST(TestKVIterator, TestMapMultipleNullAndInvalid)
 
         {
             auto index = std::to_string(i * 3 + 2);
-            object.emplace("key" + index, ddwaf::test::ddwaf_object_da::make_uninit());
+            object.emplace("key" + index, owned_object{});
         }
     }
 
@@ -490,7 +490,7 @@ TEST(TestKVIterator, TestMapNoScalars)
 
 TEST(TestKVIterator, TestInvalidObjectPath)
 {
-    owned_object object = ddwaf::test::ddwaf_object_da::make_uninit();
+    owned_object object = owned_object{};
 
     object_set_ref exclude;
     std::vector<std::variant<std::string, int64_t>> key_path{"key", "0", "value"};
@@ -505,7 +505,7 @@ TEST(TestKVIterator, TestInvalidObjectPath)
 
 TEST(TestKVIterator, TestSimplePath)
 {
-    owned_object object = ddwaf::test::ddwaf_object_da::make_uninit();
+    owned_object object = owned_object{};
 
     {
         std::vector<std::variant<std::string, int64_t>> key_path{"key"};

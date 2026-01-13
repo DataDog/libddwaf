@@ -47,7 +47,7 @@ owned_object split_query_parameters(
         }
 
         std::string_view key;
-        owned_object value = owned_object{alloc};
+        owned_object value = owned_object{};
 
         // Check if it's in the key=value format
         //  - key= is considered an empty string value
@@ -109,7 +109,7 @@ owned_object uri_parse_processor::eval_impl(const unary_argument<std::string_vie
 {
     auto decomposed = uri_parse(input.value);
     if (!decomposed.has_value()) {
-        return owned_object{alloc};
+        return owned_object{};
     }
 
     auto output = owned_object::make_map(7, alloc);

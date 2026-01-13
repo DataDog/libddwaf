@@ -824,8 +824,8 @@ protected:
 class owned_object final : public readable_object<owned_object>,
                            public writable_object<owned_object> {
 public:
-    explicit owned_object(nonnull_ptr<memory::memory_resource> alloc)
-        : obj_({.type = object_type::invalid}), alloc_(alloc)
+    owned_object()
+        : obj_({.type = object_type::invalid}), alloc_(memory::get_default_null_resource())
     {}
 
     // UNSAFE: Caller must ensure the object's memory is compatible with the
@@ -863,11 +863,6 @@ public:
     [[nodiscard]] detail::object *ptr() { return &obj_; }
     [[nodiscard]] const detail::object *ptr() const noexcept { return &obj_; }
     [[nodiscard]] nonnull_ptr<memory::memory_resource> alloc() const noexcept { return alloc_; }
-
-    static owned_object make_invalid()
-    {
-        return owned_object({.type = object_type::invalid}, memory::get_default_null_resource());
-    }
 
     // the variants that don't take a memory resource can't be written to
     // (have their value replaced)
@@ -1085,7 +1080,7 @@ template <typename Derived>
         default:
             break;
         }
-        return owned_object{alloc};
+        return owned_object{};
     };
 
     std::deque<std::pair<object_view, borrowed_object>> queue;

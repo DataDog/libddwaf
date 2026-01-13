@@ -75,7 +75,7 @@ TEST(TestObject, NullBorrowedObject)
 
 TEST(TestObject, InvalidObject)
 {
-    owned_object ow = ddwaf::test::ddwaf_object_da::make_uninit();
+    owned_object ow = owned_object{};
     EXPECT_EQ(ow.type(), object_type::invalid);
     EXPECT_TRUE(ow.is_invalid());
     EXPECT_FALSE(ow.is_valid());
@@ -966,7 +966,7 @@ TEST(TestObject, ObjectWithNullAllocator)
 
 TEST(TestObject, CloneInvalid)
 {
-    owned_object input = ddwaf::test::ddwaf_object_da::make_uninit();
+    owned_object input = owned_object{};
     auto output = input.clone(memory::get_default_resource());
     EXPECT_TRUE(output.is_invalid());
 }

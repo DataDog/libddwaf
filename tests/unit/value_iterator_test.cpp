@@ -16,7 +16,7 @@ namespace {
 
 TEST(TestValueIterator, TestInvalidIterator)
 {
-    owned_object object = ddwaf::test::ddwaf_object_da::make_uninit();
+    owned_object object = owned_object{};
 
     std::unordered_set<object_cache_key> context;
     object_set_ref exclude{context};
@@ -127,7 +127,7 @@ TEST(TestValueIterator, TestArrayMultipleNullAndInvalid)
     auto object = object_builder_da::array();
     for (unsigned i = 0; i < 25; i++) {
         object.emplace_back(std::to_string(i));
-        object.emplace_back(ddwaf::test::ddwaf_object_da::make_uninit());
+        object.emplace_back(owned_object{});
         object.emplace_back(owned_object::make_null());
     }
 
@@ -257,7 +257,7 @@ TEST(TestValueIterator, TestMapMultipleMultipleNullAndInvalid)
 
         {
             auto index = std::to_string(i * 3 + 2);
-            object.emplace("key" + index, ddwaf::test::ddwaf_object_da::make_uninit());
+            object.emplace("key" + index, owned_object{});
         }
     }
 
@@ -372,7 +372,7 @@ TEST(TestValueIterator, TestContainerMix)
 
 TEST(TestValueIterator, TestInvalidObjectPath)
 {
-    owned_object object = ddwaf::test::ddwaf_object_da::make_uninit();
+    owned_object object = owned_object{};
 
     std::unordered_set<object_cache_key> context;
     object_set_ref exclude{context};

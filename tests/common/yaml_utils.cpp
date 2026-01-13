@@ -159,7 +159,7 @@ owned_object node_to_owned_object(const Node &node)
     case NodeType::Null:
         return owned_object::make_null();
     case NodeType::Undefined:
-        return ddwaf::test::ddwaf_object_da::make_uninit();
+        return owned_object{};
     }
 
     throw parsing_error("Invalid YAML node type");

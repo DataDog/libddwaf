@@ -41,8 +41,7 @@ TEST(TestScalarCondition, NoMatch)
     scalar_condition cond{std::make_unique<matcher::regex_match>(".*", 0, true), {},
         {gen_variadic_param("server.request.uri.raw")}};
 
-    auto root = object_builder_da::map(
-        {{"server.request.uri.raw", ddwaf::test::ddwaf_object_da::make_uninit()}});
+    auto root = object_builder_da::map({{"server.request.uri.raw", owned_object{}}});
 
     object_store store;
     store.insert(std::move(root));
@@ -57,8 +56,7 @@ TEST(TestScalarCondition, Timeout)
     scalar_condition cond{std::make_unique<matcher::regex_match>(".*", 0, true), {},
         {gen_variadic_param("server.request.uri.raw")}};
 
-    auto root = object_builder_da::map(
-        {{"server.request.uri.raw", ddwaf::test::ddwaf_object_da::make_uninit()}});
+    auto root = object_builder_da::map({{"server.request.uri.raw", owned_object{}}});
 
     object_store store;
     store.insert(std::move(root));

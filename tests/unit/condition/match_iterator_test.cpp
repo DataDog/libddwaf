@@ -15,7 +15,7 @@ namespace {
 
 TEST(TestMatchIterator, InvalidIterator)
 {
-    owned_object object = ddwaf::test::ddwaf_object_da::make_uninit();
+    owned_object object = owned_object{};
 
     std::string resource = "this is the resource";
     object_set_ref exclude;

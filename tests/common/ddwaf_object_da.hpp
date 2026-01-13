@@ -14,7 +14,6 @@ namespace ddwaf::test {
 
 class ddwaf_object_da {
 public:
-    static owned_object make_uninit() { return owned_object{memory::get_default_resource()}; }
     static owned_object make_null() { return owned_object::make_null(); }
 
     static owned_object make_boolean(bool value) { return owned_object::make_boolean(value); }

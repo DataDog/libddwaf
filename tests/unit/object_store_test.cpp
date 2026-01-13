@@ -20,7 +20,7 @@ TEST(TestObjectStore, InsertInvalidObject)
     auto url = get_target_index("url");
 
     object_store store;
-    store.insert(ddwaf::test::ddwaf_object_da::make_uninit());
+    store.insert(owned_object{});
 
     EXPECT_TRUE(store.empty());
     EXPECT_FALSE(store.has_new_targets());
@@ -128,7 +128,7 @@ TEST(TestObjectStore, InsertMultipleUniqueObjects)
     }
 
     {
-        ctx_store.insert(ddwaf::test::ddwaf_object_da::make_uninit());
+        ctx_store.insert(owned_object{});
 
         EXPECT_FALSE(ctx_store.empty());
         EXPECT_TRUE(ctx_store.has_new_targets());
@@ -189,7 +189,7 @@ TEST(TestObjectStore, InsertMultipleUniqueObjectBatches)
     {
         defer cleanup{[&]() { store.clear_last_batch(); }};
 
-        owned_object third = ddwaf::test::ddwaf_object_da::make_uninit();
+        owned_object third = owned_object{};
         store.insert(std::move(third));
         EXPECT_FALSE(store.empty());
         EXPECT_FALSE(store.has_new_targets());

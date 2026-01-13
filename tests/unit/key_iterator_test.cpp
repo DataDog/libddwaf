@@ -15,7 +15,7 @@ namespace {
 
 TEST(TestKeyIterator, TestInvalidIterator)
 {
-    owned_object object = ddwaf::test::ddwaf_object_da::make_uninit();
+    owned_object object = owned_object{};
 
     object_set_ref exclude;
     ddwaf::key_iterator it(object, {}, exclude);
@@ -191,7 +191,7 @@ TEST(TestKeyIterator, TestMapMultipleNullAndInvalid)
 
         {
             auto index = std::to_string((i * 3) + 2);
-            object.emplace("key" + index, ddwaf::test::ddwaf_object_da::make_uninit());
+            object.emplace("key" + index, owned_object{});
         }
     }
 
@@ -378,7 +378,7 @@ TEST(TestKeyIterator, TestMapNoScalars)
 
 TEST(TestKeyIterator, TestInvalidObjectPath)
 {
-    owned_object object = ddwaf::test::ddwaf_object_da::make_uninit();
+    owned_object object = owned_object{};
 
     object_set_ref exclude;
     std::vector<std::variant<std::string, int64_t>> key_path{"key", "0", "value"};

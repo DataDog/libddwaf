@@ -342,7 +342,7 @@ owned_object extract_schema::eval_impl(const unary_argument<object_view> &input,
     ddwaf::timer &deadline) const
 {
     if (!input.value.has_value()) {
-        return owned_object{alloc};
+        return owned_object{};
     }
 
     return {schema::generate(input.value, scanners_, alloc, deadline)};

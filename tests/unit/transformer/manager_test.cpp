@@ -48,7 +48,7 @@ std::optional<std::string> transform(std::string_view input, const std::vector<t
 TEST(TestTransformerManager, InvalidTypes)
 {
     owned_object src = test::ddwaf_object_da::make_unsigned(29U);
-    owned_object dst = ddwaf::test::ddwaf_object_da::make_uninit();
+    owned_object dst = owned_object{};
 
     {
         std::vector<transformer_id> ids{transformer_id::compress_whitespace};

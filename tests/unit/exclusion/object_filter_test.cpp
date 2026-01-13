@@ -400,8 +400,7 @@ TEST(TestObjectFilter, SingleGlobTarget)
         object_store store;
         object_filter::cache_type cache;
 
-        auto root =
-            object_builder_da::map({{"query", ddwaf::test::ddwaf_object_da::make_uninit()}});
+        auto root = object_builder_da::map({{"query", owned_object{}}});
         store.insert(root);
 
         auto objects_filtered = filter.match(store, cache, deadline);
@@ -455,8 +454,7 @@ TEST(TestObjectFilter, GlobAndKeyTarget)
         object_store store;
         object_filter::cache_type cache;
 
-        auto root =
-            object_builder_da::map({{"query", ddwaf::test::ddwaf_object_da::make_uninit()}});
+        auto root = object_builder_da::map({{"query", owned_object{}}});
         store.insert(root);
 
         auto objects_filtered = filter.match(store, cache, deadline);
