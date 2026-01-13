@@ -8,6 +8,7 @@
 #include "processor/fingerprint.hpp"
 
 using namespace ddwaf;
+using namespace ddwaf::test;
 using namespace std::literals;
 
 namespace {
@@ -16,10 +17,10 @@ TEST(TestHttpEndpointFingerprint, Basic)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto query = object_builder::map(
+    auto query = object_builder_da::map(
         {{"Key1", owned_object{}}, {"KEY2", owned_object{}}, {"key,3", owned_object{}}});
 
-    auto body = object_builder::map({
+    auto body = object_builder_da::map({
         {"KEY1", owned_object{}},
         {"KEY2", owned_object{}},
         {"KEY", owned_object{}},
@@ -44,9 +45,9 @@ TEST(TestHttpEndpointFingerprint, EmptyQuery)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto query = object_builder::map();
+    auto query = object_builder_da::map();
 
-    auto body = object_builder::map({
+    auto body = object_builder_da::map({
         {"KEY1", owned_object{}},
         {"KEY2", owned_object{}},
         {"KEY", owned_object{}},
@@ -71,13 +72,13 @@ TEST(TestHttpEndpointFingerprint, EmptyBody)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto query = object_builder::map({
+    auto query = object_builder_da::map({
         {"Key1", owned_object{}},
         {"KEY2", owned_object{}},
         {"key,3", owned_object{}},
     });
 
-    auto body = object_builder::map();
+    auto body = object_builder_da::map();
     http_endpoint_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
@@ -96,8 +97,8 @@ TEST(TestHttpEndpointFingerprint, EmptyEverything)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto query = object_builder::map();
-    auto body = object_builder::map();
+    auto query = object_builder_da::map();
+    auto body = object_builder_da::map();
     http_endpoint_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
@@ -116,13 +117,13 @@ TEST(TestHttpEndpointFingerprint, KeyConsistency)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto query = object_builder::map({
+    auto query = object_builder_da::map({
         {"Key1", owned_object{}},
         {"KEY2", owned_object{}},
         {"key3,Key4", owned_object{}},
     });
 
-    auto body = object_builder::map({
+    auto body = object_builder_da::map({
         {"KeY1", owned_object{}},
         {"kEY2", owned_object{}},
         {"KEY3", owned_object{}},
@@ -147,13 +148,13 @@ TEST(TestHttpEndpointFingerprint, UriRawConsistency)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto query = object_builder::map({
+    auto query = object_builder_da::map({
         {"Key1", owned_object{}},
         {"KEY2", owned_object{}},
         {"key,3", owned_object{}},
     });
 
-    auto body = object_builder::map({
+    auto body = object_builder_da::map({
         {"KEY1", owned_object{}},
         {"KEY2", owned_object{}},
         {"KEY", owned_object{}},
@@ -234,7 +235,7 @@ TEST(TestHttpEndpointFingerprint, Regeneration)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto query = object_builder::map({
+    auto query = object_builder_da::map({
         {"Key1", owned_object{}},
         {"KEY2", owned_object{}},
         {"key,3", owned_object{}},
@@ -256,7 +257,7 @@ TEST(TestHttpEndpointFingerprint, Regeneration)
     }
 
     {
-        auto body = object_builder::map({
+        auto body = object_builder_da::map({
             {"KEY1", owned_object{}},
             {"KEY2", owned_object{}},
             {"KEY", owned_object{}},
@@ -279,7 +280,7 @@ TEST(TestHttpHeaderFingerprint, AllKnownHeaders)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto headers = object_builder::map({
+    auto headers = object_builder_da::map({
         {"referer", owned_object{}},
         {"CONNECTION", owned_object{}},
         {"Accept_Encoding", owned_object{}},
@@ -308,7 +309,7 @@ TEST(TestHttpHeaderFingerprint, NoHeaders)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto headers = object_builder::map();
+    auto headers = object_builder_da::map();
     http_header_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
@@ -325,7 +326,7 @@ TEST(TestHttpHeaderFingerprint, SomeKnownHeaders)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto headers = object_builder::map({
+    auto headers = object_builder_da::map({
         {"referer", owned_object{}},
         {"accept-encoding", owned_object{}},
         {"cache-control", owned_object{}},
@@ -350,7 +351,7 @@ TEST(TestHttpHeaderFingerprint, UserAgent)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto headers = object_builder::map({
+    auto headers = object_builder_da::map({
         {"referer", owned_object{}},
         {"connection", owned_object{}},
         {"accept-encoding", owned_object{}},
@@ -380,7 +381,7 @@ TEST(TestHttpHeaderFingerprint, UserAgentAsArray)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto headers = object_builder::map({
+    auto headers = object_builder_da::map({
         {"referer", owned_object{}},
         {"connection", owned_object{}},
         {"accept-encoding", owned_object{}},
@@ -391,7 +392,7 @@ TEST(TestHttpHeaderFingerprint, UserAgentAsArray)
         {"content-type", owned_object{}},
         {"accept", owned_object{}},
         {"accept-language", owned_object{}},
-        {"user-agent", object_builder::array({"Random"})},
+        {"user-agent", object_builder_da::array({"Random"})},
     });
 
     http_header_fingerprint gen{"id", {}, {}, false, true};
@@ -410,7 +411,7 @@ TEST(TestHttpHeaderFingerprint, UserAgentAsArrayInvalidType)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto headers = object_builder::map({
+    auto headers = object_builder_da::map({
         {"referer", owned_object{}},
         {"connection", owned_object{}},
         {"accept-encoding", owned_object{}},
@@ -421,7 +422,7 @@ TEST(TestHttpHeaderFingerprint, UserAgentAsArrayInvalidType)
         {"content-type", owned_object{}},
         {"accept", owned_object{}},
         {"accept-language", owned_object{}},
-        {"user-agent", object_builder::array({42})},
+        {"user-agent", object_builder_da::array({42})},
     });
     http_header_fingerprint gen{"id", {}, {}, false, true};
 
@@ -439,7 +440,7 @@ TEST(TestHttpHeaderFingerprint, MultipleUserAgents)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto headers = object_builder::map({
+    auto headers = object_builder_da::map({
         {"referer", owned_object{}},
         {"connection", owned_object{}},
         {"accept-encoding", owned_object{}},
@@ -450,7 +451,7 @@ TEST(TestHttpHeaderFingerprint, MultipleUserAgents)
         {"content-type", owned_object{}},
         {"accept", owned_object{}},
         {"accept-language", owned_object{}},
-        {"user-agent", object_builder::array({"Random", "Bot"})},
+        {"user-agent", object_builder_da::array({"Random", "Bot"})},
     });
     http_header_fingerprint gen{"id", {}, {}, false, true};
 
@@ -468,7 +469,7 @@ TEST(TestHttpHeaderFingerprint, ExcludedUnknownHeaders)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto headers = object_builder::map({
+    auto headers = object_builder_da::map({
         {"referer", owned_object{}},
         {"connection", owned_object{}},
         {"accept-encoding", owned_object{}},
@@ -511,7 +512,7 @@ TEST(TestHttpHeaderFingerprint, UnknownHeaders)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto headers = object_builder::map({
+    auto headers = object_builder_da::map({
         {"referer", owned_object{}},
         {"connection", owned_object{}},
         {"accept-encoding", owned_object{}},
@@ -558,7 +559,7 @@ TEST(TestHttpNetworkFingerprint, AllXFFHeaders)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto headers = object_builder::map({
+    auto headers = object_builder_da::map({
         {"x-forwarded-for", "192.168.1.1"},
         {"x-real-ip", owned_object{}},
         {"true-client-ip", owned_object{}},
@@ -586,7 +587,7 @@ TEST(TestHttpNetworkFingerprint, NoHeaders)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto headers = object_builder::map();
+    auto headers = object_builder_da::map();
     http_network_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
@@ -603,7 +604,7 @@ TEST(TestHttpNetworkFingerprint, AllXFFHeadersMultipleChosenIPs)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto headers = object_builder::map({
+    auto headers = object_builder_da::map({
         {"x-forwarded-for", "192.168.1.1,::1,8.7.6.5"},
         {"x-real-ip", owned_object{}},
         {"true-client-ip", owned_object{}},
@@ -632,8 +633,8 @@ TEST(TestHttpNetworkFingerprint, AllXFFHeadersMultipleChosenIPsAsArray)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto headers = object_builder::map({
-        {"x-forwarded-for", object_builder::array({"192.168.1.1,::1,8.7.6.5"})},
+    auto headers = object_builder_da::map({
+        {"x-forwarded-for", object_builder_da::array({"192.168.1.1,::1,8.7.6.5"})},
         {"x-real-ip", owned_object{}},
         {"true-client-ip", owned_object{}},
         {"x-client-ip", owned_object{}},
@@ -660,8 +661,8 @@ TEST(TestHttpNetworkFingerprint, AllXFFHeadersMultipleChosenIPsAsArrayInvalidTyp
 {
     auto *alloc = memory::get_default_resource();
 
-    auto headers = object_builder::map({
-        {"x-forwarded-for", object_builder::array({42})},
+    auto headers = object_builder_da::map({
+        {"x-forwarded-for", object_builder_da::array({42})},
         {"x-real-ip", owned_object{}},
         {"true-client-ip", owned_object{}},
         {"x-client-ip", owned_object{}},
@@ -689,8 +690,8 @@ TEST(TestHttpNetworkFingerprint, AllXFFHeadersMultipleChosenIPsDuplicateXFF)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto headers = object_builder::map({
-        {"x-forwarded-for", object_builder::array({"192.168.1.1,::1,8.7.6.5", "192.168.1.44"})},
+    auto headers = object_builder_da::map({
+        {"x-forwarded-for", object_builder_da::array({"192.168.1.1,::1,8.7.6.5", "192.168.1.44"})},
         {"x-real-ip", owned_object{}},
         {"true-client-ip", owned_object{}},
         {"x-client-ip", owned_object{}},
@@ -718,7 +719,7 @@ TEST(TestHttpNetworkFingerprint, AllXFFHeadersRandomChosenHeader)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto headers = object_builder::map({
+    auto headers = object_builder_da::map({
         {"x-forwarded-for", owned_object{}},
         {"x-real-ip", owned_object{}},
         {"true-client-ip", owned_object{}},
@@ -750,7 +751,7 @@ TEST(TestHttpNetworkFingerprint, HeaderPrecedence)
     http_network_fingerprint gen{"id", {}, {}, false, true};
 
     auto get_headers = [](std::size_t begin) {
-        auto headers = object_builder::map();
+        auto headers = object_builder_da::map();
         std::array<std::string, 10> names{"x-forwarded-for", "x-real-ip", "true-client-ip",
             "x-client-ip", "x-forwarded", "forwarded-for", "x-cluster-client-ip",
             "fastly-client-ip", "cf-connecting-ip", "cf-connecting-ipv6"};
@@ -793,7 +794,7 @@ TEST(TestSessionFingerprint, UserOnly)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto cookies = object_builder::map();
+    auto cookies = object_builder_da::map();
     session_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
@@ -812,7 +813,7 @@ TEST(TestSessionFingerprint, SessionOnly)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto cookies = object_builder::map();
+    auto cookies = object_builder_da::map();
     session_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
@@ -831,7 +832,7 @@ TEST(TestSessionFingerprint, CookiesOnly)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto cookies = object_builder::map({
+    auto cookies = object_builder_da::map({
         {"name", "albert"},
         {"theme", "dark"},
         {"language", "en-GB"},
@@ -859,7 +860,7 @@ TEST(TestSessionFingerprint, UserCookieAndSession)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto cookies = object_builder::map({
+    auto cookies = object_builder_da::map({
         {"name", "albert"},
         {"theme", "dark"},
         {"language", "en-GB"},
@@ -887,7 +888,7 @@ TEST(TestSessionFingerprint, CookieKeysNormalization)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto cookies = object_builder::map({
+    auto cookies = object_builder_da::map({
         {"nAmE", "albert"},
         {"THEME", "dark"},
         {"language,ID", "en-GB"},
@@ -915,7 +916,7 @@ TEST(TestSessionFingerprint, CookieValuesNormalization)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto cookies = object_builder::map({
+    auto cookies = object_builder_da::map({
         {"name", "albert,martinez"},
         {"theme", "dark"},
         {"language", "en-GB,en-US"},
@@ -943,14 +944,14 @@ TEST(TestSessionFingerprint, CookieValuesAsArray)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto cookies = object_builder::map({
-        {"name", object_builder::array({"albert,martinez"})},
-        {"theme", object_builder::array({"dark"})},
-        {"language", object_builder::array({"en-GB,en-US"})},
-        {"tracking_id", object_builder::array({"xyzabc"})},
-        {"gdpr_consent", object_builder::array({",yes"})},
-        {"session_id", object_builder::array({"ansd0182u2n,"})},
-        {"last_visit", object_builder::array({"2024-07-16T12:00:00Z"})},
+    auto cookies = object_builder_da::map({
+        {"name", object_builder_da::array({"albert,martinez"})},
+        {"theme", object_builder_da::array({"dark"})},
+        {"language", object_builder_da::array({"en-GB,en-US"})},
+        {"tracking_id", object_builder_da::array({"xyzabc"})},
+        {"gdpr_consent", object_builder_da::array({",yes"})},
+        {"session_id", object_builder_da::array({"ansd0182u2n,"})},
+        {"last_visit", object_builder_da::array({"2024-07-16T12:00:00Z"})},
     });
 
     session_fingerprint gen{"id", {}, {}, false, true};
@@ -971,14 +972,14 @@ TEST(TestSessionFingerprint, CookieValuesAsArrayInvalidType)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto cookies = object_builder::map({
-        {"name", object_builder::array({42})},
-        {"theme", object_builder::array({42})},
-        {"language", object_builder::array({42})},
-        {"tracking_id", object_builder::array({42})},
-        {"gdpr_consent", object_builder::array({42})},
-        {"session_id", object_builder::array({42})},
-        {"last_visit", object_builder::array({42})},
+    auto cookies = object_builder_da::map({
+        {"name", object_builder_da::array({42})},
+        {"theme", object_builder_da::array({42})},
+        {"language", object_builder_da::array({42})},
+        {"tracking_id", object_builder_da::array({42})},
+        {"gdpr_consent", object_builder_da::array({42})},
+        {"session_id", object_builder_da::array({42})},
+        {"last_visit", object_builder_da::array({42})},
     });
 
     session_fingerprint gen{"id", {}, {}, false, true};
@@ -999,14 +1000,14 @@ TEST(TestSessionFingerprint, CookieValuesArrayMultiples)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto cookies = object_builder::map({
-        {"name", object_builder::array({"albert,martinez", "albert,martinez"})},
-        {"theme", object_builder::array({"dark", "dark"})},
-        {"language", object_builder::array({"en-GB,en-US", "en-GB,en-US"})},
-        {"tracking_id", object_builder::array({"xyzabc", "xyzabc"})},
-        {"gdpr_consent", object_builder::array({",yes", ",yes"})},
-        {"session_id", object_builder::array({"ansd0182u2n,", "ansd0182u2n,"})},
-        {"last_visit", object_builder::array({"2024-07-16T12:00:00Z", "2024-07-16T12:00:00Z"})},
+    auto cookies = object_builder_da::map({
+        {"name", object_builder_da::array({"albert,martinez", "albert,martinez"})},
+        {"theme", object_builder_da::array({"dark", "dark"})},
+        {"language", object_builder_da::array({"en-GB,en-US", "en-GB,en-US"})},
+        {"tracking_id", object_builder_da::array({"xyzabc", "xyzabc"})},
+        {"gdpr_consent", object_builder_da::array({",yes", ",yes"})},
+        {"session_id", object_builder_da::array({"ansd0182u2n,", "ansd0182u2n,"})},
+        {"last_visit", object_builder_da::array({"2024-07-16T12:00:00Z", "2024-07-16T12:00:00Z"})},
     });
 
     session_fingerprint gen{"id", {}, {}, false, true};
@@ -1027,7 +1028,7 @@ TEST(TestSessionFingerprint, CookieEmptyValues)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto cookies = object_builder::map({
+    auto cookies = object_builder_da::map({
         {"name", owned_object{}},
         {"theme", owned_object{}},
         {"language", owned_object{}},
@@ -1055,7 +1056,7 @@ TEST(TestSessionFingerprint, CookieEmptyKeys)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto cookies = object_builder::map({
+    auto cookies = object_builder_da::map({
         {"", "albert,martinez"},
         {"", "dark"},
         {"", "en-GB,en-US"},
@@ -1083,7 +1084,7 @@ TEST(TestSessionFingerprint, EmptyEverything)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto cookies = object_builder::map();
+    auto cookies = object_builder_da::map();
     session_fingerprint gen{"id", {}, {}, false, true};
 
     ddwaf::timer deadline{2s};
@@ -1116,7 +1117,7 @@ TEST(TestSessionFingerprint, Regeneration)
     }
 
     {
-        auto cookies = object_builder::map({
+        auto cookies = object_builder_da::map({
             {"name", "albert,martinez"},
             {"theme", "dark"},
             {"language", "en-GB,en-US"},

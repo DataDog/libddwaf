@@ -7,58 +7,60 @@
 #include "configuration/common/parser_exception.hpp"
 #include "configuration/common/raw_configuration.hpp"
 
+#include "common/ddwaf_object_da.hpp"
 #include "common/gtest_utils.hpp"
 
 using namespace ddwaf;
+using namespace ddwaf::test;
 
 namespace {
 
 TEST(TestParameter, ToBool)
 {
     {
-        owned_object root{true};
+        owned_object root = test::ddwaf_object_da::make_boolean(true);
 
         bool value = static_cast<bool>(raw_configuration(root));
         EXPECT_TRUE(value);
     }
 
     {
-        owned_object root{false};
+        owned_object root = test::ddwaf_object_da::make_boolean(false);
 
         bool value = static_cast<bool>(raw_configuration(root));
         EXPECT_FALSE(value);
     }
 
     {
-        owned_object root{"true"};
+        owned_object root = test::ddwaf_object_da::make_string("true");
 
         bool value = static_cast<bool>(raw_configuration(root));
         EXPECT_TRUE(value);
     }
 
     {
-        owned_object root{"TrUe"};
+        owned_object root = test::ddwaf_object_da::make_string("TrUe");
 
         bool value = static_cast<bool>(raw_configuration(root));
         EXPECT_TRUE(value);
     }
 
     {
-        owned_object root{"false"};
+        owned_object root = test::ddwaf_object_da::make_string("false");
 
         bool value = static_cast<bool>(raw_configuration(root));
         EXPECT_FALSE(value);
     }
 
     {
-        owned_object root{"FaLsE"};
+        owned_object root = test::ddwaf_object_da::make_string("FaLsE");
 
         bool value = static_cast<bool>(raw_configuration(root));
         EXPECT_FALSE(value);
     }
 
     {
-        auto root = owned_object::make_map();
+        auto root = test::ddwaf_object_da::make_map();
         EXPECT_THROW((void)static_cast<bool>(raw_configuration(root)), bad_cast);
     }
 }
@@ -66,60 +68,61 @@ TEST(TestParameter, ToBool)
 TEST(TestParameter, ToUint64)
 {
     {
-        owned_object root{2123};
+        owned_object root = test::ddwaf_object_da::make_signed(2123);
 
         uint64_t value = static_cast<uint64_t>(raw_configuration(root));
         EXPECT_EQ(value, 2123);
     }
 
     {
-        owned_object root{2123};
+        owned_object root = test::ddwaf_object_da::make_signed(2123);
 
         uint64_t value = static_cast<uint64_t>(raw_configuration(root));
         EXPECT_EQ(value, 2123);
     }
 
     {
-        owned_object root{21.0};
+        owned_object root = test::ddwaf_object_da::make_float(21.0);
 
         uint64_t value = static_cast<uint64_t>(raw_configuration(root));
         EXPECT_EQ(value, 21);
     }
 
     {
-        owned_object root{static_cast<double>(std::numeric_limits<uint64_t>::max() - 1024)};
+        owned_object root = test::ddwaf_object_da::make_float(
+            static_cast<double>(std::numeric_limits<uint64_t>::max() - 1024));
 
         uint64_t value = static_cast<uint64_t>(raw_configuration(root));
         EXPECT_EQ(value, 18446744073709549568U);
     }
 
     {
-        owned_object root{"2123"};
+        owned_object root = test::ddwaf_object_da::make_string("2123");
 
         uint64_t value = static_cast<uint64_t>(raw_configuration(root));
         EXPECT_EQ(value, 2123);
     }
 
     {
-        auto root = owned_object::make_map();
+        auto root = test::ddwaf_object_da::make_map();
 
         EXPECT_THROW((void)static_cast<uint64_t>(raw_configuration(root)), bad_cast);
     }
 
     {
-        owned_object root{-2123};
+        owned_object root = test::ddwaf_object_da::make_signed(-2123);
 
         EXPECT_THROW((void)static_cast<uint64_t>(raw_configuration(root)), bad_cast);
     }
 
     {
-        owned_object root{-21.0};
+        owned_object root = test::ddwaf_object_da::make_float(-21.0);
 
         EXPECT_THROW((void)static_cast<uint64_t>(raw_configuration(root)), bad_cast);
     }
 
     {
-        owned_object root{std::numeric_limits<double>::max()};
+        owned_object root = test::ddwaf_object_da::make_float(std::numeric_limits<double>::max());
 
         EXPECT_THROW((void)static_cast<uint64_t>(raw_configuration(root)), bad_cast);
     }
@@ -128,54 +131,56 @@ TEST(TestParameter, ToUint64)
 TEST(TestParameter, ToInt64)
 {
     {
-        owned_object root{-2123};
+        owned_object root = test::ddwaf_object_da::make_signed(-2123);
 
         int64_t value = static_cast<int64_t>(raw_configuration(root));
         EXPECT_EQ(value, -2123);
     }
 
     {
-        owned_object root{2123};
+        owned_object root = test::ddwaf_object_da::make_signed(2123);
 
         int64_t value = static_cast<int64_t>(raw_configuration(root));
         EXPECT_EQ(value, 2123);
     }
 
     {
-        owned_object root{-21.0};
+        owned_object root = test::ddwaf_object_da::make_float(-21.0);
 
         int64_t value = static_cast<int64_t>(raw_configuration(root));
         EXPECT_EQ(value, -21);
     }
 
     {
-        owned_object root{static_cast<double>(std::numeric_limits<int64_t>::max() - 512)};
+        owned_object root = test::ddwaf_object_da::make_float(
+            static_cast<double>(std::numeric_limits<int64_t>::max() - 512));
 
         int64_t value = static_cast<int64_t>(raw_configuration(root));
         EXPECT_EQ(value, 9223372036854774784);
     }
 
     {
-        owned_object root{"-2123"};
+        owned_object root = test::ddwaf_object_da::make_string("-2123");
 
         int64_t value = static_cast<int64_t>(raw_configuration(root));
         EXPECT_EQ(value, -2123);
     }
 
     {
-        auto root = owned_object::make_map();
+        auto root = test::ddwaf_object_da::make_map();
 
         EXPECT_THROW((void)static_cast<int64_t>(raw_configuration(root)), bad_cast);
     }
 
     {
-        owned_object root{std::numeric_limits<uint64_t>::max()};
+        owned_object root =
+            test::ddwaf_object_da::make_unsigned(std::numeric_limits<uint64_t>::max());
 
         EXPECT_THROW((void)static_cast<int64_t>(raw_configuration(root)), bad_cast);
     }
 
     {
-        owned_object root{std::numeric_limits<double>::max()};
+        owned_object root = test::ddwaf_object_da::make_float(std::numeric_limits<double>::max());
 
         EXPECT_THROW((void)static_cast<int64_t>(raw_configuration(root)), bad_cast);
     }
@@ -184,21 +189,21 @@ TEST(TestParameter, ToInt64)
 TEST(TestParameter, ToFloat)
 {
     {
-        owned_object root{21.23};
+        owned_object root = test::ddwaf_object_da::make_float(21.23);
 
         double value = static_cast<double>(raw_configuration(root));
         EXPECT_EQ(value, 21.23);
     }
 
     {
-        owned_object root{"21.23"};
+        owned_object root = test::ddwaf_object_da::make_string("21.23");
 
         double value = static_cast<double>(raw_configuration(root));
         EXPECT_EQ(value, 21.23);
     }
 
     {
-        auto root = owned_object::make_map();
+        auto root = test::ddwaf_object_da::make_map();
 
         EXPECT_THROW((void)static_cast<double>(raw_configuration(root)), bad_cast);
     }
@@ -207,14 +212,14 @@ TEST(TestParameter, ToFloat)
 TEST(TestParameter, ToString)
 {
     {
-        owned_object root{"hello world, this is a string"};
+        owned_object root = test::ddwaf_object_da::make_string("hello world, this is a string");
 
         auto value = static_cast<std::string>(raw_configuration(root));
         EXPECT_STREQ(value.c_str(), "hello world, this is a string");
     }
 
     {
-        auto root = owned_object::make_array();
+        auto root = test::ddwaf_object_da::make_array();
 
         EXPECT_THROW((void)static_cast<std::string>(raw_configuration(root)), bad_cast);
     }
@@ -223,14 +228,14 @@ TEST(TestParameter, ToString)
 TEST(TestParameter, ToStringView)
 {
     {
-        owned_object root{"hello world, this is a string"};
+        owned_object root = test::ddwaf_object_da::make_string("hello world, this is a string");
 
         auto value = static_cast<std::string_view>(raw_configuration(root));
         EXPECT_STRV(value, "hello world, this is a string");
     }
 
     {
-        auto root = owned_object::make_array();
+        auto root = test::ddwaf_object_da::make_array();
 
         EXPECT_THROW((void)static_cast<std::string_view>(raw_configuration(root)), bad_cast);
     }
@@ -239,7 +244,7 @@ TEST(TestParameter, ToStringView)
 TEST(TestParameter, ToVector)
 {
     {
-        auto root = owned_object::make_array();
+        auto root = test::ddwaf_object_da::make_array();
         for (unsigned i = 0; i < 20; i++) { root.emplace_back(std::to_string(i)); }
 
         auto vec_param = static_cast<raw_configuration::vector>(raw_configuration(root));
@@ -254,7 +259,7 @@ TEST(TestParameter, ToVector)
     }
 
     {
-        auto root = owned_object::make_map();
+        auto root = test::ddwaf_object_da::make_map();
 
         raw_configuration param{root};
         EXPECT_THROW(param.operator raw_configuration::vector(), bad_cast);
@@ -264,7 +269,7 @@ TEST(TestParameter, ToVector)
 TEST(TestParameter, ToMap)
 {
     {
-        auto root = owned_object::make_map();
+        auto root = test::ddwaf_object_da::make_map();
 
         for (unsigned i = 0; i < 20; i++) {
             root.emplace(std::to_string(i), std::to_string(i + 100));
@@ -281,7 +286,7 @@ TEST(TestParameter, ToMap)
     }
 
     {
-        auto root = owned_object::make_array();
+        auto root = test::ddwaf_object_da::make_array();
 
         raw_configuration param{root};
         EXPECT_THROW(param.operator raw_configuration::map(), bad_cast);
@@ -291,7 +296,7 @@ TEST(TestParameter, ToMap)
 TEST(TestParameter, ToStringVector)
 {
     {
-        auto root = owned_object::make_array();
+        auto root = test::ddwaf_object_da::make_array();
         for (unsigned i = 0; i < 20; i++) { root.emplace_back(std::to_string(i)); }
 
         auto vec_param = static_cast<std::vector<std::string>>(raw_configuration(root));
@@ -302,14 +307,14 @@ TEST(TestParameter, ToStringVector)
     }
 
     {
-        auto root = owned_object::make_array();
-        root.emplace_back(owned_object::make_map());
+        auto root = test::ddwaf_object_da::make_array();
+        root.emplace_back(test::ddwaf_object_da::make_map());
 
         raw_configuration param{root};
         EXPECT_THROW(param.operator std::vector<std::string>(), bad_cast);
     }
     {
-        auto root = owned_object::make_map();
+        auto root = test::ddwaf_object_da::make_map();
         raw_configuration param{root};
         EXPECT_THROW(param.operator std::vector<std::string>(), bad_cast);
     }
@@ -318,7 +323,7 @@ TEST(TestParameter, ToStringVector)
 TEST(TestParameter, ToStringViewVector)
 {
     {
-        auto root = owned_object::make_array();
+        auto root = test::ddwaf_object_da::make_array();
         for (unsigned i = 0; i < 20; i++) { root.emplace_back(std::to_string(i)); }
 
         auto vec_param = static_cast<std::vector<std::string_view>>(raw_configuration(root));
@@ -331,14 +336,14 @@ TEST(TestParameter, ToStringViewVector)
     }
 
     {
-        auto root = owned_object::make_array();
-        root.emplace_back(50);
+        auto root = test::ddwaf_object_da::make_array();
+        root.emplace_back(test::ddwaf_object_da::make_signed(50));
 
         raw_configuration param{root};
         EXPECT_THROW(param.operator std::vector<std::string_view>(), malformed_object);
     }
     {
-        auto root = owned_object::make_map();
+        auto root = test::ddwaf_object_da::make_map();
 
         raw_configuration param{root};
         EXPECT_THROW(param.operator std::vector<std::string_view>(), bad_cast);
@@ -348,7 +353,7 @@ TEST(TestParameter, ToStringViewVector)
 TEST(TestParameter, ToStringViewSet)
 {
     {
-        auto root = owned_object::make_array();
+        auto root = test::ddwaf_object_da::make_array();
         for (unsigned i = 0; i < 20; i++) { root.emplace_back(std::to_string(i)); }
 
         auto set_param = static_cast<raw_configuration::string_set>(raw_configuration(root));
@@ -360,14 +365,14 @@ TEST(TestParameter, ToStringViewSet)
     }
 
     {
-        auto root = owned_object::make_array();
-        root.emplace_back(50);
+        auto root = test::ddwaf_object_da::make_array();
+        root.emplace_back(test::ddwaf_object_da::make_signed(50));
 
         raw_configuration param{root};
         EXPECT_THROW(param.operator raw_configuration::string_set(), malformed_object);
     }
     {
-        auto root = owned_object::make_map();
+        auto root = test::ddwaf_object_da::make_map();
 
         raw_configuration param{root};
         EXPECT_THROW(param.operator raw_configuration::string_set(), bad_cast);
@@ -376,7 +381,7 @@ TEST(TestParameter, ToStringViewSet)
 
 TEST(TestParameter, ToKeyPathVectorEmpty)
 {
-    auto root = owned_object::make_array();
+    auto root = test::ddwaf_object_da::make_array();
     auto vec =
         static_cast<std::vector<std::variant<std::string, int64_t>>>(raw_configuration(root));
     EXPECT_TRUE(vec.empty());
@@ -385,21 +390,21 @@ TEST(TestParameter, ToKeyPathVectorEmpty)
 TEST(TestParameter, ToSemanticVersion)
 {
     {
-        owned_object root{"1.2.3"};
+        owned_object root = test::ddwaf_object_da::make_string("1.2.3");
 
         auto value = static_cast<semantic_version>(raw_configuration(root));
         EXPECT_EQ(value.number(), 1002003);
     }
 
     {
-        owned_object root{3};
+        owned_object root = test::ddwaf_object_da::make_signed(3);
 
         raw_configuration param{root};
         EXPECT_THROW(param.operator semantic_version(), bad_cast);
     }
 
     {
-        auto root = owned_object::make_string_nocopy(nullptr, 0);
+        auto root = test::ddwaf_object_da::make_string_nocopy(nullptr, 0);
 
         raw_configuration param{root};
         EXPECT_THROW(param.operator semantic_version(), std::invalid_argument);

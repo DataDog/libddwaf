@@ -5,7 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 #include "common/utils.hpp"
 #include "ddwaf.h"
-#include "generator/extract_schema.hpp"
+#include "processor/extract_schema.hpp"
 
 #include <algorithm>
 #include <chrono>
@@ -23,10 +23,12 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
+    auto alloc = ddwaf_get_default_allocator();
+
     std::string raw_payload = read_file(argv[1]);
     auto payload = YAML::Load(raw_payload).as<ddwaf_object>();
 
-    ddwaf::generator::extract_schema generator;
+    ddwaf::extract_schema generator;
     auto start = std::chrono::system_clock::now();
     auto schema = generator.generate(&payload);
 

@@ -11,6 +11,7 @@
 #include "matcher/ip_match.hpp"
 
 using namespace ddwaf;
+using namespace ddwaf::test;
 
 namespace {
 

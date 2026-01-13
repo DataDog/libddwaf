@@ -403,7 +403,7 @@ owned_object generate_fragment(
         buffer.append(field);
     }
 
-    return buffer.to_object();
+    return buffer.to_object(alloc);
 }
 
 template <typename T, typename... Rest>
@@ -464,7 +464,7 @@ owned_object generate_fragment_cached(std::string_view header,
         }
     }
 
-    return buffer.to_object();
+    return buffer.to_object(alloc);
 }
 
 enum class header_type : uint8_t { unknown, standard, ip_origin, user_agent, datadog };
@@ -522,16 +522,14 @@ owned_object http_endpoint_fingerprint::eval_impl(const unary_argument<std::stri
         stripped_uri = stripped_uri.substr(0, query_or_frag_idx);
     }
 
-    owned_object res;
     try {
-        res = generate_fragment_cached("http", alloc, cache.fingerprint.fragment_fields,
+        return generate_fragment_cached("http", alloc, cache.fingerprint.fragment_fields,
             string_field{method.value}, string_hash_field{stripped_uri},
             optional_generator<key_hash_field>{query}, optional_generator<key_hash_field>{body});
     } catch (const std::out_of_range &e) {
         DDWAF_WARN("Failed to generate http endpoint fingerprint: {}", e.what());
+        return owned_object{};
     }
-
-    return res;
 }
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
@@ -565,16 +563,14 @@ owned_object http_header_fingerprint::eval_impl(const unary_argument<map_view> &
     std::sort(unknown_headers.begin(), unknown_headers.end());
 
     const uint64_t unknown_header_size = unknown_headers.size();
-    owned_object res;
     try {
-        res = generate_fragment("hdr", alloc, string_field{known_header_bitset},
+        return generate_fragment("hdr", alloc, string_field{known_header_bitset},
             string_hash_field{user_agent}, unsigned_field{unknown_header_size},
             vector_hash_field{std::move(unknown_headers)});
     } catch (const std::out_of_range &e) {
         DDWAF_WARN("Failed to generate http header fingerprint: {}", e.what());
+        return owned_object{};
     }
-
-    return res;
 }
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
@@ -618,15 +614,13 @@ owned_object http_network_fingerprint::eval_impl(const unary_argument<map_view> 
         for (auto c : chosen_header_value) { ip_count += static_cast<unsigned int>(c == ','); }
     }
 
-    owned_object res;
     try {
-        res = generate_fragment(
+        return generate_fragment(
             "net", alloc, unsigned_field{ip_count}, string_field{ip_origin_bitset});
     } catch (const std::out_of_range &e) {
         DDWAF_WARN("Failed to generate http network fingerprint: {}", e.what());
+        return owned_object{};
     }
-
-    return res;
 }
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
@@ -640,17 +634,15 @@ owned_object session_fingerprint::eval_impl(const optional_argument<map_view> &c
         throw ddwaf::timeout_exception();
     }
 
-    owned_object res;
     try {
-        res = generate_fragment_cached("ssn", alloc, cache.fingerprint.fragment_fields,
+        return generate_fragment_cached("ssn", alloc, cache.fingerprint.fragment_fields,
             optional_generator<string_hash_field>{user_id},
             optional_generator<kv_hash_fields>{cookies},
             optional_generator<string_hash_field>{session_id});
     } catch (const std::out_of_range &e) {
         DDWAF_WARN("Failed to generate session fingerprint: {}", e.what());
+        return owned_object{};
     }
-
-    return res;
 }
 
 } // namespace ddwaf

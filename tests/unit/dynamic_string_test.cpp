@@ -13,6 +13,7 @@
 #include "common/gtest_utils.hpp"
 
 using namespace ddwaf;
+using namespace ddwaf::test;
 using namespace std::literals;
 
 namespace {
@@ -141,7 +142,7 @@ TEST(TestDynamicString, MoveToObject)
     dynamic_string str{"thisisastring"sv};
     EXPECT_NE(str.data(), nullptr);
 
-    auto object = str.to_object();
+    auto object = str.to_object(str.alloc());
 
     auto str_view = object.as<std::string_view>();
 
@@ -163,7 +164,7 @@ TEST(TestDynamicString, MoveToObjectDifferentCapacity)
     EXPECT_EQ(str.capacity(), 32);
     EXPECT_EQ(str.size(), 13);
 
-    auto object = str.to_object();
+    auto object = str.to_object(str.alloc());
 
     auto str_view = object.as<std::string_view>();
 

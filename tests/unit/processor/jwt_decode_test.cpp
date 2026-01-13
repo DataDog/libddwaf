@@ -4,10 +4,12 @@
 // This product includes software developed at Datadog
 // (https://www.datadoghq.com/). Copyright 2023 Datadog, Inc.
 
+#include "common/ddwaf_object_da.hpp"
 #include "common/gtest_utils.hpp"
 #include "processor/jwt_decode.hpp"
 
 using namespace ddwaf;
+using namespace ddwaf::test;
 using namespace std::literals;
 
 namespace {
@@ -16,7 +18,7 @@ TEST(TestJwtDecoder, Basic)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto headers = object_builder::map({{"authorization",
+    auto headers = object_builder_da::map({{"authorization",
         "Bearer eyJhbGciOiJSUzM4NCIsInR5cCI6IkpXVCJ9."
         "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUx"
         "NjIzOTAyMn0.o1hC1xYbJolSyh0-bOY230w22zEQSk5TiBfc-OCvtpI2JtYlW-23-"
@@ -44,8 +46,8 @@ TEST(TestJwtDecoder, KeyPathLeadsToSingleValueArray)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto headers = object_builder::map({{"authorization",
-        object_builder::array(
+    auto headers = object_builder_da::map({{"authorization",
+        object_builder_da::array(
             {"Bearer eyJhbGciOiJSUzM4NCIsInR5cCI6IkpXVCJ9."
              "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUx"
              "NjIzOTAyMn0.o1hC1xYbJolSyh0-bOY230w22zEQSk5TiBfc-OCvtpI2JtYlW-23-"
@@ -73,8 +75,8 @@ TEST(TestJwtDecoder, KeyPathLeadsToValidMultiValueArray)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto headers = object_builder::map({{"authorization",
-        object_builder::array(
+    auto headers = object_builder_da::map({{"authorization",
+        object_builder_da::array(
             {"Bearer eyJhbGciOiJSUzM4NCIsInR5cCI6IkpXVCJ9."
              "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUx"
              "NjIzOTAyMn0.o1hC1xYbJolSyh0-bOY230w22zEQSk5TiBfc-OCvtpI2JtYlW-23-"
@@ -105,8 +107,8 @@ TEST(TestJwtDecoder, KeyPathLeadsToInvalidMultiValueArray)
 
     // Even though the token is there, we only take the first element of arrays as we're trying
     // to account for the serialisation not perform a JWT search.
-    auto headers = object_builder::map({{"authorization",
-        object_builder::array({"Arachni",
+    auto headers = object_builder_da::map({{"authorization",
+        object_builder_da::array({"Arachni",
             "Bearer eyJhbGciOiJSUzM4NCIsInR5cCI6IkpXVCJ9."
             "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUx"
             "NjIzOTAyMn0.o1hC1xYbJolSyh0-bOY230w22zEQSk5TiBfc-OCvtpI2JtYlW-23-"
@@ -131,7 +133,7 @@ TEST(TestJwtDecoder, MissingKeypath)
 {
     auto *alloc = memory::get_default_resource();
 
-    owned_object headers{
+    owned_object headers = test::ddwaf_object_da::make_string(
         "Bearer eyJhbGciOiJSUzM4NCIsInR5cCI6IkpXVCJ9."
         "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUx"
         "NjIzOTAyMn0.o1hC1xYbJolSyh0-bOY230w22zEQSk5TiBfc-OCvtpI2JtYlW-23-"
@@ -139,7 +141,7 @@ TEST(TestJwtDecoder, MissingKeypath)
         "61L6SXswzPAQu4kVDwAefGf5hyYBUM-80vYZwWPEpLI8K4yCBsF6I9N1yQaZAJmkMp_"
         "Iw371Menae4Mp4JusvBJS-s6LrmG2QbiZaFaxVJiW8KlUkWyUCns8-"
         "qFl5OMeYlgGFsyvvSHvXCzQrsEXqyCdS4tQJd73ayYA4SPtCb9clz76N1zE5WsV4Z0BYrxeb77oA7jJh"
-        "h994RAPzCG0hmQ"};
+        "h994RAPzCG0hmQ");
 
     jwt_decode gen{"id", {}, {}, false, true};
 
@@ -156,7 +158,7 @@ TEST(TestJwtDecoder, EmptyHeader)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto headers = object_builder::map({{"authorization",
+    auto headers = object_builder_da::map({{"authorization",
         "Bearer ."
         "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUx"
         "NjIzOTAyMn0.o1hC1xYbJolSyh0-bOY230w22zEQSk5TiBfc-OCvtpI2JtYlW-23-"
@@ -184,7 +186,7 @@ TEST(TestJwtDecoder, EmptyPayload)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto headers = object_builder::map({{"authorization",
+    auto headers = object_builder_da::map({{"authorization",
         "Bearer eyJhbGciOiJSUzM4NCIsInR5cCI6IkpXVCJ9."
         ".o1hC1xYbJolSyh0-bOY230w22zEQSk5TiBfc-OCvtpI2JtYlW-23-"
         "8B48NpATozzMHn0j3rE0xVUldxShzy0xeJ7vYAccVXu2Gs9rnTVqouc-UZu_wJHkZiKBL67j8_"
@@ -211,7 +213,7 @@ TEST(TestJwtDecoder, LargePayloadBeyondLimit)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto headers = object_builder::map({{"authorization",
+    auto headers = object_builder_da::map({{"authorization",
         "Bearer "
         "eyJhbGciOiJSUzM4NCIsInR5cCI6IkpXVCJ9."
         "eyJrZXlfMCI6eyJrZXlfMSI6eyJrZXlfMiI6eyJrZXlfMyI6eyJrZXlfNCI6eyJrZXlfNSI6eyJrZXlfNiI6ey"
@@ -237,7 +239,7 @@ TEST(TestJwtDecoder, NoSignature)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto headers = object_builder::map({{"authorization",
+    auto headers = object_builder_da::map({{"authorization",
         "Bearer "
         "eyJhbGciOiJub25lIn0."
         "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUx"
@@ -262,7 +264,7 @@ TEST(TestJwtDecoder, NoPayloadNoSignatureMissingDelim)
     auto *alloc = memory::get_default_resource();
 
     auto headers =
-        object_builder::map({{"authorization", "Bearer eyJhbGciOiJSUzM4NCIsInR5cCI6IkpXVCJ9."}});
+        object_builder_da::map({{"authorization", "Bearer eyJhbGciOiJSUzM4NCIsInR5cCI6IkpXVCJ9."}});
 
     jwt_decode gen{"id", {}, {}, false, true};
 
@@ -280,7 +282,7 @@ TEST(TestJwtDecoder, NoPayloadNoSignatureMissingAllDelim)
     auto *alloc = memory::get_default_resource();
 
     auto headers =
-        object_builder::map({{"authorization", "Bearer eyJhbGciOiJSUzM4NCIsInR5cCI6IkpXVCJ9"}});
+        object_builder_da::map({{"authorization", "Bearer eyJhbGciOiJSUzM4NCIsInR5cCI6IkpXVCJ9"}});
     jwt_decode gen{"id", {}, {}, false, true};
 
     std::vector<std::variant<std::string, int64_t>> key_path{"authorization"};
@@ -296,7 +298,7 @@ TEST(TestJwtDecoder, NoSignatureNoDelim)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto headers = object_builder::map({{"authorization",
+    auto headers = object_builder_da::map({{"authorization",
         "Bearer "
         "eyJhbGciOiJub25lIn0."
         "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUx"

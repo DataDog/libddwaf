@@ -4,6 +4,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include "common/ddwaf_object_da.hpp"
 #include "common/gtest_utils.hpp"
 #include "memory_resource.hpp"
 #include "object.hpp"
@@ -11,6 +12,7 @@
 #include <stdexcept>
 
 using namespace ddwaf;
+using namespace ddwaf::test;
 using namespace std::literals;
 
 namespace {
@@ -68,12 +70,12 @@ private:
 
 TEST(TestObject, NullBorrowedObject)
 {
-    EXPECT_THROW(borrowed_object{nullptr}, std::invalid_argument);
+    EXPECT_THROW(borrowed_object(nullptr, memory::get_default_resource()), std::invalid_argument);
 }
 
 TEST(TestObject, InvalidObject)
 {
-    owned_object ow;
+    owned_object ow = owned_object{};
     EXPECT_EQ(ow.type(), object_type::invalid);
     EXPECT_TRUE(ow.is_invalid());
     EXPECT_FALSE(ow.is_valid());
@@ -98,7 +100,7 @@ TEST(TestObject, BooleanObject)
     }
 
     {
-        owned_object ow{true};
+        owned_object ow = test::ddwaf_object_da::make_boolean(true);
         EXPECT_EQ(ow.type(), object_type::boolean);
         EXPECT_TRUE(ow.is_valid());
         EXPECT_TRUE(ow.as<bool>());
@@ -115,7 +117,7 @@ TEST(TestObject, SignedObject)
     }
 
     {
-        owned_object ow{-20L};
+        owned_object ow = test::ddwaf_object_da::make_signed(-20L);
         EXPECT_EQ(ow.type(), object_type::int64);
         EXPECT_TRUE(ow.is_valid());
         EXPECT_EQ(ow.as<int64_t>(), -20);
@@ -132,7 +134,7 @@ TEST(TestObject, UnsignedObject)
     }
 
     {
-        owned_object ow(20UL);
+        owned_object ow = test::ddwaf_object_da::make_unsigned(20UL);
         EXPECT_EQ(ow.type(), object_type::uint64);
         EXPECT_TRUE(ow.is_valid());
         EXPECT_EQ(ow.as<uint64_t>(), 20);
@@ -149,7 +151,7 @@ TEST(TestObject, FloatObject)
     }
 
     {
-        owned_object ow{20.5};
+        owned_object ow = test::ddwaf_object_da::make_float(20.5);
         EXPECT_EQ(ow.type(), object_type::float64);
         EXPECT_TRUE(ow.is_valid());
         EXPECT_EQ(ow.as<double>(), 20.5);
@@ -159,7 +161,7 @@ TEST(TestObject, FloatObject)
 TEST(TestObject, StringObject)
 {
     {
-        auto ow = owned_object::make_string("this is a string");
+        auto ow = test::ddwaf_object_da::make_string("this is a string");
         EXPECT_EQ(ow.type(), object_type::string);
         EXPECT_TRUE(ow.is_string());
         EXPECT_TRUE(ow.is_valid());
@@ -167,7 +169,7 @@ TEST(TestObject, StringObject)
     }
 
     {
-        owned_object ow{"this is a string"};
+        owned_object ow = test::ddwaf_object_da::make_string("this is a string");
         EXPECT_TRUE(ow.is_string());
         EXPECT_TRUE(ow.is_valid());
         EXPECT_EQ(ow.as<std::string_view>(), "this is a string");
@@ -179,7 +181,7 @@ TEST(TestObject, StringObjectWithAllocator)
     counting_resource alloc;
 
     {
-        auto ow = owned_object::make_string("this is a string", &alloc);
+        auto ow = test::ddwaf_object_da::make_string("this is a string", &alloc);
         EXPECT_EQ(ow.type(), object_type::string);
         EXPECT_TRUE(ow.is_string());
         EXPECT_TRUE(ow.is_valid());
@@ -190,7 +192,7 @@ TEST(TestObject, StringObjectWithAllocator)
     EXPECT_EQ(alloc.deallocations(), 1);
 
     {
-        owned_object ow{"this is a string", &alloc};
+        owned_object ow = owned_object::make_string("this is a string", &alloc);
         EXPECT_TRUE(ow.is_string());
         EXPECT_TRUE(ow.is_valid());
         EXPECT_EQ(ow.as<std::string_view>(), "this is a string");
@@ -203,7 +205,7 @@ TEST(TestObject, StringObjectWithAllocator)
 TEST(TestObject, SmallStringObject)
 {
     {
-        auto ow = owned_object::make_string("string");
+        auto ow = test::ddwaf_object_da::make_string("string");
         EXPECT_EQ(ow.type(), object_type::small_string);
         EXPECT_TRUE(ow.is_string());
         EXPECT_TRUE(ow.is_valid());
@@ -211,7 +213,7 @@ TEST(TestObject, SmallStringObject)
     }
 
     {
-        owned_object ow{"string"};
+        owned_object ow = test::ddwaf_object_da::make_string("string");
         EXPECT_EQ(ow.type(), object_type::small_string);
         EXPECT_TRUE(ow.is_string());
         EXPECT_TRUE(ow.is_valid());
@@ -231,7 +233,7 @@ TEST(TestObject, StringLiteralObject)
 TEST(TestObject, EmptyArrayObject)
 {
     {
-        auto root = owned_object::make_array();
+        auto root = test::ddwaf_object_da::make_array();
         EXPECT_EQ(root.type(), object_type::array);
         EXPECT_TRUE(root.is_valid());
         EXPECT_TRUE(root.is_array());
@@ -240,7 +242,7 @@ TEST(TestObject, EmptyArrayObject)
     }
 
     {
-        auto root = owned_object::make_array(0);
+        auto root = test::ddwaf_object_da::make_array(0);
         EXPECT_EQ(root.type(), object_type::array);
         EXPECT_TRUE(root.is_valid());
         EXPECT_TRUE(root.is_array());
@@ -254,7 +256,7 @@ TEST(TestObject, EmptyArrayObjectWithAllocator)
     counting_resource alloc;
 
     {
-        auto root = owned_object::make_array(0, &alloc);
+        auto root = owned_object::make_array(&alloc);
         EXPECT_EQ(root.type(), object_type::array);
         EXPECT_TRUE(root.is_valid());
         EXPECT_TRUE(root.is_array());
@@ -268,7 +270,7 @@ TEST(TestObject, EmptyArrayObjectWithAllocator)
 
 TEST(TestObject, EmptyPreallocatedArrayObject)
 {
-    auto root = owned_object::make_array(20);
+    auto root = test::ddwaf_object_da::make_array(20);
     EXPECT_EQ(root.type(), object_type::array);
     EXPECT_TRUE(root.is_valid());
     EXPECT_TRUE(root.is_array());
@@ -295,7 +297,7 @@ TEST(TestObject, EmptyPreallocatedArrayObjectWithAllocator)
 
 TEST(TestObject, ArrayObjectEmplaceBack)
 {
-    auto root = owned_object::make_array();
+    auto root = test::ddwaf_object_da::make_array();
     EXPECT_EQ(root.type(), object_type::array);
     EXPECT_TRUE(root.is_valid());
 
@@ -337,13 +339,13 @@ TEST(TestObject, ArrayObjectEmplaceBackWithAllocator)
     counting_resource alloc;
 
     {
-        auto root = owned_object::make_array(0, &alloc);
+        auto root = owned_object::make_array(&alloc);
         EXPECT_EQ(root.type(), object_type::array);
         EXPECT_TRUE(root.is_valid());
 
         for (unsigned i = 0; i < 20; i++) {
-            root.emplace_back(
-                owned_object::make_string(std::to_string(i) + "_012345678901234"s, &alloc));
+            root.emplace_back(test::ddwaf_object_da::make_string(
+                std::to_string(i) + "_012345678901234"s, &alloc));
         }
 
         object_view view(root);
@@ -384,7 +386,7 @@ TEST(TestObject, ArrayObjectEmplaceBackWithAllocator)
 
 TEST(TestObject, PreallocatedArrayObjectEmplaceBack)
 {
-    auto root = owned_object::make_array(20);
+    auto root = test::ddwaf_object_da::make_array(20);
     EXPECT_EQ(root.type(), object_type::array);
     EXPECT_TRUE(root.is_valid());
 
@@ -431,8 +433,8 @@ TEST(TestObject, PreallocatedArrayObjectEmplaceBackWithAllocator)
         EXPECT_TRUE(root.is_valid());
 
         for (unsigned i = 0; i < 20; i++) {
-            root.emplace_back(
-                owned_object::make_string(std::to_string(i) + "_012345678901234"s, &alloc));
+            root.emplace_back(test::ddwaf_object_da::make_string(
+                std::to_string(i) + "_012345678901234"s, &alloc));
         }
 
         object_view view(root);
@@ -475,14 +477,14 @@ TEST(TestObject, ArrayObjectIncompatibleAllocators)
 {
     memory::monotonic_buffer_resource alloc;
 
-    auto root = owned_object::make_array(20);
-    EXPECT_THROW(root.emplace_back(owned_object::make_string("012345678901234"sv, &alloc)),
+    auto root = test::ddwaf_object_da::make_array(20);
+    EXPECT_THROW(root.emplace_back(test::ddwaf_object_da::make_string("012345678901234"sv, &alloc)),
         std::runtime_error);
 }
 
 TEST(TestObject, EmptyMapObject)
 {
-    auto root = owned_object::make_map(0);
+    auto root = test::ddwaf_object_da::make_map(0);
     EXPECT_EQ(root.type(), object_type::map);
     EXPECT_TRUE(root.is_valid());
     EXPECT_TRUE(root.empty());
@@ -493,7 +495,7 @@ TEST(TestObject, EmptyMapObjectWithAllocator)
     counting_resource alloc;
 
     {
-        auto root = owned_object::make_map(0, &alloc);
+        auto root = owned_object::make_map(&alloc);
         EXPECT_EQ(root.type(), object_type::map);
         EXPECT_TRUE(root.is_valid());
         EXPECT_TRUE(root.empty());
@@ -505,7 +507,7 @@ TEST(TestObject, EmptyMapObjectWithAllocator)
 
 TEST(TestObject, EmptyPreallocatedMapObject)
 {
-    auto root = owned_object::make_map(20);
+    auto root = test::ddwaf_object_da::make_map(20);
     EXPECT_EQ(root.type(), object_type::map);
     EXPECT_TRUE(root.is_valid());
     EXPECT_TRUE(root.empty());
@@ -528,7 +530,7 @@ TEST(TestObject, EmptyPreallocatedMapObjectWithAllocator)
 
 TEST(TestObject, MapObjectEmplace)
 {
-    auto root = owned_object::make_map();
+    auto root = test::ddwaf_object_da::make_map();
     EXPECT_EQ(root.type(), object_type::map);
     EXPECT_TRUE(root.is_valid());
 
@@ -571,13 +573,13 @@ TEST(TestObject, MapObjectEmplaceWithAllocator)
     counting_resource alloc;
 
     {
-        auto root = owned_object::make_map(0, &alloc);
+        auto root = owned_object::make_map(&alloc);
         EXPECT_EQ(root.type(), object_type::map);
         EXPECT_TRUE(root.is_valid());
 
         for (unsigned i = 0; i < 20; i++) {
-            root.emplace(std::to_string(i),
-                owned_object::make_string(std::to_string(i) + "_012345678901234"s, &alloc));
+            root.emplace(std::to_string(i), test::ddwaf_object_da::make_string(
+                                                std::to_string(i) + "_012345678901234"s, &alloc));
         }
 
         object_view view(root);
@@ -619,7 +621,7 @@ TEST(TestObject, MapObjectEmplaceWithAllocator)
 
 TEST(TestObject, PreallocatedMapObjectEmplace)
 {
-    auto root = owned_object::make_map(20);
+    auto root = test::ddwaf_object_da::make_map(20);
     EXPECT_EQ(root.type(), object_type::map);
     EXPECT_TRUE(root.is_valid());
 
@@ -667,8 +669,8 @@ TEST(TestObject, PreallocatedMapObjectEmplaceWithAllocator)
         EXPECT_TRUE(root.is_valid());
 
         for (unsigned i = 0; i < 20; i++) {
-            root.emplace(std::to_string(i),
-                owned_object::make_string(std::to_string(i) + "_012345678901234"s, &alloc));
+            root.emplace(std::to_string(i), test::ddwaf_object_da::make_string(
+                                                std::to_string(i) + "_012345678901234"s, &alloc));
         }
 
         object_view view(root);
@@ -712,14 +714,15 @@ TEST(TestObject, MapObjectIncompatibleAllocators)
 {
     memory::monotonic_buffer_resource alloc;
 
-    auto root = owned_object::make_map(20);
-    EXPECT_THROW(root.emplace("key"sv, owned_object::make_string("012345678901234"sv, &alloc)),
+    auto root = test::ddwaf_object_da::make_map(20);
+    EXPECT_THROW(
+        root.emplace("key"sv, test::ddwaf_object_da::make_string("012345678901234"sv, &alloc)),
         std::runtime_error);
 }
 
 TEST(TestObject, ArrayObjectBuilder)
 {
-    auto root = object_builder::array({"hello", "this", "is", "an", "array"});
+    auto root = object_builder_da::array({"hello", "this", "is", "an", "array"});
     EXPECT_EQ(root.type(), object_type::array);
     EXPECT_TRUE(root.is_valid());
     EXPECT_EQ(root.size(), 5);
@@ -727,7 +730,7 @@ TEST(TestObject, ArrayObjectBuilder)
 
 TEST(TestObject, MapObjectBuilder)
 {
-    auto root = object_builder::map({{"hello"sv, object_builder::array({"array", "value"})},
+    auto root = object_builder_da::map({{"hello"sv, object_builder_da::array({"array", "value"})},
         {"this"sv, "is"sv}, {"an"sv, "array"sv}});
     EXPECT_EQ(root.type(), object_type::map);
     EXPECT_TRUE(root.is_valid());
@@ -736,8 +739,8 @@ TEST(TestObject, MapObjectBuilder)
 
 TEST(TestObject, HeterogenousArrayObjectBuilder)
 {
-    auto root = object_builder::array({object_builder::array({"array", "value"}),
-        object_builder::map({{"map", "value"}}), "small"sv, "this is a normal string view"sv,
+    auto root = object_builder_da::array({object_builder_da::array({"array", "value"}),
+        object_builder_da::map({{"map", "value"}}), "small"sv, "this is a normal string view"sv,
         "this is a normal string"s, "this is a normal const char *", false,
         static_cast<int16_t>(-16), static_cast<uint16_t>(16), static_cast<int32_t>(-32),
         static_cast<uint32_t>(32), static_cast<int64_t>(-64), static_cast<uint64_t>(64), 64.64});
@@ -763,9 +766,9 @@ TEST(TestObject, HeterogenousArrayObjectBuilder)
 
 TEST(TestObject, HeterogenousMapObjectBuilder)
 {
-    auto root = object_builder::map({
-        {"array"sv, object_builder::array({"array", "value"})},
-        {"map"sv, object_builder::map({{"map", "value"}})},
+    auto root = object_builder_da::map({
+        {"array"sv, object_builder_da::array({"array", "value"})},
+        {"map"sv, object_builder_da::map({{"map", "value"}})},
         {"small string"sv, "small"sv},
         {"string view"sv, "this is a normal string view"sv},
         {"string"sv, "this is a normal string"s},
@@ -890,48 +893,52 @@ TEST(TestObject, ArrayObjectBuilderIncompatibleAllocator)
 
     EXPECT_THROW(
         object_builder::array(
-            {"hello", "this", "is", "an", "array", object_builder::array({"hello"})}, &alloc),
+            {"hello", "this", "is", "an", "array", object_builder_da::array({"hello"})}, &alloc),
         std::runtime_error);
     EXPECT_THROW(object_builder::array({"hello", "this", "is", "an", "array",
-                                           object_builder::map({{"hello", "bye"}})},
+                                           object_builder_da::map({{"hello", "bye"}})},
                      &alloc),
         std::runtime_error);
 
     EXPECT_THROW(object_builder::array({"hello", "this", "is", "an", "array",
-                     object_builder::array({"hello"}, &alloc)}),
+                                           object_builder::array({"hello"}, &alloc)},
+                     memory::get_default_resource()),
         std::runtime_error);
     EXPECT_THROW(object_builder::array({"hello", "this", "is", "an", "array",
-                     object_builder::map({{"hello", "bye"}}, &alloc)}),
+                                           object_builder::map({{"hello", "bye"}}, &alloc)},
+                     memory::get_default_resource()),
         std::runtime_error);
 }
 
 TEST(TestObject, MapObjectBuilderIncompatibleAllocators)
 {
     memory::monotonic_buffer_resource alloc;
-    EXPECT_THROW(object_builder::map({{"hello"sv, object_builder::array({"array", "value"})},
+    EXPECT_THROW(object_builder::map({{"hello"sv, object_builder_da::array({"array", "value"})},
                                          {"this"sv, "is"sv}, {"an"sv, "array"sv}},
                      &alloc),
         std::runtime_error);
-    EXPECT_THROW(object_builder::map({{"hello"sv, object_builder::map({{"array", "value"}})},
+    EXPECT_THROW(object_builder::map({{"hello"sv, object_builder_da::map({{"array", "value"}})},
                                          {"this"sv, "is"sv}, {"an"sv, "array"sv}},
                      &alloc),
         std::runtime_error);
 
     EXPECT_THROW(
         object_builder::map({{"hello"sv, object_builder::array({"array", "value"}, &alloc)},
-            {"this"sv, "is"sv}, {"an"sv, "array"sv}}),
+                                {"this"sv, "is"sv}, {"an"sv, "array"sv}},
+            memory::get_default_resource()),
         std::runtime_error);
     EXPECT_THROW(
         object_builder::map({{"hello"sv, object_builder::map({{"array", "value"}}, &alloc)},
-            {"this"sv, "is"sv}, {"an"sv, "array"sv}}),
+                                {"this"sv, "is"sv}, {"an"sv, "array"sv}},
+            memory::get_default_resource()),
         std::runtime_error);
 }
 
 TEST(TestObject, ObjectWithNullAllocator)
 {
-    auto root = object_builder::map({
-        {"array"sv, object_builder::array({"array", "value"})},
-        {"map"sv, object_builder::map({{"map", "value"}})},
+    auto root = object_builder_da::map({
+        {"array"sv, object_builder_da::array({"array", "value"})},
+        {"map"sv, object_builder_da::map({{"map", "value"}})},
         {"small string"sv, "small"sv},
         {"string view"sv, "this is a normal string view"sv},
         {"string"sv, "this is a normal string"s},
@@ -951,7 +958,7 @@ TEST(TestObject, ObjectWithNullAllocator)
     {
         null_counting_resource alloc;
         {
-            owned_object other{root.ref(), &alloc};
+            owned_object other = owned_object{root.ref(), &alloc};
         }
         EXPECT_EQ(alloc.deallocations(), 0);
     }
@@ -959,8 +966,8 @@ TEST(TestObject, ObjectWithNullAllocator)
 
 TEST(TestObject, CloneInvalid)
 {
-    owned_object input;
-    auto output = input.clone();
+    owned_object input = owned_object{};
+    auto output = input.clone(memory::get_default_resource());
     EXPECT_TRUE(output.is_invalid());
 }
 
@@ -968,7 +975,7 @@ TEST(TestObject, CloneNull)
 {
     auto input = owned_object::make_null();
 
-    auto output = input.clone();
+    auto output = input.clone(memory::get_default_resource());
     EXPECT_EQ(output.type(), object_type::null);
 }
 
@@ -976,7 +983,7 @@ TEST(TestObject, CloneBool)
 {
     auto input = owned_object::make_boolean(true);
 
-    auto output = input.clone();
+    auto output = input.clone(memory::get_default_resource());
     EXPECT_EQ(output.type(), object_type::boolean);
     EXPECT_EQ(output.as<bool>(), true);
 }
@@ -984,7 +991,7 @@ TEST(TestObject, CloneBool)
 TEST(TestObject, CloneSigned)
 {
     auto input = owned_object::make_signed(-5);
-    auto output = input.clone();
+    auto output = input.clone(memory::get_default_resource());
     EXPECT_EQ(output.type(), object_type::int64);
     EXPECT_EQ(output.as<int64_t>(), -5);
 }
@@ -992,7 +999,7 @@ TEST(TestObject, CloneSigned)
 TEST(TestObject, CloneUnsigned)
 {
     auto input = owned_object::make_unsigned(5);
-    auto output = input.clone();
+    auto output = input.clone(memory::get_default_resource());
     EXPECT_EQ(output.type(), object_type::uint64);
     EXPECT_EQ(output.as<uint64_t>(), 5);
 }
@@ -1000,15 +1007,15 @@ TEST(TestObject, CloneUnsigned)
 TEST(TestObject, CloneFloat)
 {
     auto input = owned_object::make_float(5.1);
-    auto output = input.clone();
+    auto output = input.clone(memory::get_default_resource());
     EXPECT_EQ(output.type(), object_type::float64);
     EXPECT_EQ(output.as<double>(), 5.1);
 }
 
 TEST(TestObject, CloneString)
 {
-    auto input = owned_object::make_string("this is a string");
-    auto output = input.clone();
+    auto input = test::ddwaf_object_da::make_string("this is a string");
+    auto output = input.clone(memory::get_default_resource());
     EXPECT_TRUE(output.is_string());
     EXPECT_EQ(input.as<std::string_view>(), output.as<std::string_view>());
     EXPECT_EQ(input.size(), output.size());
@@ -1016,8 +1023,8 @@ TEST(TestObject, CloneString)
 
 TEST(TestObject, CloneSmallString)
 {
-    auto input = owned_object::make_string("this");
-    auto output = input.clone();
+    auto input = test::ddwaf_object_da::make_string("this");
+    auto output = input.clone(memory::get_default_resource());
     EXPECT_TRUE(output.is_string());
     EXPECT_EQ(input.as<std::string_view>(), output.as<std::string_view>());
     EXPECT_EQ(input.size(), output.size());
@@ -1026,7 +1033,7 @@ TEST(TestObject, CloneSmallString)
 TEST(TestObject, CloneStringLiteral)
 {
     auto input = owned_object::make_string_literal(STRL("this"));
-    auto output = input.clone();
+    auto output = input.clone(memory::get_default_resource());
     EXPECT_TRUE(output.is_string());
     EXPECT_EQ(input.as<std::string_view>(), output.as<std::string_view>());
     EXPECT_EQ(input.size(), output.size());
@@ -1034,28 +1041,28 @@ TEST(TestObject, CloneStringLiteral)
 
 TEST(TestObject, CloneEmptyArray)
 {
-    auto input = owned_object::make_array();
-    auto output = input.clone();
+    auto input = test::ddwaf_object_da::make_array();
+    auto output = input.clone(memory::get_default_resource());
     EXPECT_EQ(output.type(), object_type::array);
     EXPECT_EQ(input.size(), output.size());
 }
 
 TEST(TestObject, CloneEmptyMap)
 {
-    auto input = owned_object::make_map();
-    auto output = input.clone();
+    auto input = test::ddwaf_object_da::make_map();
+    auto output = input.clone(memory::get_default_resource());
     EXPECT_EQ(output.type(), object_type::map);
     EXPECT_EQ(input.size(), output.size());
 }
 
 TEST(TestObject, CloneArray)
 {
-    auto input = owned_object::make_array();
+    auto input = test::ddwaf_object_da::make_array();
     input.emplace_back(true);
     input.emplace_back("string");
-    input.emplace_back(5L);
+    input.emplace_back(test::ddwaf_object_da::make_signed(5L));
 
-    auto output = input.clone();
+    auto output = input.clone(memory::get_default_resource());
     EXPECT_EQ(output.type(), object_type::array);
     EXPECT_EQ(input.size(), output.size());
 
@@ -1090,9 +1097,10 @@ TEST(TestObject, CloneArray)
 
 TEST(TestObject, CloneMap)
 {
-    auto input = object_builder::map({{"bool", true}, {"string", "string"}, {"signed", 5}});
+    auto input = object_builder_da::map(
+        {{"bool", true}, {"string", "string"}, {"signed", test::ddwaf_object_da::make_signed(5)}});
 
-    auto output = input.clone();
+    auto output = input.clone(memory::get_default_resource());
     EXPECT_EQ(output.type(), object_type::map);
     EXPECT_EQ(input.size(), output.size());
 
@@ -1127,10 +1135,12 @@ TEST(TestObject, CloneMap)
 
 TEST(TestObject, CloneHeterogenous)
 {
-    auto input = object_builder::map({{"bool", true}, {"string", "string"}, {"signed", 5},
-        {"array", object_builder::array({"1", 2, "3", 4})}});
+    auto input = object_builder_da::map(
+        {{"bool", true}, {"string", "string"}, {"signed", test::ddwaf_object_da::make_signed(5)},
+            {"array", object_builder_da::array({"1", test::ddwaf_object_da::make_signed(2), "3",
+                          test::ddwaf_object_da::make_signed(4)})}});
 
-    auto output = input.clone();
+    auto output = input.clone(memory::get_default_resource());
     EXPECT_EQ(output.type(), object_type::map);
     EXPECT_EQ(input.size(), output.size());
 
@@ -1207,9 +1217,11 @@ TEST(TestObject, CloneHeterogenous)
 
 TEST(TestObject, CloneHeterogenousWithAllocator)
 {
-    auto input = object_builder::map(
-        {{"bool value key ...", true}, {"string value key", "string value value"},
-            {"signed value key", 5}, {"array value key", object_builder::array({"1", 2, "3", 4})}});
+    auto input = object_builder_da::map({{"bool value key ...", true},
+        {"string value key", "string value value"},
+        {"signed value key", test::ddwaf_object_da::make_signed(5)},
+        {"array value key", object_builder_da::array({"1", test::ddwaf_object_da::make_signed(2),
+                                "3", test::ddwaf_object_da::make_signed(4)})}});
 
     counting_resource alloc;
 
@@ -1295,9 +1307,11 @@ TEST(TestObject, CloneHeterogenousWithAllocator)
 
 TEST(TestObject, CloneHeterogenousWithIncompatibleAllocator)
 {
-    auto input = object_builder::map(
-        {{"bool value key ...", true}, {"string value key", "string value value"},
-            {"signed value key", 5}, {"array value key", object_builder::array({"1", 2, "3", 4})}});
+    auto input = object_builder_da::map({{"bool value key ...", true},
+        {"string value key", "string value value"},
+        {"signed value key", test::ddwaf_object_da::make_signed(5)},
+        {"array value key", object_builder_da::array({"1", test::ddwaf_object_da::make_signed(2),
+                                "3", test::ddwaf_object_da::make_signed(4)})}});
 
     memory::monotonic_buffer_resource alloc;
 

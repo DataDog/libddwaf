@@ -144,7 +144,7 @@ public:
             return true;
         }
 
-        return emplace(owned_object::make_string(str, length));
+        return emplace(owned_object::make_string(str, length, alloc_));
     }
 
     bool Key(const char *str, rapidjson::SizeType length, bool /*copy*/)
@@ -167,7 +167,7 @@ public:
             return true;
         }
 
-        return emplace(owned_object::make_map(0, alloc_));
+        return emplace(owned_object::make_map(alloc_));
     }
 
     // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
@@ -188,7 +188,7 @@ public:
             return true;
         }
 
-        return emplace(owned_object::make_array(0, alloc_));
+        return emplace(owned_object::make_array(alloc_));
     }
 
     // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
@@ -239,7 +239,7 @@ private:
         return true;
     }
 
-    nonnull_ptr<memory::memory_resource> alloc_{memory::get_default_resource()};
+    nonnull_ptr<memory::memory_resource> alloc_;
     owned_object root_;
     std::vector<borrowed_object> stack_;
 
@@ -259,7 +259,7 @@ owned_object json_to_object(std::string_view json, nonnull_ptr<memory::memory_re
     const rapidjson::ParseResult res = reader.Parse(ss, handler);
     if (res.IsError()) {
         // Not interested in partial JSON for now
-        return {};
+        return owned_object{};
     }
 
     return handler.finalize();

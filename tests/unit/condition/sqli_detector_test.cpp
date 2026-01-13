@@ -8,6 +8,7 @@
 #include "condition/sqli_detector.hpp"
 
 using namespace ddwaf;
+using namespace ddwaf::test;
 using namespace std::literals;
 
 namespace {
@@ -34,7 +35,7 @@ TEST_P(DialectTestFixture, InvalidSql)
     sqli_detector cond{
         {gen_param_def("server.db.statement", "server.request.query", "server.db.system")}};
     for (const auto &[statement, input] : samples) {
-        auto root = object_builder::map({{"server.db.statement", statement},
+        auto root = object_builder_da::map({{"server.db.statement", statement},
             {"server.db.system", dialect}, {"server.request.query", input}});
 
         object_store store;
@@ -58,7 +59,7 @@ TEST_P(DialectTestFixture, InjectionWithoutTokens)
     sqli_detector cond{
         {gen_param_def("server.db.statement", "server.request.query", "server.db.system")}};
     for (const auto &[statement, input] : samples) {
-        auto root = object_builder::map({{"server.db.statement", statement},
+        auto root = object_builder_da::map({{"server.db.statement", statement},
             {"server.db.system", dialect}, {"server.request.query", input}});
 
         object_store store;
@@ -94,7 +95,7 @@ TEST_P(DialectTestFixture, BenignInjections)
     sqli_detector cond{
         {gen_param_def("server.db.statement", "server.request.query", "server.db.system")}};
     for (const auto &[statement, input] : samples) {
-        auto root = object_builder::map({{"server.db.statement", statement},
+        auto root = object_builder_da::map({{"server.db.statement", statement},
             {"server.db.system", dialect}, {"server.request.query", input}});
 
         object_store store;
@@ -143,7 +144,7 @@ TEST_P(DialectTestFixture, MaliciousInjections)
     };
 
     for (const auto &[statement, obfuscated, input] : samples) {
-        auto root = object_builder::map({{"server.db.statement", statement},
+        auto root = object_builder_da::map({{"server.db.statement", statement},
             {"server.db.system", dialect}, {"server.request.query", input}});
 
         object_store store;
@@ -212,7 +213,7 @@ TEST_P(DialectTestFixture, Tautologies)
     };
 
     for (const auto &[statement, obfuscated, input] : samples) {
-        auto root = object_builder::map({{"server.db.statement", statement},
+        auto root = object_builder_da::map({{"server.db.statement", statement},
             {"server.db.system", dialect}, {"server.request.query", input}});
 
         object_store store;
@@ -255,7 +256,7 @@ TEST_P(DialectTestFixture, Comments)
     sqli_detector cond{
         {gen_param_def("server.db.statement", "server.request.query", "server.db.system")}};
     for (const auto &[statement, obfuscated, input] : samples) {
-        auto root = object_builder::map({{"server.db.statement", statement},
+        auto root = object_builder_da::map({{"server.db.statement", statement},
             {"server.db.system", dialect}, {"server.request.query", input}});
 
         object_store store;
@@ -295,7 +296,7 @@ TEST(TestSqliDetectorMySql, Comments)
     sqli_detector cond{
         {gen_param_def("server.db.statement", "server.request.query", "server.db.system")}};
     for (const auto &[statement, obfuscated, input] : samples) {
-        auto root = object_builder::map({{"server.db.statement", statement},
+        auto root = object_builder_da::map({{"server.db.statement", statement},
             {"server.db.system", "mysql"}, {"server.request.query", input}});
 
         object_store store;
@@ -338,7 +339,7 @@ TEST(TestSqliDetectorMySql, Tautologies)
     };
 
     for (const auto &[statement, obfuscated, input] : samples) {
-        auto root = object_builder::map({{"server.db.statement", statement},
+        auto root = object_builder_da::map({{"server.db.statement", statement},
             {"server.db.system", "mysql"}, {"server.request.query", input}});
 
         object_store store;
@@ -384,7 +385,7 @@ TEST(TestSqliDetectorPgSql, Tautologies)
     };
 
     for (const auto &[statement, obfuscated, input] : samples) {
-        auto root = object_builder::map({{"server.db.statement", statement},
+        auto root = object_builder_da::map({{"server.db.statement", statement},
             {"server.db.system", "pgsql"}, {"server.request.query", input}});
 
         object_store store;

@@ -12,6 +12,7 @@
 #include "common/gtest_utils.hpp"
 
 using namespace ddwaf;
+using namespace ddwaf::test;
 using namespace std::literals;
 
 namespace {
@@ -49,7 +50,7 @@ TEST(TestNegatedScalarCondition, NoMatch)
     negated_scalar_condition cond{std::make_unique<matcher::regex_match>(".*", 0, true), {},
         {gen_variadic_param("server.request.uri.raw")}};
 
-    auto root = object_builder::map({{"server.request.uri.raw", "hello"}});
+    auto root = object_builder_da::map({{"server.request.uri.raw", "hello"}});
 
     object_store store;
     store.insert(root);
@@ -66,10 +67,10 @@ TEST(TestNegatedScalarCondition, NoMatchWithKeyPath)
             .index = get_target_index("server.request.uri.raw"),
             .key_path = {"path", "to", "rome"}}}}}};
 
-    auto root = object_builder::map({{"server.request.uri.raw",
-        object_builder::map({{"path",
-            object_builder::map({{"to",
-                object_builder::map({{"object", object_builder::array({{"bye"}})}})}})}})}});
+    auto root = object_builder_da::map({{"server.request.uri.raw",
+        object_builder_da::map({{"path",
+            object_builder_da::map({{"to",
+                object_builder_da::map({{"object", object_builder_da::array({{"bye"}})}})}})}})}});
 
     object_store store;
     store.insert(root);
@@ -84,7 +85,7 @@ TEST(TestNegatedScalarCondition, Timeout)
     negated_scalar_condition cond{std::make_unique<matcher::regex_match>(".*", 0, true), {},
         {gen_variadic_param("server.request.uri.raw")}};
 
-    auto root = object_builder::map({{"server.request.uri.raw", "hello"}});
+    auto root = object_builder_da::map({{"server.request.uri.raw", "hello"}});
 
     object_store store;
     store.insert(root);
@@ -99,7 +100,7 @@ TEST(TestNegatedScalarCondition, SimpleMatch)
     negated_scalar_condition cond{std::make_unique<matcher::regex_match>("hello.*", 0, true), {},
         {gen_variadic_param("server.request.uri.raw")}};
 
-    auto root = object_builder::map({{"server.request.uri.raw", "bye"}});
+    auto root = object_builder_da::map({{"server.request.uri.raw", "bye"}});
 
     object_store store;
     store.insert(root);
@@ -121,9 +122,9 @@ TEST(TestNegatedScalarCondition, SimpleMatchWithKeyPath)
             .index = get_target_index("server.request.uri.raw"),
             .key_path = {"path", "to", "object"}}}}}};
 
-    auto root = object_builder::map({{"server.request.uri.raw",
-        object_builder::map(
-            {{"path", object_builder::map({{"to", object_builder::map({{"object", "bye"}})}})}})}});
+    auto root = object_builder_da::map({{"server.request.uri.raw",
+        object_builder_da::map({{"path",
+            object_builder_da::map({{"to", object_builder_da::map({{"object", "bye"}})}})}})}});
 
     object_store store;
     store.insert(root);
@@ -144,7 +145,8 @@ TEST(TestNegatedScalarCondition, SingleValueArrayMatch)
     negated_scalar_condition cond{std::make_unique<matcher::regex_match>("hello.*", 0, true), {},
         {gen_variadic_param("server.request.uri.raw")}};
 
-    auto root = object_builder::map({{"server.request.uri.raw", object_builder::array({"bye"})}});
+    auto root =
+        object_builder_da::map({{"server.request.uri.raw", object_builder_da::array({"bye"})}});
 
     object_store store;
     store.insert(root);
@@ -167,10 +169,10 @@ TEST(TestNegatedScalarCondition, SingleValueArrayMatchWithKeyPath)
             .index = get_target_index("server.request.uri.raw"),
             .key_path = {"path", "to", "object"}}}}}};
 
-    auto root = object_builder::map({{"server.request.uri.raw",
-        object_builder::map({{"path",
-            object_builder::map(
-                {{"to", object_builder::map({{"object", object_builder::array({"bye"})}})}})}})}});
+    auto root = object_builder_da::map({{"server.request.uri.raw",
+        object_builder_da::map({{"path",
+            object_builder_da::map({{"to",
+                object_builder_da::map({{"object", object_builder_da::array({"bye"})}})}})}})}});
 
     object_store store;
     store.insert(root);
@@ -191,8 +193,8 @@ TEST(TestNegatedScalarCondition, MultiValueArrayMatch)
     negated_scalar_condition cond{std::make_unique<matcher::regex_match>("hello.*", 0, true), {},
         {gen_variadic_param("server.request.uri.raw")}};
 
-    auto root = object_builder::map(
-        {{"server.request.uri.raw", object_builder::array({"bye", "greetings"})}});
+    auto root = object_builder_da::map(
+        {{"server.request.uri.raw", object_builder_da::array({"bye", "greetings"})}});
 
     object_store store;
     store.insert(root);
@@ -215,10 +217,11 @@ TEST(TestNegatedScalarCondition, MultiValueArrayMatchWithKeyPath)
             .index = get_target_index("server.request.uri.raw"),
             .key_path = {"path", "to", "object"}}}}}};
 
-    auto root = object_builder::map({{"server.request.uri.raw",
-        object_builder::map({{"path",
-            object_builder::map({{"to", object_builder::map({{"object",
-                                            object_builder::array({"bye", "greetings"})}})}})}})}});
+    auto root = object_builder_da::map({{"server.request.uri.raw",
+        object_builder_da::map(
+            {{"path", object_builder_da::map(
+                          {{"to", object_builder_da::map({{"object",
+                                      object_builder_da::array({"bye", "greetings"})}})}})}})}});
 
     object_store store;
     store.insert(root);
@@ -242,10 +245,11 @@ TEST(TestNegatedScalarCondition, ExcludedRootObject)
             .index = target_index,
             .key_path = {"path", "to", "object"}}}}}};
 
-    auto root = object_builder::map({{"server.request.uri.raw",
-        object_builder::map({{"path",
-            object_builder::map({{"to", object_builder::map({{"object",
-                                            object_builder::array({"bye", "greetings"})}})}})}})}});
+    auto root = object_builder_da::map({{"server.request.uri.raw",
+        object_builder_da::map(
+            {{"path", object_builder_da::map(
+                          {{"to", object_builder_da::map({{"object",
+                                      object_builder_da::array({"bye", "greetings"})}})}})}})}});
 
     object_store store;
     store.insert(root);
@@ -265,10 +269,11 @@ TEST(TestNegatedScalarCondition, ExcludedIntermediateObject)
             .index = get_target_index("server.request.uri.raw"),
             .key_path = {"path", "to", "object"}}}}}};
 
-    auto root = object_builder::map({{"server.request.uri.raw",
-        object_builder::map({{"path",
-            object_builder::map({{"to", object_builder::map({{"object",
-                                            object_builder::array({"bye", "greetings"})}})}})}})}});
+    auto root = object_builder_da::map({{"server.request.uri.raw",
+        object_builder_da::map(
+            {{"path", object_builder_da::map(
+                          {{"to", object_builder_da::map({{"object",
+                                      object_builder_da::array({"bye", "greetings"})}})}})}})}});
 
     std::vector<std::variant<std::string, int64_t>> kp{"server.request.uri.raw", "path", "to"};
 
@@ -291,10 +296,10 @@ TEST(TestNegatedScalarCondition, ExcludedFinalObject)
             .index = target_index,
             .key_path = {"path", "to", "object"}}}}}};
 
-    auto root = object_builder::map({{"server.request.uri.raw",
-        object_builder::map({{"path",
-            object_builder::map(
-                {{"to", object_builder::map({{"object", object_builder::array({"bye"})}})}})}})}});
+    auto root = object_builder_da::map({{"server.request.uri.raw",
+        object_builder_da::map({{"path",
+            object_builder_da::map({{"to",
+                object_builder_da::map({{"object", object_builder_da::array({"bye"})}})}})}})}});
 
     std::vector<std::variant<std::string, int64_t>> kp{
         "server.request.uri.raw", "path", "to", "object"};
@@ -317,7 +322,7 @@ TEST(TestNegatedScalarCondition, CachedMatch)
     ddwaf::timer deadline{2s};
     condition_cache cache;
 
-    auto root = object_builder::map({{"server.request.uri.raw", "bye"}});
+    auto root = object_builder_da::map({{"server.request.uri.raw", "bye"}});
 
     {
         object_store store;
@@ -342,8 +347,8 @@ TEST(TestNegatedScalarCondition, SimpleMatchOnKeys)
     negated_scalar_condition cond{
         std::make_unique<matcher::regex_match>("hello", 0, true), {}, {std::move(target)}};
 
-    auto root =
-        object_builder::map({{"server.request.uri.raw", object_builder::map({{"bye", "hello"}})}});
+    auto root = object_builder_da::map(
+        {{"server.request.uri.raw", object_builder_da::map({{"bye", "hello"}})}});
 
     object_store store;
     store.insert(root);
@@ -358,7 +363,7 @@ TEST(TestNegatedScalarCondition, SimplesubcontextMatch)
     negated_scalar_condition cond{std::make_unique<matcher::regex_match>("hello.*", 0, true), {},
         {gen_variadic_param("server.request.uri.raw")}};
 
-    auto root = object_builder::map({{"server.request.uri.raw", "bye"}});
+    auto root = object_builder_da::map({{"server.request.uri.raw", "bye"}});
 
     object_store ctx_store;
     {

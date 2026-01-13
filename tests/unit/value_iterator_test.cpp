@@ -4,17 +4,19 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include "common/ddwaf_object_da.hpp"
 #include "common/gtest_utils.hpp"
 #include "context_allocator.hpp"
 #include "iterator.hpp"
 
 using namespace ddwaf;
+using namespace ddwaf::test;
 
 namespace {
 
 TEST(TestValueIterator, TestInvalidIterator)
 {
-    owned_object object;
+    owned_object object = owned_object{};
 
     std::unordered_set<object_cache_key> context;
     object_set_ref exclude{context};
@@ -31,7 +33,7 @@ TEST(TestValueIterator, TestInvalidIterator)
 
 TEST(TestValueIterator, TestStringScalar)
 {
-    owned_object object{"value"};
+    owned_object object = test::ddwaf_object_da::make_string("value");
 
     std::unordered_set<object_cache_key> context;
     object_set_ref exclude{context};
@@ -49,7 +51,7 @@ TEST(TestValueIterator, TestStringScalar)
 
 TEST(TestValueIterator, TestUnsignedScalar)
 {
-    owned_object object{22U};
+    owned_object object = test::ddwaf_object_da::make_unsigned(22U);
 
     std::unordered_set<object_cache_key> context;
     object_set_ref exclude{context};
@@ -65,7 +67,7 @@ TEST(TestValueIterator, TestUnsignedScalar)
 
 TEST(TestValueIterator, TestSignedScalar)
 {
-    owned_object object{22L};
+    owned_object object = test::ddwaf_object_da::make_signed(22L);
 
     std::unordered_set<object_cache_key> context;
     object_set_ref exclude{context};
@@ -81,7 +83,7 @@ TEST(TestValueIterator, TestSignedScalar)
 
 TEST(TestValueIterator, TestArraySingleItem)
 {
-    auto object = object_builder::array({"string"});
+    auto object = object_builder_da::array({"string"});
 
     std::unordered_set<object_cache_key> context;
     object_set_ref exclude{context};
@@ -98,7 +100,7 @@ TEST(TestValueIterator, TestArraySingleItem)
 
 TEST(TestValueIterator, TestArrayMultipleItems)
 {
-    auto object = object_builder::array();
+    auto object = object_builder_da::array();
     for (unsigned i = 0; i < 50; i++) { object.emplace_back(std::to_string(i)); }
 
     std::unordered_set<object_cache_key> context;
@@ -122,7 +124,7 @@ TEST(TestValueIterator, TestArrayMultipleItems)
 
 TEST(TestValueIterator, TestArrayMultipleNullAndInvalid)
 {
-    auto object = object_builder::array();
+    auto object = object_builder_da::array();
     for (unsigned i = 0; i < 25; i++) {
         object.emplace_back(std::to_string(i));
         object.emplace_back(owned_object{});
@@ -152,11 +154,11 @@ TEST(TestValueIterator, TestArrayMultipleNullAndInvalid)
 
 TEST(TestValueIterator, TestDeepArray)
 {
-    auto object = object_builder::array();
+    auto object = object_builder_da::array();
     borrowed_object array{object};
     for (unsigned i = 0; i < 10; i++) {
         array.emplace_back("val" + std::to_string(i));
-        array = array.emplace_back(object_builder::array());
+        array = array.emplace_back(object_builder_da::array());
     }
 
     std::unordered_set<object_cache_key> context;
@@ -179,8 +181,8 @@ TEST(TestValueIterator, TestDeepArray)
 
 TEST(TestValueIterator, TestArrayNoScalars)
 {
-    auto object = object_builder::array();
-    for (unsigned i = 0; i < 50; i++) { object.emplace_back(object_builder::array()); }
+    auto object = object_builder_da::array();
+    for (unsigned i = 0; i < 50; i++) { object.emplace_back(object_builder_da::array()); }
 
     std::unordered_set<object_cache_key> context;
     object_set_ref exclude{context};
@@ -192,7 +194,7 @@ TEST(TestValueIterator, TestArrayNoScalars)
 
 TEST(TestValueIterator, TestMapSingleItem)
 {
-    auto object = object_builder::map({{"key", "value"}});
+    auto object = object_builder_da::map({{"key", "value"}});
 
     std::unordered_set<object_cache_key> context;
     object_set_ref exclude{context};
@@ -210,7 +212,7 @@ TEST(TestValueIterator, TestMapSingleItem)
 
 TEST(TestValueIterator, TestMapMultipleItems)
 {
-    auto object = object_builder::map();
+    auto object = object_builder_da::map();
 
     for (unsigned i = 0; i < 50; i++) {
         auto index = std::to_string(i);
@@ -240,7 +242,7 @@ TEST(TestValueIterator, TestMapMultipleItems)
 
 TEST(TestValueIterator, TestMapMultipleMultipleNullAndInvalid)
 {
-    auto object = object_builder::map();
+    auto object = object_builder_da::map();
 
     for (unsigned i = 0; i < 25; i++) {
         {
@@ -282,13 +284,13 @@ TEST(TestValueIterator, TestMapMultipleMultipleNullAndInvalid)
 
 TEST(TestValueIterator, TestDeepMap)
 {
-    auto object = object_builder::map();
+    auto object = object_builder_da::map();
     borrowed_object map{object};
 
     for (unsigned i = 0; i < 10; i++) {
         auto index = std::to_string(i);
         map.emplace("str" + index, "val" + index);
-        map = map.emplace("map" + index, object_builder::map());
+        map = map.emplace("map" + index, object_builder_da::map());
     }
 
     std::unordered_set<object_cache_key> context;
@@ -314,8 +316,8 @@ TEST(TestValueIterator, TestDeepMap)
 
 TEST(TestValueIterator, TestMapNoScalars)
 {
-    auto object = object_builder::map();
-    for (unsigned i = 0; i < 50; i++) { object.emplace("key", object_builder::map()); }
+    auto object = object_builder_da::map();
+    for (unsigned i = 0; i < 50; i++) { object.emplace("key", object_builder_da::map()); }
 
     std::unordered_set<object_cache_key> context;
     object_set_ref exclude{context};
@@ -370,7 +372,7 @@ TEST(TestValueIterator, TestContainerMix)
 
 TEST(TestValueIterator, TestInvalidObjectPath)
 {
-    owned_object object;
+    owned_object object = owned_object{};
 
     std::unordered_set<object_cache_key> context;
     object_set_ref exclude{context};
@@ -410,7 +412,7 @@ TEST(TestValueIterator, TestInvalidObjectPath)
 
 TEST(TestValueIterator, TestSimplePath)
 {
-    auto object = object_builder::map({{"key", "value"}, {"key1", "value"}, {"key2", "value"}});
+    auto object = object_builder_da::map({{"key", "value"}, {"key1", "value"}, {"key2", "value"}});
 
     std::unordered_set<object_cache_key> context;
     object_set_ref exclude{context};
@@ -452,9 +454,9 @@ TEST(TestValueIterator, TestSimplePath)
 
 TEST(TestValueIterator, TestMultiPath)
 {
-    auto object = object_builder::map(
-        {{"first", object_builder::map({{"second", object_builder::map({{"third", "final"},
-                                                       {"value", "value_third"}})},
+    auto object = object_builder_da::map(
+        {{"first", object_builder_da::map({{"second", object_builder_da::map({{"third", "final"},
+                                                          {"value", "value_third"}})},
                        {"value", "value_second"}})},
             {"value", "value_first"}});
 
@@ -657,7 +659,7 @@ TEST(TestValueIterator, TestContainerMixInvalidPath)
 
 TEST(TestValueIterator, TestExcludeSingleObject)
 {
-    auto object = object_builder::map({{"key", "value"}});
+    auto object = object_builder_da::map({{"key", "value"}});
 
     std::unordered_set<object_cache_key> context{object.at(0)};
     object_set_ref exclude{context};
@@ -668,9 +670,9 @@ TEST(TestValueIterator, TestExcludeSingleObject)
 
 TEST(TestValueIterator, TestExcludeMultipleObjects)
 {
-    auto root = object_builder::map({{"key", "value"}});
+    auto root = object_builder_da::map({{"key", "value"}});
 
-    auto map = root.emplace("other", object_builder::array({"hello", "bye"}));
+    auto map = root.emplace("other", object_builder_da::array({"hello", "bye"}));
 
     std::unordered_set<object_cache_key> context{root.at(0), map.at(1)};
     object_set_ref exclude{context};
@@ -689,8 +691,8 @@ TEST(TestValueIterator, TestExcludeMultipleObjects)
 
 TEST(TestValueIterator, TestExcludeObjectInKeyPath)
 {
-    auto root = object_builder::map();
-    auto child = root.emplace("parent", object_builder::map());
+    auto root = object_builder_da::map();
+    auto child = root.emplace("parent", object_builder_da::map());
     child.emplace("child", "value");
 
     std::unordered_set<object_cache_key> context{child.at(0)};
@@ -703,7 +705,7 @@ TEST(TestValueIterator, TestExcludeObjectInKeyPath)
 
 TEST(TestValueIterator, TestExcludeRootOfKeyPath)
 {
-    auto root = object_builder::map({{"parent", object_builder::map({{"child", "value"}})}});
+    auto root = object_builder_da::map({{"parent", object_builder_da::map({{"child", "value"}})}});
 
     std::unordered_set<object_cache_key> context{root.at(0)};
 
@@ -716,8 +718,8 @@ TEST(TestValueIterator, TestExcludeRootOfKeyPath)
 
 TEST(TestValueIterator, TestNegativeIndexInPath)
 {
-    auto object = object_builder::map(
-        {{"root", object_builder::map({{"arr", object_builder::array({"a", "b", "c"})}})}});
+    auto object = object_builder_da::map(
+        {{"root", object_builder_da::map({{"arr", object_builder_da::array({"a", "b", "c"})}})}});
 
     std::unordered_set<object_cache_key> context;
     object_set_ref exclude{context};
@@ -736,8 +738,8 @@ TEST(TestValueIterator, TestNegativeIndexInPath)
 
 TEST(TestValueIterator, TestPositiveIndexInPath)
 {
-    auto object = object_builder::map(
-        {{"root", object_builder::map({{"arr", object_builder::array({"a", "b", "c"})}})}});
+    auto object = object_builder_da::map(
+        {{"root", object_builder_da::map({{"arr", object_builder_da::array({"a", "b", "c"})}})}});
 
     std::unordered_set<object_cache_key> context;
     object_set_ref exclude{context};

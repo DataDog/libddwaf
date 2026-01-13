@@ -221,9 +221,10 @@ owned_object node_serialize::operator()(const node_array_ptr &node) const
     }
 
     if (node->truncated) {
-        array.emplace_back(object_builder::map({{"len", node->length}, {"truncated", true}}));
+        array.emplace_back(
+            object_builder::map({{"len", node->length}, {"truncated", true}}, alloc));
     } else {
-        array.emplace_back(object_builder::map({{"len", node->length}}));
+        array.emplace_back(object_builder::map({{"len", node->length}}, alloc));
     }
 
     return array;
@@ -241,7 +242,7 @@ owned_object node_serialize::operator()(const node_record_ptr &node) const
     }
 
     if (node->truncated) {
-        array.emplace_back(object_builder::map({{"truncated", true}}));
+        array.emplace_back(object_builder::map({{"truncated", true}}, alloc));
     }
 
     return array;
@@ -341,7 +342,7 @@ owned_object extract_schema::eval_impl(const unary_argument<object_view> &input,
     ddwaf::timer &deadline) const
 {
     if (!input.value.has_value()) {
-        return {};
+        return owned_object{};
     }
 
     return {schema::generate(input.value, scanners_, alloc, deadline)};

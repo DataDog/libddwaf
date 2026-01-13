@@ -9,6 +9,7 @@
 
 #include <gmock/gmock.h>
 
+#include "common/ddwaf_object_da.hpp"
 #include "common/gtest_utils.hpp"
 
 using ::testing::_;
@@ -16,6 +17,7 @@ using ::testing::ByMove;
 using ::testing::Return;
 
 using namespace ddwaf;
+using namespace ddwaf::test;
 using namespace std::literals;
 
 namespace {
@@ -45,9 +47,9 @@ TEST(TestStructuredProcessor, AllParametersAvailable)
 {
     auto *alloc = memory::get_default_resource();
 
-    owned_object output = owned_object::make_string("output_string");
+    owned_object output = test::ddwaf_object_da::make_string("output_string");
 
-    auto input_map = object_builder::map(
+    auto input_map = object_builder_da::map(
         {{"unary_address", "unary_string"}, {"optional_address", "optional_string"},
             {"variadic_address_1", 1U}, {"variadic_address_2", 1U}});
     object_store store;
@@ -94,9 +96,9 @@ TEST(TestStructuredProcessor, OptionalParametersNotAvailable)
 {
     auto *alloc = memory::get_default_resource();
 
-    owned_object output = owned_object::make_string("output_string");
+    owned_object output = test::ddwaf_object_da::make_string("output_string");
 
-    auto input_map = object_builder::map({{"unary_address", "unary_string"},
+    auto input_map = object_builder_da::map({{"unary_address", "unary_string"},
         {"variadic_address_1", 1U}, {"variadic_address_2", 1U}});
 
     object_store store;
@@ -143,7 +145,7 @@ TEST(TestStructuredProcessor, RequiredParameterNotAvailable)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto input_map = object_builder::map({{"optional_address", "optional_string"},
+    auto input_map = object_builder_da::map({{"optional_address", "optional_string"},
         {"variadic_address_1", 1U}, {"variadic_address_2", 1U}});
 
     object_store store;
@@ -185,7 +187,7 @@ TEST(TestStructuredProcessor, NoVariadocParametersAvailable)
 {
     auto *alloc = memory::get_default_resource();
 
-    auto input_map = object_builder::map({
+    auto input_map = object_builder_da::map({
         {"unary_address", "unary_string"},
         {"optional_address", "optional_string"},
     });

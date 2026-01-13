@@ -21,7 +21,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
 
     random_buffer buffer{bytes, size};
 
-    auto header = owned_object::make_map();
+    auto header = owned_object::make_map(0, ddwaf::memory::get_default_resource());
     auto header_size = buffer.get<uint8_t>();
     for (uint8_t i = 0; i < header_size; ++i) {
         auto value = buffer.get<std::string_view>();
@@ -40,7 +40,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *bytes, size_t size)
     processor_cache cache;
     ddwaf::timer deadline{2s};
     auto output = gen.eval_impl({.address = {}, .key_path = {}, .value = header}, cache,
-        memory::get_default_resource(), deadline);
+        ddwaf::memory::get_default_resource(), deadline);
 
     return 0;
 }

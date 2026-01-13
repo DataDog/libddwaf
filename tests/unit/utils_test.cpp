@@ -11,6 +11,7 @@
 #include "common/gtest_utils.hpp"
 
 using namespace ddwaf;
+using namespace ddwaf::test;
 
 namespace {
 constexpr char char_min = std::numeric_limits<char>::min();
