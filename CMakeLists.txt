@@ -34,6 +34,8 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
+set(GIT_COMMIT "" CACHE STRING "Git commit hash (skips git invocation if set)")
+
 option(LIBDDWAF_BUILD_SHARED "Build shared library" ON)
 option(LIBDDWAF_BUILD_STATIC "Build shared library" ON)
 option(LIBDDWAF_TESTING "Load test subdirectories and targets" ON)
