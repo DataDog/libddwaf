@@ -8,36 +8,24 @@ The C API in libddwaf v2 has experienced a large number of changes, primarily ar
 - Two new string types have been introduced:
   - Small string: a string of 14 bytes or less, stored within the object memory itself without extra allocations.
   - Literal string: a c-string which should be treated as read-only and never freed.
-- Object creation and access functions have been changed significantly, primarily to avoid the need for intermediate objects.
-- `ddwaf_run` has been renamed to `ddwaf_context_eval`.
+- Object creation, access and destruction functions have been changed significantly, primarily to avoid the need for intermediate objects and due to the introduction of allocators.
+- For consistency,`ddwaf_run` has been renamed to `ddwaf_context_eval`.
 - Subcontexts have been introduced to replace ephemerals, their lifecycle and use is equivalent to that of the context.
-- `ddwaf_object_free` and `ddwaf_result_free` are replaced by `ddwaf_object_destroy`, which requires the allocator used for the object's allocations.
 - `ddwaf_config` has been removed:
   - Evaluation limits have been entirely removed, the caller must now enforce any relevant limits during serialisation.
   - Obfuscator regexes must now be provided through configuration: `{obfuscator: {key_regex: <value>, value_regex: <value>}}`.
   - The free function is no longer needed due to the introduction of allocators.
 
-## Checklist for bindings maintainers
-
-- Replace `ddwaf_init(ruleset, config, diagnostics)` with `ddwaf_init(ruleset, diagnostics)` and destroy `diagnostics` with the default allocator.
-- Pass an output allocator to `ddwaf_context_init()` and destroy results with `ddwaf_object_destroy(result, output_alloc)`.
-- Update `ddwaf_run()` usages to `ddwaf_context_eval()` and consolidate persistent/ephemeral data into a single `data` argument.
-- If you relied on ephemerals, introduce subcontexts and destroy them with `ddwaf_subcontext_destroy()`.
-- Replace `ddwaf_object_free`/`ddwaf_result_free` with `ddwaf_object_destroy` and ensure the allocator used for allocation is available at destruction time.
-- Update object builders to `ddwaf_object_set_*` plus `ddwaf_object_insert_*` APIs; prefer literal/no-copy variants only when ownership rules are clear.
-
 ## Note on Allocators
 The ownership of any allocated memory crossing the API boundary was one of the pain points of libddwaf v1. To fix this, v2 introduces allocators, which can be used to define the explicit ownership of the allocated memory.
 
-Since the use of allocators is now required on many of the API functions, the migration examples will use the default allocator and will also include allocator destruction for illustrative purposes, as the destruction of the default allocator is a no-op.
+Since the use of allocators is now required on many of the API functions, the migration examples will use the default allocator and will also include allocator destruction for illustrative purposes, as the destruction of the default allocator is a no-op. 
 
-The allocator API now includes default, pool, monotonic, and user-defined allocators via `ddwaf_*_allocator_init()` plus `ddwaf_allocator_destroy()` for cleanup. The default allocator is process-wide and `ddwaf_allocator_destroy()` is a no-op for it.
-
-See the [allocators document](../allocators.md) for more information on the different types of allocators available.
+However, note that other allocators are also available. See the [allocators document](../allocators.md) for more information on the different types of allocators available.
 
 ## 1. WAF instantiation: Removal of `ddwaf_config`
 
-The main changes pertaining to WAF initialisation is the removal of `ddwaf_config`, as the evaluation limits have been entirely removed in favour of user-controlled truncation and the free function is no longer required due to the explicit memory ownership defined through allocators. As a consequence, instantiation through `ddwaf_init` has changed as follows:
+The main changes pertaining to WAF initialisation is the removal of `ddwaf_config`, as the evaluation limits have been entirely removed, in favour of user-controlled truncation, and the free function is no longer required due to the explicit memory ownership defined through allocators. As a consequence, instantiation through `ddwaf_init` has changed as follows:
 
 **v1.x:**
 ```c
@@ -55,9 +43,8 @@ ddwaf_object ruleset = ...;
 ddwaf_object diagnostics;
 ddwaf_handle handle = ddwaf_init(&ruleset, &diagnostics);
 ```
-The `diagnostics` object is allocated with the default allocator and must be destroyed with `ddwaf_object_destroy(&diagnostics, ddwaf_get_default_allocator())`.
+When instantiating through the builder, the deprecation of `ddwaf_config` only affects `ddwaf_builder_init`.
 
-When instantiating through the builder, the deprecation of `ddwaf_config` only affects `ddwaf_builder_init`:
 **v1.x:**
 ```c
 ddwaf_config config = ...;
@@ -69,11 +56,20 @@ ddwaf_builder builder = ddwaf_builder_init(&config);
 ddwaf_builder builder = ddwaf_builder_init();
 ```
 
+Note that the The `diagnostics` object is allocated with the default allocator and must be destroyed as follows:
+
+```c
+ddwaf_object_destroy(&diagnostics, ddwaf_get_default_allocator())
+```
+This applies to both `ddwaf_init` and to relevant `ddwaf_builder_*` functions.
+
 ## 2. WAF Context: Input & Output Allocators and Removal of Ephemerals
 
-The WAF context lifecycle has changed significantly in v2 with the introduction of allocators and the consolidation of persistent and ephemeral data into a single parameter. In v1.x, `ddwaf_run` accepted separate persistent and ephemeral data parameters, while v2.x uses `ddwaf_context_eval` with a unified data parameter.
+The WAF context lifecycle functions have changed significantly in v2 with the introduction of allocators and subcontexts as a replacement for ephemerals. In v1.x, `ddwaf_run` accepted separate persistent and ephemeral data parameters, while v2.x no longer provides ephemeral semantics, therefore only persistent data is provided.
 
 ### Context Initialization
+
+During context initialisation, the caller must provide the output allocator which is used by the WAF to allocate memory for the result object, provided as an output parameter to `ddwaf_context_eval`. This allocator must remain valid for the lifetime of the context.
 
 **v1.x:**
 ```c
@@ -94,9 +90,9 @@ ddwaf_allocator output_alloc = ddwaf_get_default_allocator();
 ddwaf_context context = ddwaf_context_init(handle, output_alloc);
 ```
 
-The output allocator (`output_alloc`) is used by the WAF to allocate memory for the result object returned by `ddwaf_context_eval`. This allocator must remain valid for the lifetime of the context.
-
 ### Context Evaluation
+
+As mentioned, context evaluation no longer supports ephemeral data, consequently the main difference between v1.x and v2.x is the removal from `ddwaf_run`, which has been renamed to `ddwaf_context_eval`. Additionally, the allocator used to generate the input data must also be provided. Note that this allocator may be the same as the output allocator provided through `ddwaf_context_init` and it must also remain valid for the lifetime of the context.
 
 **v1.x:**
 ```c
@@ -134,20 +130,6 @@ if (code == DDWAF_MATCH) {
 // Destroy result using the output allocator from ddwaf_context_init
 ddwaf_object_destroy(&result, output_alloc);
 ```
-
-### Key Changes
-
-1. **Allocators Required**: Both context initialization and evaluation now require allocators
-   - Output allocator: Passed to `ddwaf_context_init()`, used for result objects
-   - Input allocator: Passed to `ddwaf_context_eval()`, used to manage input data lifecycle
-   - If the input allocator is NULL, libddwaf will not free the input data; the caller must keep it alive until the context or subcontext is destroyed.
-
-2. **Unified Data Parameter**: The `persistent_data` and `ephemeral_data` split has been removed. All data is passed through the single `data` parameter in `ddwaf_context_eval()`.
-
-3. **Persistent Data Accumulation**: Data passed to `ddwaf_context_eval()` is stored in the context and persists across multiple evaluations. To override a previously provided address, simply pass new data for the same address in a subsequent call.
-
-4. **Result Object Management**: The result object is now a `ddwaf_object` instead of `ddwaf_result`, and must be destroyed with `ddwaf_object_destroy()` using the output allocator.
-
 ### Multiple Evaluations Example
 
 **v1.x:**
