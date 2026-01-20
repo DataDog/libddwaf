@@ -275,6 +275,7 @@ The object creation API has changed extensively in v2 to support allocators and 
 
 ### String Creation
 
+The creation of a string object typically involves an allocation, therefore the allocator parameter is now required. Additionally, the string length is now always required to avoid potential issues with nul characters.
 **v1.x:**
 ```c
 // Create string object (library allocates and copies)
@@ -297,25 +298,40 @@ ddwaf_object_set_string(&obj, "hello world", 11, alloc);
 ddwaf_object_destroy(&obj, alloc);
 ```
 
-### String Literals (Read-Only Strings)
+**Note**: Small strings (14 bytes or less) are automatically stored inline within the object itself without additional allocation.
 
-v2 introduces a new literal string type for read-only strings, which avoids allocation:
+#### Literal Strings
 
-**v2.x:**
+This new version introduces a new literal string type which are never freed, this makes it easier to provide literals or interned strings. The associated memory must be managed by the caller:
+
 ```c
 ddwaf_object obj;
 
 // String literal - no allocation, no copy
 ddwaf_object_set_string_literal(&obj, "constant string", 15);
-
-// Must still call destroy, but allocator can be any valid allocator since no memory was allocated
-ddwaf_allocator alloc = ddwaf_get_default_allocator();
-ddwaf_object_destroy(&obj, alloc);
 ```
 
-**Note**: Small strings (14 bytes or less) are automatically stored inline within the object itself without additional allocation, regardless of whether you use `ddwaf_object_set_string()` or `ddwaf_object_set_string_literal()`.
+#### No-Copy Strings
 
-**No-copy strings**: Use `ddwaf_object_set_string_nocopy()` when the string buffer is already allocated with the same allocator you will pass to `ddwaf_object_destroy()`. This avoids a copy but requires the buffer to remain valid for the lifetime of the object.
+It is still possible to create freeable strings by providing a preallocated/preinitialised buffer using the `ddwaf_object_set_string_nocopy`, however note that the memory of the provided buffer must have been allocated with the same allocator used for object destruction, e.g. using `ddwaf_allocator_alloc`.
+
+```c
+ddwaf_object obj;
+
+ddwaf_allocator alloc = ddwaf_get_default_allocator();
+
+// Preallocated and preinitialised
+char *str = (char*)ddwaf_allocator_alloc(alloc, 16, 1);
+
+// Initialise string
+...
+
+// String literal - no allocation, no copy
+ddwaf_object_set_string_nocopy(&obj, str, strlen(str));
+
+// Destroy using the correct allocator
+ddwaf_object_destroy(&obj, alloc);
+```
 
 ### Numeric Types
 
@@ -336,9 +352,53 @@ The same pattern applies to other numeric types:
 - `ddwaf_object_bool()` → `ddwaf_object_set_bool()`
 - `ddwaf_object_float()` → `ddwaf_object_set_float()`
 
+
+### Array Creation and Insertion
+
+The array insertion API has changed to return a pointer to the inserted value, eliminating the need for intermediate objects.
+
+**v1.x:**
+```c
+ddwaf_object array;
+ddwaf_object_array(&array);
+
+// Create value objects and add to array
+ddwaf_object elem1;
+ddwaf_object_string(&elem1, "first");
+ddwaf_object_array_add(&array, &elem1);
+
+ddwaf_object elem2;
+ddwaf_object_string(&elem2, "second");
+ddwaf_object_array_add(&array, &elem2);
+
+ddwaf_object_free(&array);
+```
+
+**v2.x:**
+```c
+ddwaf_allocator alloc = ddwaf_get_default_allocator();
+
+ddwaf_object array;
+ddwaf_object_set_array(&array, 2, alloc);  // Initialize with capacity
+
+// Insert and set value in one step
+ddwaf_object_set_string(
+    ddwaf_object_insert(&array, alloc),
+    "first", 5, alloc);
+
+ddwaf_object_set_string(
+    ddwaf_object_insert(&array, alloc),
+    "second", 6, alloc);
+
+ddwaf_object_destroy(&array, alloc);
+```
+
+
 ### Map Creation and Insertion
 
-The map insertion API has changed to return a pointer to the inserted value, eliminating the need for intermediate objects.
+The map creation now requires both the expected size of the map (which may be 0) and a suitable allocator. Note that if the size of the map is incorrect, the container will still grow dynamically.
+
+Additionally, the insertion API has changed to return a pointer to the inserted value, eliminating the need for intermediate objects.
 
 **v1.x:**
 ```c
@@ -377,48 +437,9 @@ ddwaf_object_set_unsigned(
 
 ddwaf_object_destroy(&map, alloc);
 ```
+#### Insertion Variants
 
-### Array Creation and Insertion
-
-**v1.x:**
-```c
-ddwaf_object array;
-ddwaf_object_array(&array);
-
-// Create value objects and add to array
-ddwaf_object elem1;
-ddwaf_object_string(&elem1, "first");
-ddwaf_object_array_add(&array, &elem1);
-
-ddwaf_object elem2;
-ddwaf_object_string(&elem2, "second");
-ddwaf_object_array_add(&array, &elem2);
-
-ddwaf_object_free(&array);
-```
-
-**v2.x:**
-```c
-ddwaf_allocator alloc = ddwaf_get_default_allocator();
-
-ddwaf_object array;
-ddwaf_object_set_array(&array, 2, alloc);  // Initialize with capacity
-
-// Insert and set value in one step
-ddwaf_object_set_string(
-    ddwaf_object_insert(&array, alloc),
-    "first", 5, alloc);
-
-ddwaf_object_set_string(
-    ddwaf_object_insert(&array, alloc),
-    "second", 6, alloc);
-
-ddwaf_object_destroy(&array, alloc);
-```
-
-### Insertion Variants
-
-v2 provides multiple insertion functions for different use cases:
+To cover different allocation and / or string management strategies, v2 provides multiple insertion functions for different use cases:
 
 ```c
 ddwaf_allocator alloc = ddwaf_get_default_allocator();
@@ -460,11 +481,12 @@ const char *str = ddwaf_object_get_string(&obj, &length);  // Unchanged
 uint64_t num = ddwaf_object_get_unsigned(&obj);  // Unchanged
 ```
 
+The same pattern applies to all other getters.
+
 ### JSON Parsing
 
 If you use `ddwaf_object_from_json()`, it now takes an allocator and the resulting object must be destroyed with the same allocator:
 
-**v2.x:**
 ```c
 ddwaf_allocator alloc = ddwaf_get_default_allocator();
 ddwaf_object obj;
@@ -519,16 +541,3 @@ ddwaf_object_set_string(
 
 ddwaf_object_destroy(&root, alloc);
 ```
-
-### Key Changes Summary
-
-1. **Allocator Required**: Most creation functions now require an allocator (except numeric types and null/invalid)
-2. **Naming Convention**: `ddwaf_object_*` → `ddwaf_object_set_*` for creation functions
-3. **Insertion Returns Pointer**: `ddwaf_object_insert()` and `ddwaf_object_insert_key()` return a pointer to the inserted object, allowing direct value assignment
-4. **String Variants**: Three string types available:
-   - `ddwaf_object_set_string()`: Allocates and copies (regular string)
-   - `ddwaf_object_set_string_literal()`: Read-only, no allocation (literal string)
-   - Small strings (≤14 bytes): Automatically stored inline
-5. **No-copy Variants**: `ddwaf_object_set_string_nocopy()` and `ddwaf_object_insert_key_nocopy()` avoid copies but require allocator-managed storage
-6. **Destruction**: `ddwaf_object_free(&obj)` → `ddwaf_object_destroy(&obj, alloc)`
-7. **Literal Keys**: Use `ddwaf_object_insert_literal_key()` for constant string keys to avoid allocation
