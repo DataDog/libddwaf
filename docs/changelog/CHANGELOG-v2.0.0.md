@@ -9,6 +9,12 @@
 - Array indexing on key paths ([#458](https://github.com/DataDog/libddwaf/pull/458)).
 - Instantiate obfuscator through configuration and remove `ddwaf_config` ([#464](https://github.com/DataDog/libddwaf/pull/464)).
 - Return `DDWAF_MATCH` when events, attributes, or actions are present ([#455](https://github.com/DataDog/libddwaf/pull/455)).
+- Remove legacy configuration schema (v1) support ([#482](https://github.com/DataDog/libddwaf/pull/482)).
+
+### Fixes
+
+- Report input attribute addresses on `ddwaf_known_addresses` ([#485](https://github.com/DataDog/libddwaf/pull/485)).
+- Remove default allocator arguments ([#486](https://github.com/DataDog/libddwaf/pull/486)).
 
 ### Miscellaneous
 
@@ -24,7 +30,5 @@
 - Expanded fingerprint and object-view tests ([#414](https://github.com/DataDog/libddwaf/pull/414)).
 - Add fuzzer v2 ([#465](https://github.com/DataDog/libddwaf/pull/465)).
 - Update logger to avoid dependencies on `ddwaf.h` ([#453](https://github.com/DataDog/libddwaf/pull/453)).
-
-### Documentation
-
-- Consolidated configuration docs (rules, actions, processors, exclusions, conditions) and added evaluation and scanners references.
+- Achieve 100% test coverage for src/utils.cpp ([#481](https://github.com/DataDog/libddwaf/pull/481)).
+- Documentation ([#487](https://github.com/DataDog/libddwaf/pull/487)).
