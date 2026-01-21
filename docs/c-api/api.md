@@ -163,7 +163,7 @@ Lists the action identifiers that may appear in evaluation results. Ownership ru
 ddwaf_context ddwaf_context_init(const ddwaf_handle handle, ddwaf_allocator output_alloc);
 ```
 
-Creates an evaluation context bound to a WAF instance. The allocator manages any output or cached copies of request data. Returns `NULL` on allocation errors.
+Creates an evaluation context bound to a WAF instance. The `output_alloc` allocator is used to allocate result objects returned by `ddwaf_context_eval` and `ddwaf_subcontext_eval`. Returns `NULL` on allocation errors.
 
 ### `ddwaf_context_eval`
 
@@ -176,7 +176,7 @@ DDWAF_RET_CODE ddwaf_context_eval(
     uint64_t timeout);
 ```
 
-Evaluates a request payload. `data` must be a map keyed by address and built with the same allocator used to destroy it. `alloc` supplies storage for intermediate copies and the optional `result`. When `result` is non-null and the return code is `DDWAF_OK` or `DDWAF_MATCH`, it contains detailed events and metadata which must be released with `ddwaf_object_destroy(result, alloc)`. The function enforces a microsecond timeout.
+Evaluates a request payload. `data` must be a map keyed by address. The `alloc` parameter is the allocator used to free the `data` object after evaluation completes (if non-null). When `result` is non-null and the return code is `DDWAF_OK` or `DDWAF_MATCH`, it contains detailed events and metadata allocated with the `output_alloc` from `ddwaf_context_init`, and must be released with `ddwaf_object_destroy(result, output_alloc)`. The function enforces a microsecond timeout.
 
 ### `ddwaf_context_destroy`
 
@@ -209,7 +209,7 @@ DDWAF_RET_CODE ddwaf_subcontext_eval(
     uint64_t timeout);
 ```
 
-Evaluates request data against a subcontext using the same semantics as `ddwaf_context_eval`. The allocator must be identical to the one used when creating the parent context.
+Evaluates request data against a subcontext using the same semantics as `ddwaf_context_eval`. The `alloc` parameter is used to free the `data` object. The `result` object, when populated, is allocated with the `output_alloc` from the parent context's `ddwaf_context_init` call and must be destroyed with that same allocator.
 
 ### `ddwaf_subcontext_destroy`
 
@@ -433,7 +433,7 @@ Reclaims any memory owned by the object. Always pass the allocator that was used
 
 ## Thread Safety and Lifetime Notes
 
-- WAF handles are thread-safe for evaluation once a context has been created. Builder operations and configuration mutation are not thread-safe.
+- WAF handles are thread-safe for read operations (`ddwaf_context_init`, `ddwaf_known_addresses`, `ddwaf_known_actions`). Builder operations and handle destruction are not thread-safe with respect to these read operations.
 - Allocation routines inherit the thread-safety guarantees of the allocator instance returned by the corresponding factory.
 - Objects created with `_string_literal` or `_insert_literal_key` expect the referenced buffers to outlive the object or to remain immutable.
 - Result objects returned by evaluation functions remain valid until destroyed. Never reuse them across calls without destroying or reinitialising them first.

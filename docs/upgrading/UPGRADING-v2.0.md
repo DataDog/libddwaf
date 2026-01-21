@@ -67,7 +67,7 @@ This applies to both `ddwaf_init` and to relevant `ddwaf_builder_*` functions.
 
 The WAF context lifecycle functions have changed significantly in v2 with the introduction of allocators and subcontexts as a replacement for ephemerals. In v1.x, `ddwaf_run` accepted separate persistent and ephemeral data parameters, while v2.x no longer provides ephemeral semantics, therefore only persistent data is provided.
 
-### Context Initialization
+### Context Initialisation
 
 During context initialisation, the caller must provide the output allocator which is used by the WAF to allocate memory for the result object, provided as an output parameter to `ddwaf_context_eval`. This allocator must remain valid for the lifetime of the context.
 
@@ -314,7 +314,7 @@ ddwaf_object obj;
 
 ddwaf_allocator alloc = ddwaf_get_default_allocator();
 
-// Preallocated and preinitialised
+// Pre-allocated and pre-initialised
 char *str = (char*)ddwaf_allocator_alloc(alloc, 16, 1);
 memcpy(str, "constant string", sizeof("constant string"));
 
