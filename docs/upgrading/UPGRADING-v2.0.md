@@ -98,7 +98,7 @@ As mentioned, context evaluation no longer supports ephemeral data, consequently
 ```c
 ddwaf_object persistent_data = ...;
 ddwaf_object ephemeral_data = ...;
-ddwaf_result result;
+ddwaf_object result;
 
 // Separate persistent and ephemeral parameters
 DDWAF_RET_CODE code = ddwaf_run(context, &persistent_data, &ephemeral_data, &result, timeout);
@@ -109,7 +109,7 @@ if (code == DDWAF_MATCH) {
 }
 
 // Free result (v1 used internal memory management)
-ddwaf_result_free(&result);
+ddwaf_object_free(&result);
 ```
 
 **v2.x:**
@@ -138,15 +138,15 @@ ddwaf_context context = ddwaf_context_init(handle);
 
 // First evaluation with persistent data
 ddwaf_object persistent = ...;
-ddwaf_result result1;
+ddwaf_object result1;
 ddwaf_run(context, &persistent, NULL, &result1, timeout);
-ddwaf_result_free(&result1);
+ddwaf_object_free(&result1);
 
 // Second evaluation - persistent data still available
 ddwaf_object more_data = ...;
-ddwaf_result result2;
+ddwaf_object result2;
 ddwaf_run(context, &more_data, NULL, &result2, timeout);
-ddwaf_result_free(&result2);
+ddwaf_object_free(&result2);
 ```
 
 **v2.x:**
@@ -181,15 +181,15 @@ ddwaf_context context = ddwaf_context_init(handle);
 
 // Store persistent data
 ddwaf_object persistent = ...;
-ddwaf_result result1;
+ddwaf_object result1;
 ddwaf_run(context, &persistent, NULL, &result1, timeout);
-ddwaf_result_free(&result1);
+ddwaf_object_free(&result1);
 
 // Evaluate with ephemeral data
 ddwaf_object ephemeral = ...;
-ddwaf_result result2;
+ddwaf_object result2;
 ddwaf_run(context, NULL, &ephemeral, &result2, timeout);
-ddwaf_result_free(&result2);
+ddwaf_object_free(&result2);
 
 // Ephemeral data is NOT stored, persistent data remains
 ```

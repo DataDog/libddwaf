@@ -196,7 +196,7 @@ static_assert(sizeof(struct _ddwaf_object_kv) == 32);
 /**
  * @typedef ddwaf_log_cb
  *
- * Callback that powerwaf will call to relay messages to the binding.
+ * Callback that libddwaf will call to relay messages to the binding.
  *
  * @param level The logging level.
  * @param function The native function that emitted the message. (nonnull)
@@ -210,8 +210,6 @@ typedef void (*ddwaf_log_cb)(
     const char* message, uint64_t message_len);
 
 /**
- * ddwaf_init
- *
  * Initialize a ddwaf instance
  *
  * @param ruleset ddwaf::object map containing rules, exclusions, rules_override and rules_data. (nonnull)
@@ -226,8 +224,6 @@ typedef void (*ddwaf_log_cb)(
 ddwaf_handle ddwaf_init(const ddwaf_object *ruleset,  ddwaf_object *diagnostics);
 
 /**
- * ddwaf_destroy
- *
  * Destroy a WAF instance.
  *
  * @param handle Handle to the WAF instance.
@@ -235,8 +231,6 @@ ddwaf_handle ddwaf_init(const ddwaf_object *ruleset,  ddwaf_object *diagnostics)
 void ddwaf_destroy(ddwaf_handle handle);
 
 /**
- * ddwaf_known_addresses
- *
  * Get an array of known (root) addresses used by rules, exclusion filters and
  * processors. This array contains both required and optional addresses. A more
  * accurate distinction between required and optional addresses is provided
@@ -255,8 +249,6 @@ void ddwaf_destroy(ddwaf_handle handle);
  **/
 const char* const* ddwaf_known_addresses(const ddwaf_handle handle, uint32_t *size);
 /**
- * ddwaf_known_actions
- *
  * Get an array of all the action types which could be triggered as a result of
  * the current set of rules and exclusion filters.
  *
@@ -273,12 +265,10 @@ const char* const* ddwaf_known_addresses(const ddwaf_handle handle, uint32_t *si
  **/
 const char *const *ddwaf_known_actions(const ddwaf_handle handle, uint32_t *size);
 /**
- * ddwaf_context_init
- *
  * Context object to perform matching using the provided WAF instance.
  *
  * @param handle Handle of the WAF instance containing the ruleset definition. (nonnull)
- * @param output Allocator used to serve output objects created during evaluation (nonnull)
+ * @param output_alloc Allocator used to serve output objects created during evaluation (nonnull)
 
  * @return Handle to the context instance.
  *
@@ -287,8 +277,6 @@ const char *const *ddwaf_known_actions(const ddwaf_handle handle, uint32_t *size
 ddwaf_context ddwaf_context_init(const ddwaf_handle handle, ddwaf_allocator output_alloc);
 
 /**
- * ddwaf_context_eval
- *
  * Perform a matching operation on the provided data
  *
  * @param context WAF context to be used in this run, this will determine the
@@ -310,7 +298,7 @@ ddwaf_context ddwaf_context_init(const ddwaf_handle handle, ddwaf_allocator outp
  * @param result (nullable) Object map containing the following items:
  *               - events: an array of the generated events.
  *               - actions: a map of the generated actions in the format:
- *                          {action type: { <parameter map> }, ...}
+ *                          "{action type: { <parameter map> }, ...}"
  *               - duration: an unsigned specifying the total runtime of the
  *                           call in nanoseconds.
  *               - timeout: whether there has been a timeout during the call.
@@ -327,12 +315,12 @@ ddwaf_context ddwaf_context_init(const ddwaf_handle handle, ddwaf_allocator outp
  * @param timeout Maximum time budget in microseconds.
  *
  * @return Return code of the operation.
- * @error DDWAF_ERR_INVALID_ARGUMENT The context is invalid, the data will not
+ * @retval DDWAF_ERR_INVALID_ARGUMENT The context is invalid, the data will not
  *                                   be freed.
- * @error DDWAF_ERR_INVALID_OBJECT The data provided didn't match the desired
+ * @retval DDWAF_ERR_INVALID_OBJECT The data provided didn't match the desired
  *                                 structure or contained invalid objects, the
  *                                 data will be freed by this function.
- * @error DDWAF_ERR_INTERNAL There was an unexpected error and the operation did
+ * @retval DDWAF_ERR_INTERNAL There was an unexpected error and the operation did
  *                           not succeed. The state of the WAF is undefined if
  *                           this error is produced and the ownership of the
  *                           data is unknown. The result structure will not be
@@ -349,8 +337,6 @@ DDWAF_RET_CODE ddwaf_context_eval(ddwaf_context context, ddwaf_object *data,
     ddwaf_allocator alloc, ddwaf_object *result,  uint64_t timeout);
 
 /**
- * ddwaf_context_destroy
- *
  * Performs the destruction of the context, freeing the data passed to it through
  * ddwaf_context_eval using the used-defined free function.
  *
@@ -359,19 +345,15 @@ DDWAF_RET_CODE ddwaf_context_eval(ddwaf_context context, ddwaf_object *data,
 void ddwaf_context_destroy(ddwaf_context context);
 
 /**
- * ddwaf_subcontext_init
- *
  * Subcontext object to perform matching using the provided WAF instance.
  *
- * @param conext Context from which to derive this subcontext. (nonnull)
+ * @param context Context from which to derive this subcontext. (nonnull)
 
  * @return Handle to the subcontext instance.
  **/
 ddwaf_subcontext ddwaf_subcontext_init(ddwaf_context context);
 
 /**
- * ddwaf_subcontext_eval
- *
  * Perform a matching operation on the provided data
  *
  * @param subcontext WAF subcontext to be used in this run, this will determine
@@ -392,7 +374,7 @@ ddwaf_subcontext ddwaf_subcontext_init(ddwaf_context context);
  * @param result (nullable) Object map containing the following items:
  *               - events: an array of the generated events.
  *               - actions: a map of the generated actions in the format:
- *                          {action type: { <parameter map> }, ...}
+ *                          "{action type: { <parameter map> }, ...}"
  *               - duration: an unsigned specifying the total runtime of the
  *                           call in nanoseconds.
  *               - timeout: whether there has been a timeout during the call.
@@ -409,12 +391,12 @@ ddwaf_subcontext ddwaf_subcontext_init(ddwaf_context context);
  * @param timeout Maximum time budget in microseconds.
  *
  * @return Return code of the operation.
- * @error DDWAF_ERR_INVALID_ARGUMENT The subcontext is invalid, the data will not
+ * @retval DDWAF_ERR_INVALID_ARGUMENT The subcontext is invalid, the data will not
  *                                   be freed.
- * @error DDWAF_ERR_INVALID_OBJECT The data provided didn't match the desired
+ * @retval DDWAF_ERR_INVALID_OBJECT The data provided didn't match the desired
  *                                 structure or contained invalid objects, the
  *                                 data will be freed by this function.
- * @error DDWAF_ERR_INTERNAL There was an unexpected error and the operation did
+ * @retval DDWAF_ERR_INTERNAL There was an unexpected error and the operation did
  *                           not succeed. The state of the WAF is undefined if
  *                           this error is produced and the ownership of the
  *                           data is unknown. The result structure will not be
@@ -431,8 +413,6 @@ DDWAF_RET_CODE ddwaf_subcontext_eval(ddwaf_subcontext subcontext, ddwaf_object *
     ddwaf_allocator alloc, ddwaf_object *result,  uint64_t timeout);
 
 /**
- * ddwaf_subcontext_destroy
- *
  * Performs the destruction of the subcontext, freeing the data passed to it through
  * ddwaf_subcontext_eval using the used-defined allocator.
  *
@@ -442,8 +422,6 @@ void ddwaf_subcontext_destroy(ddwaf_subcontext subcontext);
 
 
 /**
- * ddwaf_builder_init
- *
  * Initialize an instace of the waf builder.
  *
  * @return Handle to the builer instance or NULL on error.
@@ -453,8 +431,6 @@ void ddwaf_subcontext_destroy(ddwaf_subcontext subcontext);
 ddwaf_builder ddwaf_builder_init();
 
 /**
- * ddwaf_builder_add_or_update_config
- *
  * Adds or updates a configuration based on the given path, which must be a unique
  * identifier for the provided configuration.
  *
@@ -473,8 +449,6 @@ ddwaf_builder ddwaf_builder_init();
 bool ddwaf_builder_add_or_update_config(ddwaf_builder builder, const char *path, uint32_t path_len, const ddwaf_object *config, ddwaf_object *diagnostics);
 
 /**
- * ddwaf_builder_remove_config
- *
  * Removes a configuration based on the provided path.
  *
  * @param builder Builder to perform the operation on. (nonnull)
@@ -489,8 +463,6 @@ bool ddwaf_builder_add_or_update_config(ddwaf_builder builder, const char *path,
 bool ddwaf_builder_remove_config(ddwaf_builder builder, const char *path, uint32_t path_len);
 
 /**
- * ddwaf_builder_build_instance
- *
  * Builds a ddwaf instance based on the current set of configurations.
  *
  * @param builder Builder to perform the operation on. (nonnull)
@@ -502,8 +474,6 @@ bool ddwaf_builder_remove_config(ddwaf_builder builder, const char *path, uint32
 ddwaf_handle ddwaf_builder_build_instance(ddwaf_builder builder);
 
 /**
- * ddwaf_builder_get_config_paths
- *
  * Provides an array of the currently loaded paths, optionally matching the
  * regex provided in filter. In addition, the count is provided as the return
  * value, allowing paths to be nullptr.
@@ -526,8 +496,6 @@ ddwaf_handle ddwaf_builder_build_instance(ddwaf_builder builder);
 uint32_t ddwaf_builder_get_config_paths(ddwaf_builder builder, ddwaf_object *paths, const char *filter, uint32_t filter_len);
 
 /**
- * ddwaf_builder_destroy
- *
  * Destroy an instance of the builder.
  *
  * @param builder Builder to perform the operation on. (nonnull)
@@ -535,8 +503,6 @@ uint32_t ddwaf_builder_get_config_paths(ddwaf_builder builder, ddwaf_object *pat
 void ddwaf_builder_destroy(ddwaf_builder builder);
 
 /**
- * ddwaf_get_default_allocator
- *
  * Returns the default allocator used by the library.
  *
  * @return Allocator handle.
@@ -544,8 +510,6 @@ void ddwaf_builder_destroy(ddwaf_builder builder);
 ddwaf_allocator ddwaf_get_default_allocator();
 
 /**
- * ddwaf_synchronized_pool_allocator_init
- *
  * Creates a thread-safe pool allocator. Allocations are served from internal
  * pools sized by block class to reduce fragmentation and allocator overhead;
  * memory freed via the corresponding ddwaf APIs is returned to the pools for
@@ -560,8 +524,6 @@ ddwaf_allocator ddwaf_get_default_allocator();
 ddwaf_allocator ddwaf_synchronized_pool_allocator_init();
 
 /**
- * ddwaf_unsynchronized_pool_allocator_init
- *
  * Creates a pool allocator without internal synchronization. It provides the
  * same pooling characteristics as the synchronized variant but with lower
  * overhead. This allocator must not be used concurrently from multiple threads
@@ -576,8 +538,6 @@ ddwaf_allocator ddwaf_synchronized_pool_allocator_init();
 ddwaf_allocator ddwaf_unsynchronized_pool_allocator_init();
 
 /**
- * ddwaf_monotonic_allocator_init
- *
  * Creates a monotonic (growing) allocator. Allocations are fast and never freed
  * individually; all memory is reclaimed only when the allocator is destroyed.
  * This allocator must not be used concurrently from multiple threads unless
@@ -594,8 +554,6 @@ ddwaf_allocator ddwaf_unsynchronized_pool_allocator_init();
 ddwaf_allocator ddwaf_monotonic_allocator_init();
 
 /**
- * ddwaf_user_allocator_init
- *
  * Creates an allocator that forwards allocation and deallocation to user
  * provided callbacks.
  *
@@ -607,14 +565,15 @@ ddwaf_allocator ddwaf_monotonic_allocator_init();
  *        able to free any pointer previously returned by `alloc_fn`. (nonnull)
  * @param udata Opaque user pointer forwarded to both callbacks; can be used to
  *        carry custom state. (nullable)
+ * @param udata_free_fn User data destruction callback, used to perform any
+ *        relevant destruction and reclamation operations on the provided user
+ *        data.
  *
  * @return Allocator handle.
  **/
 ddwaf_allocator ddwaf_user_allocator_init(ddwaf_alloc_fn_type alloc_fn, ddwaf_free_fn_type free_fn, void *udata, ddwaf_udata_free_fn_type udata_free_fn);
 
 /**
- * ddwaf_allocator_alloc
- *
  * Allocates a block of memory from the given allocator with the requested
  * alignment.
  *
@@ -636,8 +595,6 @@ ddwaf_allocator ddwaf_user_allocator_init(ddwaf_alloc_fn_type alloc_fn, ddwaf_fr
 void *ddwaf_allocator_alloc(ddwaf_allocator alloc, size_t bytes, size_t alignment);
 
 /**
- * ddwaf_allocator_free
- *
  * Releases a block of memory previously obtained via ddwaf_allocator_alloc
  * from the same allocator.
  *
@@ -658,8 +615,6 @@ void ddwaf_allocator_free(ddwaf_allocator alloc, void *p, size_t bytes, size_t a
 
 
 /**
- * ddwaf_allocator_destroy
- *
  * Destroys an allocator created by one of the ddwaf_*_allocator_init functions
  * and releases any internal resources it holds.
  *
@@ -674,8 +629,6 @@ void ddwaf_allocator_free(ddwaf_allocator alloc, void *p, size_t bytes, size_t a
 void ddwaf_allocator_destroy(ddwaf_allocator alloc);
 
 /**
- * ddwaf_object_set_invalid
- *
  * Creates an invalid object.
  *
  * @param object Object to perform the operation on. (nonnull)
@@ -685,8 +638,6 @@ void ddwaf_allocator_destroy(ddwaf_allocator alloc);
 ddwaf_object* ddwaf_object_set_invalid(ddwaf_object *object);
 
 /**
- * ddwaf_object_set_null
- *
  * Creates an null object. Provides a different semantical value to invalid as
  * it can be used to signify that a value is null rather than of an unknown type.
  *
@@ -697,8 +648,6 @@ ddwaf_object* ddwaf_object_set_invalid(ddwaf_object *object);
 ddwaf_object* ddwaf_object_set_null(ddwaf_object *object);
 
 /**
- * ddwaf_object_set_string
- *
  * Creates an object from a string.
  *
  * @param object Object to perform the operation on. (nonnull)
@@ -711,8 +660,6 @@ ddwaf_object* ddwaf_object_set_null(ddwaf_object *object);
 ddwaf_object* ddwaf_object_set_string(ddwaf_object *object, const char *string, uint32_t length, ddwaf_allocator alloc);
 
 /**
- * ddwaf_object_set_string_literal
- *
  * Creates an object from a literal string and its length.
  *
  * @param object Object to perform the operation on. (nonnull)
@@ -725,8 +672,6 @@ ddwaf_object* ddwaf_object_set_string(ddwaf_object *object, const char *string, 
 ddwaf_object* ddwaf_object_set_string_literal(ddwaf_object *object, const char *string, uint32_t length);
 
 /**
- * ddwaf_object_set_string_nocopy
- *
  * Creates an object with the string pointer and length provided, without copying the string.
  *
  * @param object Object to perform the operation on. (nonnull)
@@ -741,8 +686,6 @@ ddwaf_object* ddwaf_object_set_string_literal(ddwaf_object *object, const char *
  **/
 ddwaf_object* ddwaf_object_set_string_nocopy(ddwaf_object *object, const char *string, uint32_t length);
 /**
- * ddwaf_object_set_unsigned
- *
  * Creates an object using an unsigned integer (64-bit). The resulting object
  * will contain an unsigned integer as opposed to a string.
  *
@@ -754,8 +697,6 @@ ddwaf_object* ddwaf_object_set_string_nocopy(ddwaf_object *object, const char *s
 ddwaf_object* ddwaf_object_set_unsigned(ddwaf_object *object, uint64_t value);
 
 /**
- * ddwaf_object_set_signed
- *
  * Creates an object using a signed integer (64-bit). The resulting object
  * will contain a signed integer as opposed to a string.
  *
@@ -767,8 +708,6 @@ ddwaf_object* ddwaf_object_set_unsigned(ddwaf_object *object, uint64_t value);
 ddwaf_object* ddwaf_object_set_signed(ddwaf_object *object, int64_t value);
 
 /**
- * ddwaf_object_set_bool
- *
  * Creates an object using a boolean, the resulting object will contain a
  * boolean as opposed to a string.
  *
@@ -780,8 +719,6 @@ ddwaf_object* ddwaf_object_set_signed(ddwaf_object *object, int64_t value);
 ddwaf_object* ddwaf_object_set_bool(ddwaf_object *object, bool value);
 
 /**
- * ddwaf_object_set_float
- *
  * Creates an object using a double, the resulting object will contain a
  * double as opposed to a string.
  *
@@ -793,8 +730,6 @@ ddwaf_object* ddwaf_object_set_bool(ddwaf_object *object, bool value);
 ddwaf_object* ddwaf_object_set_float(ddwaf_object *object, double value);
 
 /**
- * ddwaf_object_set_array
- *
  * Creates an array object, for sequential storage.
  *
  * @param object Object to perform the operation on. (nonnull)
@@ -806,8 +741,6 @@ ddwaf_object* ddwaf_object_set_float(ddwaf_object *object, double value);
 ddwaf_object* ddwaf_object_set_array(ddwaf_object *object, uint16_t capacity, ddwaf_allocator alloc);
 
 /**
- * ddwaf_object_set_map
- *
  * Creates a map object, for key-value storage.
  *
  * @param object Object to perform the operation on. (nonnull)
@@ -819,8 +752,6 @@ ddwaf_object* ddwaf_object_set_array(ddwaf_object *object, uint16_t capacity, dd
 ddwaf_object* ddwaf_object_set_map(ddwaf_object *object, uint16_t capacity, ddwaf_allocator alloc);
 
 /**
- * ddwaf_object_insert
- *
  * Inserts a new object into an array object.
  *
  * @param array Array in which to insert the object. (nonnull)
@@ -832,8 +763,6 @@ ddwaf_object* ddwaf_object_set_map(ddwaf_object *object, uint16_t capacity, ddwa
 ddwaf_object *ddwaf_object_insert(ddwaf_object *array, ddwaf_allocator alloc);
 
 /**
- * ddwaf_object_insert_key
- *
  * Inserts a new object into a map object, using a key.
  *
  * @param map Map in which to insert the object. (nonnull)
@@ -846,8 +775,6 @@ ddwaf_object *ddwaf_object_insert(ddwaf_object *array, ddwaf_allocator alloc);
 ddwaf_object *ddwaf_object_insert_key(ddwaf_object *map, const char *key, uint32_t length, ddwaf_allocator alloc);
 
 /**
- * ddwaf_object_insert_literal_key
- *
  * Inserts a new object into a map object, using a literal key.
  *
  * @param map Map in which to insert the object. (nonnull)
@@ -861,8 +788,6 @@ ddwaf_object *ddwaf_object_insert_literal_key(ddwaf_object *map, const char *key
 
 
 /**
- * ddwaf_object_insert_key_nocopy
- *
  * Inserts a new object into a map object, using a key and its length, but without
  * creating a copy of the key.
  *
@@ -879,8 +804,6 @@ ddwaf_object *ddwaf_object_insert_literal_key(ddwaf_object *map, const char *key
 ddwaf_object *ddwaf_object_insert_key_nocopy(ddwaf_object *map, const char *key, uint32_t length, ddwaf_allocator alloc);
 
 /**
- * ddwaf_object_from_json
- *
  * Creates a ddwaf_object from a JSON string. The JSON will be parsed and converted
  * into the appropriate ddwaf_object structure, supporting all JSON types including
  * objects, arrays, strings, numbers, booleans, and null values.
@@ -888,6 +811,7 @@ ddwaf_object *ddwaf_object_insert_key_nocopy(ddwaf_object *map, const char *key,
  * @param output Object to populate with the parsed JSON data. (nonnull)
  * @param json_str The JSON string to parse. (nonnull)
  * @param length Length of the JSON string.
+ * @param alloc Allocator to use for memory allocation. (nonnull)
  *
  * @return The success or failure of the operation.
  *
@@ -898,8 +822,6 @@ ddwaf_object *ddwaf_object_insert_key_nocopy(ddwaf_object *map, const char *key,
 bool ddwaf_object_from_json(ddwaf_object *output, const char *json_str, uint32_t length, ddwaf_allocator alloc);
 
 /**
- * ddwaf_object_type
- *
  * Returns the type of the object.
  *
  * @param object The object from which to get the type.
@@ -909,8 +831,6 @@ bool ddwaf_object_from_json(ddwaf_object *output, const char *json_str, uint32_t
 DDWAF_OBJ_TYPE ddwaf_object_get_type(const ddwaf_object *object);
 
 /**
- * ddwaf_object_get_size
- *
  * Returns the size of the container object.
  *
  * @param object The object from which to get the size.
@@ -920,8 +840,6 @@ DDWAF_OBJ_TYPE ddwaf_object_get_type(const ddwaf_object *object);
 size_t ddwaf_object_get_size(const ddwaf_object *object);
 
 /**
- * ddwaf_object_get_length
- *
  * Returns the length of the string object.
  *
  * @param object The object from which to get the length.
@@ -931,8 +849,6 @@ size_t ddwaf_object_get_size(const ddwaf_object *object);
 size_t ddwaf_object_get_length(const ddwaf_object *object);
 
 /**
- * ddwaf_object_get_string
- *
  * Returns the string contained within the object.
  *
  * @param object The object from which to get the string.
@@ -944,8 +860,6 @@ size_t ddwaf_object_get_length(const ddwaf_object *object);
 const char* ddwaf_object_get_string(const ddwaf_object *object, size_t *length);
 
 /**
- * ddwaf_object_get_unsigned
- *
  * Returns the uint64 contained within the object.
  *
  * @param object The object from which to get the integer.
@@ -955,8 +869,6 @@ const char* ddwaf_object_get_string(const ddwaf_object *object, size_t *length);
 uint64_t ddwaf_object_get_unsigned(const ddwaf_object *object);
 
 /**
- * ddwaf_object_get_signed
- *
  * Returns the int64 contained within the object.
  *
  * @param object The object from which to get the integer.
@@ -966,8 +878,6 @@ uint64_t ddwaf_object_get_unsigned(const ddwaf_object *object);
 int64_t ddwaf_object_get_signed(const ddwaf_object *object);
 
 /**
- * ddwaf_object_get_float
- *
  * Returns the float64 (double) contained within the object.
  *
  * @param object The object from which to get the float.
@@ -977,8 +887,6 @@ int64_t ddwaf_object_get_signed(const ddwaf_object *object);
 double ddwaf_object_get_float(const ddwaf_object *object);
 
 /**
- * ddwaf_object_get_bool
- *
  * Returns the boolean contained within the object.
  *
  * @param object The object from which to get the boolean.
@@ -988,8 +896,6 @@ double ddwaf_object_get_float(const ddwaf_object *object);
 bool ddwaf_object_get_bool(const ddwaf_object *object);
 
 /**
- * ddwaf_object_at_key
- *
  * Returns the key contained in the container at the given index.
  *
  * @param object The container from which to extract the object.
@@ -1002,8 +908,6 @@ const ddwaf_object* ddwaf_object_at_key(const ddwaf_object *object, size_t index
 
 
 /**
- * ddwaf_object_at_value
- *
  * Returns the object contained in the container at the given index.
  *
  * @param object The container from which to extract the object.
@@ -1015,8 +919,6 @@ const ddwaf_object* ddwaf_object_at_key(const ddwaf_object *object, size_t index
 const ddwaf_object* ddwaf_object_at_value(const ddwaf_object *object, size_t index);
 
 /**
- * ddwaf_object_find
- *
  * Returns the object within the given map with a key matching the provided one.
  *
  * @param object The container from which to extract the object.
@@ -1029,8 +931,6 @@ const ddwaf_object* ddwaf_object_at_value(const ddwaf_object *object, size_t ind
 const ddwaf_object* ddwaf_object_find(const ddwaf_object *object, const char *key, size_t length);
 
 /**
- * ddwaf_object_clone
- *
  * Creates a deep copy of the source object into the destination object.
  *
  * @param source The source object to clone from. (nonnull)
@@ -1042,8 +942,6 @@ const ddwaf_object* ddwaf_object_find(const ddwaf_object *object, const char *ke
 ddwaf_object* ddwaf_object_clone(const ddwaf_object *source, ddwaf_object *destination, ddwaf_allocator alloc);
 
 /**
- * ddwaf_object_is_invalid
- *
  * Returns true if the object is invalid.
  *
  * @param object The object from which to get the type.
@@ -1053,8 +951,6 @@ ddwaf_object* ddwaf_object_clone(const ddwaf_object *source, ddwaf_object *desti
 bool ddwaf_object_is_invalid(const ddwaf_object *object);
 
 /**
- * ddwaf_object_is_null
- *
  * Returns true if the object is null.
  *
  * @param object The object from which to get the type.
@@ -1064,8 +960,6 @@ bool ddwaf_object_is_invalid(const ddwaf_object *object);
 bool ddwaf_object_is_null(const ddwaf_object *object);
 
 /**
- * ddwaf_object_is_bool
- *
  * Returns true if the object is a boolean.
  *
  * @param object The object from which to get the type.
@@ -1075,8 +969,6 @@ bool ddwaf_object_is_null(const ddwaf_object *object);
 bool ddwaf_object_is_bool(const ddwaf_object *object);
 
 /**
- * ddwaf_object_is_signed
- *
  * Returns true if the object is a signed integer.
  *
  * @param object The object from which to get the type.
@@ -1086,8 +978,6 @@ bool ddwaf_object_is_bool(const ddwaf_object *object);
 bool ddwaf_object_is_signed(const ddwaf_object *object);
 
 /**
- * ddwaf_object_is_unsigned
- *
  * Returns true if the object is an unsigned integer.
  *
  * @param object The object from which to get the type.
@@ -1097,8 +987,6 @@ bool ddwaf_object_is_signed(const ddwaf_object *object);
 bool ddwaf_object_is_unsigned(const ddwaf_object *object);
 
 /**
- * ddwaf_object_is_float
- *
  * Returns true if the object is a float.
  *
  * @param object The object from which to get the type.
@@ -1108,8 +996,6 @@ bool ddwaf_object_is_unsigned(const ddwaf_object *object);
 bool ddwaf_object_is_float(const ddwaf_object *object);
 
 /**
- * ddwaf_object_is_string
- *
  * Returns true if the object is a string.
  *
  * @param object The object from which to get the type.
@@ -1119,8 +1005,6 @@ bool ddwaf_object_is_float(const ddwaf_object *object);
 bool ddwaf_object_is_string(const ddwaf_object *object);
 
 /**
- * ddwaf_object_is_array
- *
  * Returns true if the object is an array.
  *
  * @param object The object from which to get the type.
@@ -1130,8 +1014,6 @@ bool ddwaf_object_is_string(const ddwaf_object *object);
 bool ddwaf_object_is_array(const ddwaf_object *object);
 
 /**
- * ddwaf_object_is_map
- *
  * Returns true if the object is a map.
  *
  * @param object The object from which to get the type.
@@ -1141,8 +1023,6 @@ bool ddwaf_object_is_array(const ddwaf_object *object);
 bool ddwaf_object_is_map(const ddwaf_object *object);
 
 /**
- * ddwaf_object_destroy
- *
  * Frees the memory contained within the object.
  *
  * @param object Object to destroy. (nonnull)
@@ -1151,8 +1031,6 @@ bool ddwaf_object_is_map(const ddwaf_object *object);
 void ddwaf_object_destroy(ddwaf_object *object, ddwaf_allocator alloc);
 
 /**
- * ddwaf_get_version
- *
  * Return the version of the library
  *
  * @return version Version string, note that this should not be freed
@@ -1160,8 +1038,6 @@ void ddwaf_object_destroy(ddwaf_object *object, ddwaf_allocator alloc);
 const char *ddwaf_get_version();
 
 /**
- * ddwaf_set_log_cb
- *
  * Sets the callback to relay logging messages to the binding
  *
  * @param cb The callback to call, or NULL to stop relaying messages
