@@ -1,5 +1,25 @@
 # v2.0.0-alpha0
 
+libddwaf v2.0.0 represents a significant redesign of the C API, focusing on explicit memory ownership, reduced memory footprint, and a more consistent interface. Beyond the public API, the internals have also been refactored to use safer and more C++-native abstractions. This is an alpha release intended for early adopters and binding library maintainers to begin integration work.
+
+### Memory Ownership and Allocators
+
+The most fundamental change in v2 is the introduction of allocators throughout the API. In v1, memory ownership across the API boundary was often ambiguous, leading to potential issues in complex integration scenarios. The new allocator system makes memory ownership explicit: callers provide an allocator when creating objects and use the same allocator when destroying them. A default allocator is available via `ddwaf_get_default_allocator()` for simple use cases, while custom allocators enable advanced memory management strategies.
+
+### Object Model and Creation API
+
+The `ddwaf_object` structure has been completely redesigned to reduce memory overhead. A single object now requires only 16 bytes, down from a considerably larger footprint in v1. This was achieved through the introduction of small strings, where strings of 14 bytes or fewer are stored directly within the object without additional heap allocation, and literal strings, which reference read-only memory that is never freed by the library.
+
+Object creation functions have been renamed to follow a consistent `ddwaf_object_set_*` pattern and now require an allocator parameter where allocation may occur. Container insertion returns a pointer to the newly inserted element, eliminating the need for intermediate objects. For example, where v1 required creating a value object separately and then adding it to a map, v2 allows direct initialisation: `ddwaf_object_set_string(ddwaf_object_insert_key(&map, "key", 3, alloc), "value", 5, alloc)`. This pattern reduces boilerplate and makes the ownership model clearer.
+
+### Context and Subcontext Lifecycle
+
+The function `ddwaf_run` has been renamed to `ddwaf_context_eval` for consistency with the rest of the API. More significantly, ephemeral data semantics have been replaced with a new subcontext mechanism. In v1, ephemeral data was passed as a separate parameter to each run call and was not retained. In v2, a subcontext is explicitly created from a parent context via `ddwaf_subcontext_init`, evaluated with `ddwaf_subcontext_eval`, and destroyed with `ddwaf_subcontext_destroy`. Subcontexts inherit all persistent data from their parent context but maintain their own isolated evaluation state. Multiple concurrent subcontexts can be created from the same parent context, each defining its own data scope and lifetime.
+
+### Breaking Changes Summary
+
+Binding library maintainers should note that this release is not backwards compatible. Key migration points include: all object creation and destruction requires allocators, `ddwaf_run` is now `ddwaf_context_eval`, ephemeral data is handled through subcontexts rather than a parameter, `ddwaf_config` is removed, and `ddwaf_result_free` is replaced by `ddwaf_object_destroy` with the appropriate allocator. The upgrading guide at `docs/upgrading/UPGRADING-v2.0.md` provides detailed migration examples for each of these changes.
+
 ## Release Changelog
 ### Changes
 
