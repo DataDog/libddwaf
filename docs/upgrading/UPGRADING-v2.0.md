@@ -25,7 +25,7 @@ However, note that other allocators are also available. See the [allocators docu
 
 ## 1. WAF instantiation: Removal of `ddwaf_config`
 
-The main changes pertaining to WAF initialisation are the removal of `ddwaf_config`, as the evaluation limits have been entirely removed, in favour of user-controlled truncation, and the free function is no longer required due to the explicit memory ownership defined through allocators. As a consequence, instantiation through `ddwaf_init` has changed as follows:
+The main changes pertaining to WAF initialisation are the removal of `ddwaf_config`, as the evaluation limits have been entirely removed, in favour of user-controlled truncation, the free function is no longer required due to the explicit memory ownership defined through allocators and the obfuscator is now configured through a configuration. As a consequence, instantiation through `ddwaf_init` has changed as follows:
 
 **v1.x:**
 ```c
@@ -55,6 +55,62 @@ ddwaf_builder builder = ddwaf_builder_init(&config);
 ```c
 ddwaf_builder builder = ddwaf_builder_init();
 ```
+
+### Obfuscator Configuration
+
+In v1.x, the obfuscator regexes were provided through `ddwaf_config`. In v2.x, the obfuscator must be configured through the builder by providing a configuration containing the `obfuscator` key. The configuration format is:
+
+```yaml
+obfuscator:
+  key_regex: "<regex>"    # Optional, defaults to built-in key regex
+  value_regex: "<regex>"  # Optional, defaults to built-in value regex
+```
+
+Both `key_regex` and `value_regex` are optional; if not provided, the built-in defaults are used.
+
+**v1.x:**
+```c
+ddwaf_config config;
+memset(&config, 0, sizeof(config));
+config.obfuscator.key_regex = "^password$";
+config.obfuscator.value_regex = "^secret_.*";
+
+ddwaf_handle handle = ddwaf_init(&ruleset, &config, &diagnostics);
+// or
+ddwaf_builder builder = ddwaf_builder_init(&config);
+```
+
+**v2.x:**
+```c
+ddwaf_builder builder = ddwaf_builder_init();
+
+// Create an obfuscator configuration
+ddwaf_allocator alloc = ddwaf_get_default_allocator();
+ddwaf_object obfuscator_config;
+ddwaf_object_set_map(&obfuscator_config, 1, alloc);
+
+ddwaf_object *obfuscator = ddwaf_object_insert_literal_key(
+    &obfuscator_config, "obfuscator", 10, alloc);
+ddwaf_object_set_map(obfuscator, 2, alloc);
+
+ddwaf_object_set_string_literal(
+    ddwaf_object_insert_literal_key(obfuscator, "key_regex", 9, alloc),
+    "^password$", 10);
+
+ddwaf_object_set_string_literal(
+    ddwaf_object_insert_literal_key(obfuscator, "value_regex", 11, alloc),
+    "^secret_.*", 10);
+
+// Add the obfuscator configuration to the builder
+ddwaf_object diagnostics;
+ddwaf_builder_add_or_update_config(builder,
+    "obfuscator/config", 17, &obfuscator_config, &diagnostics);
+
+ddwaf_object_destroy(&obfuscator_config, alloc);
+ddwaf_object_destroy(&diagnostics, ddwaf_get_default_allocator());
+```
+
+The obfuscator configuration can be provided as a standalone configuration or combined with other configurations (e.g., rules) in a single `ddwaf_builder_add_or_update_config` call.
 
 Note that the `diagnostics` object is allocated with the default allocator and must be destroyed as follows:
 
