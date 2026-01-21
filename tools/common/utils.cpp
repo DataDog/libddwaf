@@ -275,9 +275,11 @@ void object_to_json_helper(
     case DDWAF_OBJ_FLOAT:
         output.SetDouble(ddwaf_object_get_float(&obj));
         break;
-    case DDWAF_OBJ_STRING: {
-        auto sv = std::string_view(obj.via.str.ptr, obj.via.str.size);
-        output.SetString(sv.data(), sv.size(), alloc);
+    case DDWAF_OBJ_STRING:
+    case DDWAF_OBJ_SMALL_STRING:
+    case DDWAF_OBJ_LITERAL_STRING: {
+        output.SetString(
+            ddwaf_object_get_string(&obj, nullptr), ddwaf_object_get_length(&obj), alloc);
     } break;
     case DDWAF_OBJ_MAP:
         output.SetObject();
@@ -287,8 +289,10 @@ void object_to_json_helper(
 
             auto child = obj.via.map.ptr[i];
             object_to_json_helper(child.val, value, alloc);
+            const auto *child_key = ddwaf_object_at_key(&obj, i);
+            key.SetString(ddwaf_object_get_string(child_key, nullptr),
+                ddwaf_object_get_length(child_key), alloc);
 
-            key.SetString(child.key.via.str.ptr, child.key.via.str.size, alloc);
             output.AddMember(key, value, alloc);
         }
         break;
