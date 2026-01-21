@@ -41,26 +41,27 @@ extern "C"
  **/
 typedef enum
 {
+    /** Unkmown or uninitialised type **/
     DDWAF_OBJ_INVALID  = 0,
-    // Null type, only used for its semantical value
+    /** Null type, only used for its semantical value **/
     DDWAF_OBJ_NULL     = 0x01,
-    // Boolean type
+    /** Boolean type **/
     DDWAF_OBJ_BOOL     = 0x02,
-    // 64-bit signed integer type
+    /** 64-bit signed integer type **/
     DDWAF_OBJ_SIGNED   = 0x04,
-    // 64-bit unsigned integer type
+    /** 64-bit unsigned integer type **/
     DDWAF_OBJ_UNSIGNED = 0x06,
-    // 64-bit float (or double) type
+    /** 64-bit float (or double) type **/
     DDWAF_OBJ_FLOAT    = 0x08,
-    // Dynamic UTF-8 string of up to max(uint16) length
+    /** Dynamic UTF-8 string of up to max(uint32) length **/
     DDWAF_OBJ_STRING   = 0x10,
-    // Literal UTF-8 string of up to max(uint32) length, these are never freed
+    /** Literal UTF-8 string of up to max(uint32) length, these are never freed **/
     DDWAF_OBJ_LITERAL_STRING   = 0x12,
-    // UTF-8 string of up to 14 bytes in length
+    /** UTF-8 string of up to 14 bytes in length **/
     DDWAF_OBJ_SMALL_STRING   = 0x14,
-    // Array of ddwaf_object of length nbEntries, each item having no parameterName
+    /** Array of ddwaf_object, up to max(uint16) capacity **/
     DDWAF_OBJ_ARRAY    = 0x20,
-    // Array of ddwaf_object of length nbEntries, each item having a parameterName
+    /** Array of ddwaf_object_kv, up to max(uint16) capacity **/
     DDWAF_OBJ_MAP      = 0x40,
 } DDWAF_OBJ_TYPE;
 
@@ -71,10 +72,15 @@ typedef enum
  **/
 typedef enum
 {
+    /** Unknown error, typically due to an unexpected exception **/
     DDWAF_ERR_INTERNAL          = -3,
+    /** The provided data object didn't match the expected schema **/
     DDWAF_ERR_INVALID_OBJECT    = -2,
+    /** One or more of the provided arguments to a function is invalid **/
     DDWAF_ERR_INVALID_ARGUMENT  = -1,
+    /** The data evaluation didn't yield any events, attributes, etc **/
     DDWAF_OK                    = 0,
+    /** The data evaluation resulted in an event, attribute, etc **/
     DDWAF_MATCH                 = 1,
 } DDWAF_RET_CODE;
 
@@ -85,12 +91,18 @@ typedef enum
  **/
 typedef enum
 {
-    DDWAF_LOG_TRACE,
-    DDWAF_LOG_DEBUG,
-    DDWAF_LOG_INFO,
-    DDWAF_LOG_WARN,
-    DDWAF_LOG_ERROR,
-    DDWAF_LOG_OFF,
+    /** Finest-grained logging for detailed tracing */
+    DDWAF_LOG_TRACE = 0,
+    /** Debugging information for development */
+    DDWAF_LOG_DEBUG = 1,
+    /** General informational messages */
+    DDWAF_LOG_INFO = 2,
+    /** Warning messages for potential issues */
+    DDWAF_LOG_WARN = 3,
+    /** Error messages for failures */
+    DDWAF_LOG_ERROR = 4,
+    /** Disable all logging */
+    DDWAF_LOG_OFF = 5,
 } DDWAF_LOG_LEVEL;
 
 #ifndef __cplusplus
@@ -106,8 +118,7 @@ typedef void (ddwaf_udata_free_fn_type)(void *);
 #endif
 
 typedef union _ddwaf_object ddwaf_object;
-
-struct _ddwaf_object_kv;
+typedef struct _ddwaf_object_kv ddwaf_object_kv;
 
 struct _ddwaf_object_bool {
     uint8_t type;
@@ -385,8 +396,8 @@ ddwaf_subcontext ddwaf_subcontext_init(ddwaf_context context);
  *               - keep: whether the data contained herein must override any
  *                       transport sampling through the relevant mechanism.
  *               This structure must be freed by the caller and will contain all
- *               specified keys when the value returned by ddwaf_subcontext_eval is either
- *               DDWAF_OK or DDWAF_MATCH and will be empty otherwise.
+ *               specified keys when the value returned by ddwaf_subcontext_eval
+ *               is either DDWAF_OK or DDWAF_MATCH and will be empty otherwise.
  *               IMPORTANT: This object is not allocated with the allocator
  *               passed in this call. It uses the allocator given to
  *               ddwaf_context_init instead.
