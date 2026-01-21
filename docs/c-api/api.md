@@ -2,71 +2,50 @@
 
 This document describes the public C API of libddwaf.
 
-## Table of Contents
-
-- [Enumerations](#enumerations)
-  - [DDWAF_OBJ_TYPE](#ddwaf-obj-type)
-  - [DDWAF_RET_CODE](#ddwaf-ret-code)
-  - [DDWAF_LOG_LEVEL](#ddwaf-log-level)
-- [Type Definitions](#type-definitions)
-- [Functions](#functions)
-  - [Initialization/Destruction](#initializationdestruction)
-  - [Builder](#builder)
-  - [Context](#context)
-  - [Subcontext](#subcontext)
-  - [Allocator](#allocator)
-  - [Object Creation](#object-creation)
-  - [Object Inspection](#object-inspection)
-  - [Object Container Operations](#object-container-operations)
-  - [Object Type Checking](#object-type-checking)
-  - [Utility](#utility)
-
----
-
 ## Enumerations
 
 ### DDWAF_OBJ_TYPE
 
 Specifies the type of a ddwaf::object.
 
-| Value | Code | Description |
-|-------|------|-------------|
-| `DDWAF_OBJ_INVALID` | `= 0` |  |
-| `DDWAF_OBJ_NULL` | `= 0x01` |  |
-| `DDWAF_OBJ_BOOL` | `= 0x02` |  |
-| `DDWAF_OBJ_SIGNED` | `= 0x04` |  |
-| `DDWAF_OBJ_UNSIGNED` | `= 0x06` |  |
-| `DDWAF_OBJ_FLOAT` | `= 0x08` |  |
-| `DDWAF_OBJ_STRING` | `= 0x10` |  |
-| `DDWAF_OBJ_LITERAL_STRING` | `= 0x12` |  |
-| `DDWAF_OBJ_SMALL_STRING` | `= 0x14` |  |
-| `DDWAF_OBJ_ARRAY` | `= 0x20` |  |
-| `DDWAF_OBJ_MAP` | `= 0x40` |  |
+| Value | Code |
+|-------|------|
+| `DDWAF_OBJ_INVALID` | `= 0` |
+| `DDWAF_OBJ_NULL` | `= 0x01` |
+| `DDWAF_OBJ_BOOL` | `= 0x02` |
+| `DDWAF_OBJ_SIGNED` | `= 0x04` |
+| `DDWAF_OBJ_UNSIGNED` | `= 0x06` |
+| `DDWAF_OBJ_FLOAT` | `= 0x08` |
+| `DDWAF_OBJ_STRING` | `= 0x10` |
+| `DDWAF_OBJ_LITERAL_STRING` | `= 0x12` |
+| `DDWAF_OBJ_SMALL_STRING` | `= 0x14` |
+| `DDWAF_OBJ_ARRAY` | `= 0x20` |
+| `DDWAF_OBJ_MAP` | `= 0x40` |
 
 ### DDWAF_RET_CODE
 
 Codes returned by ddwaf_context_eval.
 
-| Value | Code | Description |
-|-------|------|-------------|
-| `DDWAF_ERR_INTERNAL` | `= -3` |  |
-| `DDWAF_ERR_INVALID_OBJECT` | `= -2` |  |
-| `DDWAF_ERR_INVALID_ARGUMENT` | `= -1` |  |
-| `DDWAF_OK` | `= 0` |  |
-| `DDWAF_MATCH` | `= 1` |  |
+| Value | Code |
+|-------|------|
+| `DDWAF_ERR_INTERNAL` | `= -3` |
+| `DDWAF_ERR_INVALID_OBJECT` | `= -2` |
+| `DDWAF_ERR_INVALID_ARGUMENT` | `= -1` |
+| `DDWAF_OK` | `= 0` |
+| `DDWAF_MATCH` | `= 1` |
 
 ### DDWAF_LOG_LEVEL
 
 Internal WAF log levels, to be used when setting the minimum log level and cb.
 
-| Value | Code | Description |
-|-------|------|-------------|
-| `DDWAF_LOG_TRACE` | `` |  |
-| `DDWAF_LOG_DEBUG` | `` |  |
-| `DDWAF_LOG_INFO` | `` |  |
-| `DDWAF_LOG_WARN` | `` |  |
-| `DDWAF_LOG_ERROR` | `` |  |
-| `DDWAF_LOG_OFF` | `` |  |
+| Value |
+|-------|
+| `DDWAF_LOG_TRACE` |
+| `DDWAF_LOG_DEBUG` |
+| `DDWAF_LOG_INFO` |
+| `DDWAF_LOG_WARN` |
+| `DDWAF_LOG_ERROR` |
+| `DDWAF_LOG_OFF` |
 
 ---
 
@@ -318,12 +297,13 @@ Perform a matching operation on the provided data
 - `data`: (nonnull) Data on which to perform the pattern matching. This data will be stored by the context and used across multiple calls to this function or ddwaf_subcontext_eval. Once the context is destroyed, the user defined allocator will be used to free the data provided. Note that the data passed must be valid until the destruction of the context. The object must be a map of {string,
 - `alloc`: (nullable) Allocator used to free the data provided. If NULL, the data will not be freed.
 - `result`: (nullable) Object map containing the following items:
-- events: an array of the generated events.
-- actions: a map of the generated actions in the format: "{action type: { <parameter map> }, ...}"
-- duration: an unsigned specifying the total runtime of the call in nanoseconds.
-- timeout: whether there has been a timeout during the call.
-- attributes: a map containing all derived objects in the format: {tag, value}
-- keep: whether the data contained herein must override any transport sampling through the relevant mechanism. This structure must be freed by the caller using the output allocator provided through ddwaf_context_init. The object will contain all specified keys when the value returned by ddwaf_context_eval is either DDWAF_OK or DDWAF_MATCH and will be empty otherwise. IMPORTANT: This object is not allocated with the allocator passed in this call. It uses the allocator given to ddwaf_context_init instead.
+  - `events`: an array of the generated events.
+  - `actions`: a map of the generated actions in the format: "{action type: { <parameter map> }, ...}"
+  - `duration`: an unsigned specifying the total runtime of the call in nanoseconds.
+  - `timeout`: whether there has been a timeout during the call.
+  - `attributes`: a map containing all derived objects in the format: {tag, value}
+  - `keep`: whether the data contained herein must override any transport sampling through the relevant mechanism. This structure must be freed by the caller using the output allocator provided through ddwaf_context_init. The object will contain all specified keys when the value returned by ddwaf_context_eval is either DDWAF_OK or DDWAF_MATCH and will be empty otherwise.
+  - **IMPORTANT**: This object is not allocated with the allocator passed in this call. It uses the allocator given to ddwaf_context_init instead.
 - `timeout`: Maximum time budget in microseconds.
 
 **Returns:** Return code of the operation.
@@ -376,12 +356,13 @@ Perform a matching operation on the provided data
 - `data`: (nonnull) Data on which to perform the pattern matching. This data will be stored by the subcontext and used across multiple calls to this function. Once the subcontext is destroyed, the user defined allocator will be used to free the data provided. Note that the data passed must be valid until the destruction of the subcontext. The object must be a map of {string,
 - `alloc`: (nullable) Allocator used to free the data provided. If NULL, the data will not be freed.
 - `result`: (nullable) Object map containing the following items:
-- events: an array of the generated events.
-- actions: a map of the generated actions in the format: "{action type: { <parameter map> }, ...}"
-- duration: an unsigned specifying the total runtime of the call in nanoseconds.
-- timeout: whether there has been a timeout during the call.
-- attributes: a map containing all derived objects in the format: {tag, value}
-- keep: whether the data contained herein must override any transport sampling through the relevant mechanism. This structure must be freed by the caller and will contain all specified keys when the value returned by ddwaf_subcontext_eval is either DDWAF_OK or DDWAF_MATCH and will be empty otherwise. IMPORTANT: This object is not allocated with the allocator passed in this call. It uses the allocator given to ddwaf_context_init instead.
+  - `events`: an array of the generated events.
+  - `actions`: a map of the generated actions in the format: "{action type: { <parameter map> }, ...}"
+  - `duration`: an unsigned specifying the total runtime of the call in nanoseconds.
+  - `timeout`: whether there has been a timeout during the call.
+  - `attributes`: a map containing all derived objects in the format: {tag, value}
+  - `keep`: whether the data contained herein must override any transport sampling through the relevant mechanism. This structure must be freed by the caller and will contain all specified keys when the value returned by ddwaf_subcontext_eval is either DDWAF_OK or DDWAF_MATCH and will be empty otherwise.
+  - **IMPORTANT**: This object is not allocated with the allocator passed in this call. It uses the allocator given to ddwaf_context_init instead.
 - `timeout`: Maximum time budget in microseconds.
 
 **Returns:** Return code of the operation.
