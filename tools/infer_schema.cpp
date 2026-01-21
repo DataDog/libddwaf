@@ -57,11 +57,10 @@ int main(int argc, char *argv[])
     ddwaf_object result;
     auto code = ddwaf_context_eval(context, &input, alloc, &result, std::numeric_limits<uint64_t>::max());
     if (code == DDWAF_MATCH) {
-        std::cout << object_to_json(result) << '\n';
-/*        const ddwaf_object *attributes = ddwaf_object_find(&result, STRL("attributes"));*/
-        /*if (attributes != nullptr && ddwaf_object_get_size(attributes) > 0) {*/
-            /*std::cout << object_to_json(*attributes) << '\n';*/
-        /*}*/
+        const ddwaf_object *attributes = ddwaf_object_find(&result, STRL("attributes"));
+        if (attributes != nullptr && ddwaf_object_get_size(attributes) > 0) {
+            std::cout << object_to_json(*attributes) << '\n';
+        }
     }
 
     ddwaf_object_destroy(&result, alloc);
