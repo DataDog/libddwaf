@@ -1,5 +1,6 @@
-## v2.0.0-alpha0
+# v2.0.0-alpha0
 
+## Release Changelog
 ### Changes
 
 - Object model overhaul: immutable `object_view`, owned/borrowed writable objects, raw configuration on `object_view`, container view types, and updated unit tests ([#341](https://github.com/DataDog/libddwaf/pull/341), [#378](https://github.com/DataDog/libddwaf/pull/378), [#382](https://github.com/DataDog/libddwaf/pull/382), [#387](https://github.com/DataDog/libddwaf/pull/387), [#390](https://github.com/DataDog/libddwaf/pull/390), [#391](https://github.com/DataDog/libddwaf/pull/391), [#394](https://github.com/DataDog/libddwaf/pull/394), [#408](https://github.com/DataDog/libddwaf/pull/408), [#413](https://github.com/DataDog/libddwaf/pull/413)), ([#476](https://github.com/DataDog/libddwaf/pull/476)).
