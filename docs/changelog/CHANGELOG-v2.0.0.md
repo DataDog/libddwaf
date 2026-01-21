@@ -2,6 +2,8 @@
 
 libddwaf v2.0.0 represents a significant redesign of the C API, focusing on explicit memory ownership, reduced memory footprint, and a more consistent interface. Beyond the public API, the internals have also been refactored to use safer and more C++-native abstractions. This is an alpha release intended for early adopters and binding library maintainers to begin integration work.
 
+As expected, this release is not backwards compatible; the upgrading guide at `docs/upgrading/UPGRADING-v2.0.md` provides detailed migration examples for each of the breaking changes.
+
 ### Memory Ownership and Allocators
 
 The most fundamental change in v2 is the introduction of allocators throughout the API. In v1, memory ownership across the API boundary was often ambiguous, leading to potential issues in complex integration scenarios. The new allocator system makes memory ownership explicit: callers provide an allocator when creating objects and use the same allocator when destroying them. A default allocator is available via `ddwaf_get_default_allocator()` for simple use cases, while custom allocators enable advanced memory management strategies.
@@ -15,10 +17,6 @@ Object creation functions have been renamed to follow a consistent `ddwaf_object
 ### Context and Subcontext Lifecycle
 
 The function `ddwaf_run` has been renamed to `ddwaf_context_eval` for consistency with the rest of the API. More significantly, ephemeral data semantics have been replaced with a new subcontext mechanism. In v1, ephemeral data was passed as a separate parameter to each `ddwaf_run` call and was not retained. In v2, a subcontext is explicitly created from a parent context via `ddwaf_subcontext_init`, evaluated with `ddwaf_subcontext_eval`, and destroyed with `ddwaf_subcontext_destroy`. Subcontexts inherit all data from their parent context but maintain their own isolated evaluation state. Multiple concurrent subcontexts can be created from the same parent context, each defining its own data scope and lifetime.
-
-### Breaking Changes Summary
-
-As expected, this release is not backwards compatible; the upgrading guide at `docs/upgrading/UPGRADING-v2.0.md` provides detailed migration examples for each of the breaking changes.
 
 ## Release Changelog
 ### Changes
