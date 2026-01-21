@@ -209,11 +209,9 @@ jobs:
           name: coverage_${{ matrix.suffix }}_${{ matrix.arch }}
           path: ${{ github.workspace }}/Debug/coverage-${{ matrix.suffix }}-${{ matrix.arch }}.json
 
-  upload-coverage:
+  generate-coverage:
     needs: [ coverage ]
     runs-on: ubuntu-24.04
-    environment:
-      name: dd-protected-coverage
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
@@ -223,10 +221,6 @@ jobs:
         with:
           path: artifacts
 
-      - uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903
-        with:
-          node-version: 24
-
       - name: Install dependencies
         run: |
           sudo apt update
@@ -234,7 +228,7 @@ jobs:
           python3 -m venv .venv
           source .venv/bin/activate
           pip install gcovr==7.2
-          npm install -g @datadog/datadog-ci
+
       - name: Generate coverage
         run: |
           source .venv/bin/activate
@@ -243,10 +237,28 @@ jobs:
           mkdir -p coverage
           gcovr --merge-mode-functions merge-use-line-0 --json-add-tracefile "artifacts/*/coverage-*.json" --html-details coverage/coverage.html
 
-      - name: Submit coverage (DataDog)
-        run: datadog-ci coverage upload coverage.xml
-        env:
-          DD_API_KEY: ${{ secrets.DD_API_KEY }}
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: coverage
+          path: ${{ github.workspace }}/coverage/
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: coverage-xml
+          path: ${{ github.workspace }}/coverage.xml
+
+  upload-to-codecov:
+    needs: [ generate-coverage ]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          submodules: recursive
+
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
+        with:
+          name: coverage-xml
+          path: .
 
       - name: Submit coverage (CodeCov)
         uses: codecov/codecov-action@5a1091511ad55cbe89839c7260b706298ca349f7
@@ -255,10 +267,34 @@ jobs:
           flags: waf_test
           verbose: true
           files: coverage.xml
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+
+  upload-to-datadog:
+    needs: [ generate-coverage ]
+    runs-on: ubuntu-24.04
+    if: github.ref == 'refs/heads/master'
+    environment:
+      name: dd-protected-coverage
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
-          name: coverage
-          path: ${{ github.workspace }}/coverage/
+          submodules: recursive
+
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
+        with:
+          name: coverage-xml
+          path: .
+
+      - uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903
+        with:
+          node-version: 24
+
+      - name: Install datadog-ci
+        run: npm install -g @datadog/datadog-ci
+
+      - name: Submit coverage (DataDog)
+        run: datadog-ci coverage upload coverage.xml
+        env:
+          DD_API_KEY: ${{ secrets.DD_API_KEY }}
 
   lint:
     runs-on: ubuntu-24.04
