@@ -306,9 +306,11 @@ ddwaf_context ddwaf_context_init(const ddwaf_handle handle, ddwaf_allocator outp
  *                             format: {tag, value}
  *               - keep: whether the data contained herein must override any
  *                       transport sampling through the relevant mechanism.
- *               This structure must be freed by the caller and will contain all
- *               specified keys when the value returned by ddwaf_context_eval is either
- *               DDWAF_OK or DDWAF_MATCH and will be empty otherwise.
+ *               This structure must be freed by the caller using the output
+ *               allocator provided through ddwaf_context_init. The object will
+ *               contain all specified keys when the value returned by
+ *               ddwaf_context_eval is either DDWAF_OK or DDWAF_MATCH and will
+ *               be empty otherwise.
  *               IMPORTANT: This object is not allocated with the allocator
  *               passed in this call. It uses the allocator given to
  *               ddwaf_context_init instead.
@@ -338,7 +340,7 @@ DDWAF_RET_CODE ddwaf_context_eval(ddwaf_context context, ddwaf_object *data,
 
 /**
  * Performs the destruction of the context, freeing the data passed to it through
- * ddwaf_context_eval using the used-defined free function.
+ * ddwaf_context_eval using the provided allocator during evaluation.
  *
  * @param context Context to destroy. (nonnull)
  **/
@@ -444,6 +446,7 @@ ddwaf_builder ddwaf_builder_init();
  *
  * @note if any of the arguments are NULL, the diagnostics object will not be initialised.
  * @note The memory associated with the path, config and diagnostics must be freed by the caller.
+ * @note The deallocation of the diagnostics must be made with default allocator.
  * @note This function is not thread-safe.
  **/
 bool ddwaf_builder_add_or_update_config(ddwaf_builder builder, const char *path, uint32_t path_len, const ddwaf_object *config, ddwaf_object *diagnostics);
