@@ -22,20 +22,25 @@ set(CPACK_GENERATOR "TGZ")
 set(CPACK_SOURCE_GENERATOR "TGZ")
 
 ## Package name
-execute_process(COMMAND git describe --exact-match --tags HEAD
-    WORKING_DIRECTORY ${libddwaf_SOURCE_DIR}
-    OUTPUT_VARIABLE DDWAF_VERSION
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    ERROR_QUIET
-)
-
-if (NOT DDWAF_VERSION)
+if(GIT_COMMIT)
     set(DDWAF_VERSION ${CMAKE_PROJECT_VERSION})
-    execute_process(COMMAND git rev-parse --short HEAD
+    string(SUBSTRING "${GIT_COMMIT}" 0 7 SHORT_BUILD_ID)
+else()
+    execute_process(COMMAND git describe --exact-match --tags HEAD
         WORKING_DIRECTORY ${libddwaf_SOURCE_DIR}
-        OUTPUT_VARIABLE SHORT_BUILD_ID
+        OUTPUT_VARIABLE DDWAF_VERSION
         OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
     )
+
+    if (NOT DDWAF_VERSION)
+        set(DDWAF_VERSION ${CMAKE_PROJECT_VERSION})
+        execute_process(COMMAND git rev-parse --short HEAD
+            WORKING_DIRECTORY ${libddwaf_SOURCE_DIR}
+            OUTPUT_VARIABLE SHORT_BUILD_ID
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+    endif()
 endif()
 
 set(CPACK_PACKAGE_FILE_NAME ${CMAKE_PROJECT_NAME}-${DDWAF_VERSION}-${CMAKE_SYSTEM_NAME}-${LIBDDWAF_PACKAGE_PROCESSOR})

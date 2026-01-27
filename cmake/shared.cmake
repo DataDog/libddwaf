@@ -1,8 +1,12 @@
-execute_process(COMMAND git rev-parse HEAD
-    WORKING_DIRECTORY ${libddwaf_SOURCE_DIR}
-    OUTPUT_VARIABLE BUILD_ID
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-)
+if(GIT_COMMIT)
+    set(BUILD_ID "${GIT_COMMIT}")
+else()
+    execute_process(COMMAND git rev-parse HEAD
+        WORKING_DIRECTORY ${libddwaf_SOURCE_DIR}
+        OUTPUT_VARIABLE BUILD_ID
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+endif()
 
 message(STATUS "Build id is ${BUILD_ID}")
 string(SUBSTRING "${BUILD_ID}" 0 2 BUILD_ID_PREFIX)
