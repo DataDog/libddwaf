@@ -205,8 +205,21 @@ int main()
     YAML::Node doc = YAML::Load(waf_rule.data());
 
     auto rule = doc.as<ddwaf_object>();
-    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
+
+    ddwaf_builder builder = ddwaf_builder_init();
+    ddwaf_object diagnostics;
+    bool success = ddwaf_builder_add_or_update_config(builder, "config", 6, &rule, &diagnostics);
     ddwaf_object_destroy(&rule, alloc);
+    ddwaf_object_destroy(&diagnostics, alloc);
+
+    if (!success) {
+        ddwaf_builder_destroy(builder);
+        return EXIT_FAILURE;
+    }
+
+    ddwaf_handle handle = ddwaf_builder_build_instance(builder);
+    ddwaf_builder_destroy(builder);
+
     if (handle == nullptr) {
         return EXIT_FAILURE;
     }
