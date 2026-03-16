@@ -238,7 +238,7 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
-      - uses: nuget/setup-nuget@v2
+      - uses: nuget/setup-nuget@d105a947828025cd7a980103c35ba2bfae586d0f # v2.0.2
         with:
           nuget-version: '5.x'
 
