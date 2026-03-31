@@ -284,17 +284,11 @@ jobs:
           name: coverage-xml
           path: .
 
-      - uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903
-        with:
-          node-version: 24
-
-      - name: Install datadog-ci
-        run: npm install -g @datadog/datadog-ci
-
       - name: Submit coverage (DataDog)
-        run: datadog-ci coverage upload coverage.xml
-        env:
-          DD_API_KEY: ${{ secrets.DD_API_KEY }}
+        uses: DataDog/coverage-upload-github-action@d2cf302a39c05e0ad22063360a2bf6ce0cc4906c # v1
+        with:
+          api_key: ${{ secrets.DD_API_KEY }}
+          files: coverage.xml
 
   lint:
     runs-on: ubuntu-24.04
