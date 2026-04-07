@@ -271,9 +271,8 @@ jobs:
   upload-to-datadog:
     needs: [ generate-coverage ]
     runs-on: ubuntu-24.04
-    if: github.ref == 'refs/heads/master'
-    environment:
-      name: dd-protected-coverage
+    permissions:
+      id-token: write
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
@@ -284,10 +283,16 @@ jobs:
           name: coverage-xml
           path: .
 
+      - name: Obtain credentials
+        id: dd-sts
+        uses: DataDog/dd-sts-action@2e8187910199bd93129520183c093e19aa585c75 # v1.0.0
+        with:
+          policy: libddwaf
+
       - name: Submit coverage (DataDog)
         uses: DataDog/coverage-upload-github-action@d2cf302a39c05e0ad22063360a2bf6ce0cc4906c # v1
         with:
-          api_key: ${{ secrets.DD_API_KEY }}
+          api_key: ${{ steps.dd-sts.outputs.api_key }}
           files: coverage.xml
 
   lint:
