@@ -630,6 +630,12 @@ ddwaf_object *ddwaf_object_set_null(ddwaf_object *object)
 
 ddwaf_object *ddwaf_object_null(ddwaf_object *object) { return ddwaf_object_set_null(object); }
 
+ddwaf_object *ddwaf_object_stringl(ddwaf_object *object, const char *string, uint64_t length)
+{
+    return ddwaf_object_set_string(
+        object, string, static_cast<uint32_t>(length), ddwaf_get_default_allocator());
+}
+
 ddwaf_object *ddwaf_object_set_string(
     ddwaf_object *object, const char *string, uint32_t length, ddwaf_allocator alloc)
 {
@@ -852,6 +858,21 @@ ddwaf_object *ddwaf_object_insert_literal_key(
             to_borrowed(map, alloc_ptr).emplace(std::move(key_obj), std::move(value_obj)).ptr());
     } catch (...) {} // NOLINT(bugprone-empty-catch)
     return nullptr;
+}
+
+bool ddwaf_object_map_addl(
+    ddwaf_object *map, const char *key, uint64_t key_length, ddwaf_object *object)
+{
+    ddwaf_allocator alloc = ddwaf_get_default_allocator();
+    ddwaf_object *slot =
+        ddwaf_object_insert_key(map, key, static_cast<uint32_t>(key_length), alloc);
+    if (slot == nullptr) {
+        return false;
+    }
+    // Move the value into the map slot and invalidate the source
+    std::memcpy(slot, object, sizeof(ddwaf_object));
+    std::memset(object, 0, sizeof(ddwaf_object));
+    return true;
 }
 
 void ddwaf_object_destroy(ddwaf_object *object, ddwaf_allocator alloc)

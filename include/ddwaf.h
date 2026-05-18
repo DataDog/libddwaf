@@ -674,6 +674,17 @@ ddwaf_object* ddwaf_object_set_null(ddwaf_object *object);
 ddwaf_object* ddwaf_object_set_string(ddwaf_object *object, const char *string, uint32_t length, ddwaf_allocator alloc);
 
 /**
+ * Backward-compatible wrapper: creates a string object using the default allocator.
+ *
+ * @param object Object to perform the operation on. (nonnull)
+ * @param string String to initialise the object with, this string will be copied. (nonnull)
+ * @param length Length of the string.
+ *
+ * @return A pointer to the passed object or NULL if the operation failed.
+ **/
+ddwaf_object* ddwaf_object_stringl(ddwaf_object *object, const char *string, uint64_t length);
+
+/**
  * Creates an object from a literal string and its length.
  *
  * @param object Object to perform the operation on. (nonnull)
@@ -787,6 +798,20 @@ ddwaf_object *ddwaf_object_insert(ddwaf_object *array, ddwaf_allocator alloc);
  * @return A pointer to the newly inserted object or NULL if the operation failed.
  **/
 ddwaf_object *ddwaf_object_insert_key(ddwaf_object *map, const char *key, uint32_t length, ddwaf_allocator alloc);
+
+/**
+ * Backward-compatible wrapper: inserts a pre-built object into a map using the
+ * default allocator. The value is moved into the map and the source object is
+ * invalidated.
+ *
+ * @param map Map in which to insert the object. (nonnull)
+ * @param key The key for indexing purposes, this string will be copied. (nonnull)
+ * @param key_length Length of the key.
+ * @param object Object to move into the map. (nonnull)
+ *
+ * @return true if the operation succeeded, false otherwise.
+ **/
+bool ddwaf_object_map_addl(ddwaf_object *map, const char *key, uint64_t key_length, ddwaf_object *object);
 
 /**
  * Inserts a new object into a map object, using a literal key.
