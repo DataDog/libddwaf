@@ -27,7 +27,7 @@ TEST(TestExpression, SimpleMatch)
     auto root = object_builder_da::map({{"server.request.query", "value"}});
 
     object_store store;
-    store.insert(std::move(root));
+    store.insert_and_apply(std::move(root));
 
     ddwaf::timer deadline{2s};
 
@@ -58,7 +58,7 @@ TEST(TestExpression, SimpleNegatedMatch)
     auto root = object_builder_da::map({{"server.request.query", "val"}});
 
     object_store store;
-    store.insert(std::move(root));
+    store.insert_and_apply(std::move(root));
 
     ddwaf::timer deadline{2s};
 
@@ -91,11 +91,11 @@ TEST(TestExpression, MultiInputMatchOnSecondEval)
     expression::cache_type cache;
 
     {
-        defer cleanup{[&]() { store.clear_last_batch(); }};
+        defer cleanup{[&]() { store.flush_input_queue(); }};
 
         auto root = object_builder_da::map({{"server.request.query", "bad"}});
 
-        store.insert(std::move(root));
+        store.insert_and_apply(std::move(root));
 
         ddwaf::timer deadline{2s};
 
@@ -103,11 +103,11 @@ TEST(TestExpression, MultiInputMatchOnSecondEval)
     }
 
     {
-        defer cleanup{[&]() { store.clear_last_batch(); }};
+        defer cleanup{[&]() { store.flush_input_queue(); }};
 
         auto root = object_builder_da::map({{"server.request.body", "value"}});
 
-        store.insert(std::move(root));
+        store.insert_and_apply(std::move(root));
 
         ddwaf::timer deadline{2s};
 
@@ -138,11 +138,11 @@ TEST(TestExpression, DuplicateInput)
     object_store store;
 
     {
-        defer cleanup{[&]() { store.clear_last_batch(); }};
+        defer cleanup{[&]() { store.flush_input_queue(); }};
 
         auto root = object_builder_da::map({{"server.request.query", "bad"}});
 
-        store.insert(std::move(root));
+        store.insert_and_apply(std::move(root));
 
         ddwaf::timer deadline{2s};
 
@@ -150,11 +150,11 @@ TEST(TestExpression, DuplicateInput)
     }
 
     {
-        defer cleanup{[&]() { store.clear_last_batch(); }};
+        defer cleanup{[&]() { store.flush_input_queue(); }};
 
         auto root = object_builder_da::map({{"server.request.query", "value"}});
 
-        store.insert(std::move(root));
+        store.insert_and_apply(std::move(root));
 
         ddwaf::timer deadline{2s};
 
@@ -174,11 +174,11 @@ TEST(TestExpression, MatchDuplicateInputNoCache)
 
     object_store store;
     {
-        defer cleanup{[&]() { store.clear_last_batch(); }};
+        defer cleanup{[&]() { store.flush_input_queue(); }};
 
         auto root = object_builder_da::map({{"server.request.query", "bad"}});
 
-        store.insert(std::move(root));
+        store.insert_and_apply(std::move(root));
 
         ddwaf::timer deadline{2s};
 
@@ -187,11 +187,11 @@ TEST(TestExpression, MatchDuplicateInputNoCache)
     }
 
     {
-        defer cleanup{[&]() { store.clear_last_batch(); }};
+        defer cleanup{[&]() { store.flush_input_queue(); }};
 
         auto root = object_builder_da::map({{"server.request.query", "value"}});
 
-        store.insert(std::move(root));
+        store.insert_and_apply(std::move(root));
 
         ddwaf::timer deadline{2s};
 
@@ -229,11 +229,11 @@ TEST(TestExpression, TwoConditionsSingleInputNoMatch)
     object_store store;
 
     {
-        defer cleanup{[&]() { store.clear_last_batch(); }};
+        defer cleanup{[&]() { store.flush_input_queue(); }};
 
         auto root = object_builder_da::map({{"server.request.query", "bad_value"}});
 
-        store.insert(std::move(root));
+        store.insert_and_apply(std::move(root));
 
         ddwaf::timer deadline{2s};
 
@@ -241,11 +241,11 @@ TEST(TestExpression, TwoConditionsSingleInputNoMatch)
     }
 
     {
-        defer cleanup{[&]() { store.clear_last_batch(); }};
+        defer cleanup{[&]() { store.flush_input_queue(); }};
 
         auto root = object_builder_da::map({{"server.request.query", "value"}});
 
-        store.insert(std::move(root));
+        store.insert_and_apply(std::move(root));
 
         ddwaf::timer deadline{2s};
 
@@ -271,7 +271,7 @@ TEST(TestExpression, TwoConditionsSingleInputMatch)
     auto root = object_builder_da::map({{"server.request.query", "value"}});
 
     object_store store;
-    store.insert(std::move(root));
+    store.insert_and_apply(std::move(root));
 
     ddwaf::timer deadline{2s};
 
@@ -300,7 +300,7 @@ TEST(TestExpression, TwoConditionsMultiInputSingleEvalMatch)
     auto root = object_builder_da::map(
         {{"server.request.query", "query"}, {"server.request.body", "body"}});
 
-    store.insert(std::move(root));
+    store.insert_and_apply(std::move(root));
 
     ddwaf::timer deadline{2s};
 
@@ -326,11 +326,11 @@ TEST(TestExpression, TwoConditionsMultiInputMultiEvalMatch)
     expression::cache_type cache;
 
     {
-        defer cleanup{[&]() { store.clear_last_batch(); }};
+        defer cleanup{[&]() { store.flush_input_queue(); }};
 
         auto root = object_builder_da::map({{"server.request.query", "query"}});
 
-        store.insert(std::move(root));
+        store.insert_and_apply(std::move(root));
 
         ddwaf::timer deadline{2s};
 
@@ -338,12 +338,12 @@ TEST(TestExpression, TwoConditionsMultiInputMultiEvalMatch)
     }
 
     {
-        defer cleanup{[&]() { store.clear_last_batch(); }};
+        defer cleanup{[&]() { store.flush_input_queue(); }};
 
         auto root = object_builder_da::map(
             {{"server.request.query", "red-herring"}, {"server.request.body", "body"}});
 
-        store.insert(std::move(root));
+        store.insert_and_apply(std::move(root));
 
         ddwaf::timer deadline{2s};
 
@@ -364,7 +364,7 @@ TEST(TestExpression, MatchWithKeyPath)
         {{"server.request.query", object_builder_da::map({{"key", "value"}})}});
 
     object_store store;
-    store.insert(std::move(root));
+    store.insert_and_apply(std::move(root));
 
     ddwaf::timer deadline{2s};
 
@@ -393,7 +393,7 @@ TEST(TestExpression, MatchWithTransformer)
     auto root = object_builder_da::map({{"server.request.query", "VALUE"}});
 
     object_store store;
-    store.insert(std::move(root));
+    store.insert_and_apply(std::move(root));
 
     ddwaf::timer deadline{2s};
 
@@ -422,7 +422,7 @@ TEST(TestExpression, MatchWithMultipleTransformers)
     auto root = object_builder_da::map({{"server.request.query", "    VALUE    "}});
 
     object_store store;
-    store.insert(std::move(root));
+    store.insert_and_apply(std::move(root));
 
     ddwaf::timer deadline{2s};
 
@@ -451,7 +451,7 @@ TEST(TestExpression, MatchOnKeys)
         {{"server.request.query", object_builder_da::map({{"value", "1729"}})}});
 
     object_store store;
-    store.insert(std::move(root));
+    store.insert_and_apply(std::move(root));
 
     ddwaf::timer deadline{2s};
 
@@ -481,7 +481,7 @@ TEST(TestExpression, MatchOnKeysWithTransformer)
         {{"server.request.query", object_builder_da::map({{"VALUE", "1729"}})}});
 
     object_store store;
-    store.insert(std::move(root));
+    store.insert_and_apply(std::move(root));
 
     ddwaf::timer deadline{2s};
 
@@ -510,7 +510,7 @@ TEST(TestExpression, ExcludeInput)
     auto root = object_builder_da::map({{"server.request.query", "value"}});
 
     object_store store;
-    store.insert(std::move(root));
+    store.insert_and_apply(std::move(root));
 
     ddwaf::timer deadline{2s};
     std::unordered_set<object_cache_key> excluded_objects{store.get_target("server.request.query")};
@@ -532,7 +532,7 @@ TEST(TestExpression, ExcludeKeyPath)
         {{"server.request.query", object_builder_da::map({{"key", "value"}})}});
 
     object_store store;
-    store.insert(std::move(root));
+    store.insert_and_apply(std::move(root));
 
     ddwaf::timer deadline{2s};
     std::unordered_set<object_cache_key> excluded_objects{store.get_target("server.request.query")};

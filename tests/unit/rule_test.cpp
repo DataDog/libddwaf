@@ -38,8 +38,8 @@ TEST(TestRule, Match)
 
     core_rule::cache_type cache;
     {
-        defer cleanup{[&]() { store.clear_last_batch(); }};
-        store.insert(root.clone(memory::get_default_resource()));
+        defer cleanup{[&]() { store.flush_input_queue(); }};
+        store.insert_and_apply(root.clone(memory::get_default_resource()));
 
         auto [verdict, result] = rule.match(store, cache, {}, {}, deadline);
         ASSERT_TRUE(result.has_value());
@@ -63,7 +63,7 @@ TEST(TestRule, Match)
     }
 
     {
-        store.insert(std::move(root));
+        store.insert_and_apply(std::move(root));
 
         auto [verdict, result] = rule.match(store, cache, {}, {}, deadline);
         EXPECT_FALSE(result.has_value());
@@ -86,7 +86,7 @@ TEST(TestRule, NoMatch)
     auto root = object_builder_da::map({{"http.client_ip", "192.168.0.1"}});
 
     object_store store;
-    store.insert(std::move(root));
+    store.insert_and_apply(std::move(root));
 
     ddwaf::timer deadline{2s};
 
@@ -120,7 +120,7 @@ TEST(TestRule, ValidateCachedMatch)
         auto root = object_builder_da::map({{"http.client_ip", "192.168.0.1"}});
 
         object_store store;
-        store.insert(std::move(root));
+        store.insert_and_apply(std::move(root));
 
         ddwaf::timer deadline{2s};
         auto [verdict, result] = rule.match(store, cache, {}, {}, deadline);
@@ -131,7 +131,7 @@ TEST(TestRule, ValidateCachedMatch)
         auto root = object_builder_da::map({{"usr.id", "admin"}});
 
         object_store store;
-        store.insert(std::move(root));
+        store.insert_and_apply(std::move(root));
 
         ddwaf::timer deadline{2s};
         auto [verdict, result] = rule.match(store, cache, {}, {}, deadline);
@@ -190,7 +190,7 @@ TEST(TestRule, MatchWithoutCache)
     object_store store;
     {
         auto root = object_builder_da::map({{"http.client_ip", "192.168.0.1"}});
-        store.insert(std::move(root));
+        store.insert_and_apply(std::move(root));
 
         ddwaf::timer deadline{2s};
         core_rule::cache_type cache;
@@ -201,7 +201,7 @@ TEST(TestRule, MatchWithoutCache)
     {
         auto root = object_builder_da::map({{"usr.id", "admin"}});
 
-        store.insert(std::move(root));
+        store.insert_and_apply(std::move(root));
 
         ddwaf::timer deadline{2s};
         core_rule::cache_type cache;
@@ -254,7 +254,7 @@ TEST(TestRule, NoMatchWithoutCache)
         auto root = object_builder_da::map({{"http.client_ip", "192.168.0.1"}});
 
         object_store store;
-        store.insert(std::move(root));
+        store.insert_and_apply(std::move(root));
 
         ddwaf::timer deadline{2s};
         core_rule::cache_type cache;
@@ -266,7 +266,7 @@ TEST(TestRule, NoMatchWithoutCache)
         auto root = object_builder_da::map({{"usr.id", "admin"}});
 
         object_store store;
-        store.insert(std::move(root));
+        store.insert_and_apply(std::move(root));
 
         ddwaf::timer deadline{2s};
         core_rule::cache_type cache;
@@ -301,7 +301,7 @@ TEST(TestRule, FullCachedMatchSecondRun)
             object_builder_da::map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
 
         object_store store;
-        store.insert(std::move(root));
+        store.insert_and_apply(std::move(root));
 
         ddwaf::timer deadline{2s};
         auto [verdict, result] = rule.match(store, cache, {}, {}, deadline);
@@ -314,7 +314,7 @@ TEST(TestRule, FullCachedMatchSecondRun)
             object_builder_da::map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
 
         object_store store;
-        store.insert(std::move(root));
+        store.insert_and_apply(std::move(root));
 
         ddwaf::timer deadline{2s};
         auto [verdict, result] = rule.match(store, cache, {}, {}, deadline);
@@ -336,7 +336,7 @@ TEST(TestRule, ExcludeObject)
 
     auto root = object_builder_da::map({{"http.client_ip", "192.168.0.1"}});
     object_store store;
-    store.insert(std::move(root));
+    store.insert_and_apply(std::move(root));
 
     std::unordered_set<object_cache_key> excluded_set{store.get_target("http.client_ip")};
 

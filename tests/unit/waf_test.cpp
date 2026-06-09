@@ -53,7 +53,7 @@ TEST(TestWaf, BasicContextRun)
     auto root = object_builder_da::map({{"value1", "rule1"}});
     auto ctx = instance.create_context(memory::get_default_resource());
 
-    EXPECT_TRUE(ctx.insert(std::move(root)));
+    EXPECT_TRUE(ctx.insert_batch(std::move(root)));
     ddwaf::timer deadline{2s};
     auto [code, res] = ctx.eval(deadline);
     EXPECT_EQ(code, DDWAF_MATCH);

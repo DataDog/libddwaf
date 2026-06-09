@@ -42,57 +42,63 @@ void set_context_event_address(object_store &store)
         return;
     }
 
-    store.insert(event_addr_idx, event_addr, owned_object::make_boolean(true));
+    store.insert_target(event_addr_idx, event_addr, owned_object::make_boolean(true));
 }
 
 } // namespace
 
 std::pair<bool, owned_object> evaluation_engine::eval(timer &deadline)
 {
-    // Clear the last batch of targets on exit so that the process can identify
-    // new targets in the next eval
-    auto on_exit = defer([this]() { store_.clear_last_batch(); });
-
     result_serializer serializer(ruleset_->obfuscator.get(), *ruleset_->actions, output_alloc_);
 
     // Generate result object once relevant checks have been made
     auto [result_object, output] = serializer.initialise_result_object();
 
-    if (!store_.has_new_targets()) {
-        return {false, std::move(result_object)};
-    }
-
-    try {
-        // Evaluate preprocessors first in their own try-catch, if there's a
-        // timeout we still need to evaluate rules unaffected by it.
-        eval_preprocessors(deadline);
-        // NOLINTNEXTLINE(bugprone-empty-catch)
-    } catch (const ddwaf::timeout_exception &) {}
+    // Once evaluation finishes (on any exit path, including a timeout) flush any
+    // input batches left unevaluated and reset the new-target set so that the
+    // next eval can identify new targets.
+    auto on_exit = defer([this]() { store_.flush_input_queue(); });
 
     std::vector<rule_result> results;
+    std::size_t batches_evaluated = 0;
 
-    try {
-        // If no rule targets are available, there is no point in evaluating them
-        const bool should_eval_rules = check_new_rule_targets();
-        const bool should_eval_filters = should_eval_rules || check_new_filter_targets();
+    // Each queued input batch is evaluated as if it were a separate eval call,
+    // draining the store's queue one batch at a time.
+    while (store_.next_batch()) {
+        try {
+            // Evaluate preprocessors first in their own try-catch, if there's a
+            // timeout we still need to evaluate rules unaffected by it.
+            eval_preprocessors(deadline);
+            // NOLINTNEXTLINE(bugprone-empty-catch)
+        } catch (const ddwaf::timeout_exception &) {}
 
-        if (should_eval_filters) {
-            // Filters need to be evaluated even if rules don't, otherwise it'll
-            // break the current condition cache mechanism which requires knowing
-            // if an address is new to this run.
-            const auto &policy = eval_filters(deadline);
+        try {
+            // If no rule targets are available, there is no point in evaluating them
+            const bool should_eval_rules = check_new_rule_targets();
+            const bool should_eval_filters = should_eval_rules || check_new_filter_targets();
 
-            if (should_eval_rules) {
-                eval_rules(policy, results, deadline);
-                if (!results.empty()) {
-                    set_context_event_address(store_);
+            if (should_eval_filters) {
+                // Filters need to be evaluated even if rules don't, otherwise it'll
+                // break the current condition cache mechanism which requires knowing
+                // if an address is new to this run.
+                const auto &policy = eval_filters(deadline);
+
+                if (should_eval_rules) {
+                    eval_rules(policy, results, deadline);
+                    if (!results.empty()) {
+                        set_context_event_address(store_);
+                    }
                 }
             }
-        }
 
-        eval_postprocessors(deadline);
-        // NOLINTNEXTLINE(bugprone-empty-catch)
-    } catch (const ddwaf::timeout_exception &) {}
+            eval_postprocessors(deadline);
+            ++batches_evaluated;
+        } catch (const ddwaf::timeout_exception &) {
+            break;
+        }
+    }
+
+    output.evaluated = owned_object::make_unsigned(batches_evaluated);
 
     // Collect pending attributes, this will check if any new attributes are
     // available (e.g. from a postprocessor) and return a map of all attributes
