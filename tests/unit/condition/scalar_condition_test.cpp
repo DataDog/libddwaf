@@ -44,7 +44,7 @@ TEST(TestScalarCondition, NoMatch)
     auto root = object_builder_da::map({{"server.request.uri.raw", owned_object{}}});
 
     object_store store;
-    store.insert(std::move(root));
+    store.insert_and_apply(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -59,7 +59,7 @@ TEST(TestScalarCondition, Timeout)
     auto root = object_builder_da::map({{"server.request.uri.raw", owned_object{}}});
 
     object_store store;
-    store.insert(std::move(root));
+    store.insert_and_apply(std::move(root));
 
     ddwaf::timer deadline{0s};
     condition_cache cache;
@@ -74,7 +74,7 @@ TEST(TestScalarCondition, SimpleMatch)
     auto root = object_builder_da::map({{"server.request.uri.raw", "hello"}});
 
     object_store store;
-    store.insert(std::move(root));
+    store.insert_and_apply(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -93,14 +93,14 @@ TEST(TestScalarCondition, CachedMatch)
 
     {
         object_store store;
-        store.insert(root);
+        store.insert_and_apply(root);
 
         ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
     }
 
     {
         object_store store;
-        store.insert(root);
+        store.insert_and_apply(root);
 
         ASSERT_FALSE(cond.eval(cache, store, {}, {}, deadline));
     }
@@ -118,7 +118,7 @@ TEST(TestScalarCondition, SimpleMatchOnKeys)
         {{"server.request.uri.raw", object_builder_da::map({{"hello", "hello"}})}});
 
     object_store store;
-    store.insert(std::move(root));
+    store.insert_and_apply(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;

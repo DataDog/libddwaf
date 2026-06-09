@@ -46,16 +46,28 @@ public:
     subcontext &operator=(subcontext &&) noexcept = delete;
     subcontext &operator=(const subcontext &) = delete;
 
-    bool insert(owned_object data)
+    bool insert_batch(owned_object data)
     {
         const memory::memory_resource_guard guard(mr_.get());
-        return engine_->insert(std::move(data));
+        return engine_->insert_batch(std::move(data));
     }
 
-    bool insert(map_view data)
+    bool insert_batch(map_view data)
     {
         const memory::memory_resource_guard guard(mr_.get());
-        return engine_->insert(data);
+        return engine_->insert_batch(data);
+    }
+
+    bool insert_batches(owned_object data)
+    {
+        const memory::memory_resource_guard guard(mr_.get());
+        return engine_->insert_batches(std::move(data));
+    }
+
+    bool insert_batches(array_view data)
+    {
+        const memory::memory_resource_guard guard(mr_.get());
+        return engine_->insert_batches(data);
     }
 
     std::pair<bool, owned_object> eval(timer &deadline)
@@ -65,6 +77,21 @@ public:
     }
 
     // Internals exposed for testing
+    bool next_batch()
+    {
+        const memory::memory_resource_guard guard(mr_.get());
+        return engine_->next_batch();
+    }
+    bool insert_and_apply(owned_object data)
+    {
+        const memory::memory_resource_guard guard(mr_.get());
+        return engine_->insert_and_apply(std::move(data));
+    }
+    bool insert_and_apply(map_view data)
+    {
+        const memory::memory_resource_guard guard(mr_.get());
+        return engine_->insert_and_apply(data);
+    }
     void eval_preprocessors(timer &deadline)
     {
         const memory::memory_resource_guard guard(mr_.get());
@@ -141,16 +168,28 @@ public:
     context &operator=(context &&) noexcept = delete;
     context &operator=(const context &) = delete;
 
-    bool insert(owned_object data)
+    bool insert_batch(owned_object data)
     {
         const memory::memory_resource_guard guard(mr_.get());
-        return engine_->insert(std::move(data));
+        return engine_->insert_batch(std::move(data));
     }
 
-    bool insert(map_view data)
+    bool insert_batch(map_view data)
     {
         const memory::memory_resource_guard guard(mr_.get());
-        return engine_->insert(data);
+        return engine_->insert_batch(data);
+    }
+
+    bool insert_batches(owned_object data)
+    {
+        const memory::memory_resource_guard guard(mr_.get());
+        return engine_->insert_batches(std::move(data));
+    }
+
+    bool insert_batches(array_view data)
+    {
+        const memory::memory_resource_guard guard(mr_.get());
+        return engine_->insert_batches(data);
     }
 
     std::pair<bool, owned_object> eval(timer &deadline)
@@ -162,6 +201,21 @@ public:
     subcontext create_subcontext() { return subcontext{*engine_, store_, mr_}; }
 
     // Internals exposed for testing
+    bool next_batch()
+    {
+        const memory::memory_resource_guard guard(mr_.get());
+        return engine_->next_batch();
+    }
+    bool insert_and_apply(owned_object data)
+    {
+        const memory::memory_resource_guard guard(mr_.get());
+        return engine_->insert_and_apply(std::move(data));
+    }
+    bool insert_and_apply(map_view data)
+    {
+        const memory::memory_resource_guard guard(mr_.get());
+        return engine_->insert_and_apply(data);
+    }
     void eval_preprocessors(timer &deadline)
     {
         const memory::memory_resource_guard guard(mr_.get());

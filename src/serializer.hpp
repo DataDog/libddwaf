@@ -28,6 +28,7 @@ struct result_components {
     borrowed_object timeout;
     borrowed_object attributes;
     borrowed_object keep;
+    borrowed_object evaluated;
 };
 // NOLINTEND(cppcoreguidelines-avoid-const-or-ref-data-members)
 

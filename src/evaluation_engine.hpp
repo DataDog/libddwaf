@@ -48,23 +48,49 @@ public:
     evaluation_engine &operator=(evaluation_engine &&) = delete;
     ~evaluation_engine() = default;
 
-    bool insert(owned_object data) noexcept
+    bool insert_batch(owned_object data) noexcept
     {
-        if (!store_.insert(std::move(data))) {
+        if (!store_.insert_batch(std::move(data))) {
             DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
             return false;
         }
         return true;
     }
 
-    bool insert(map_view data) noexcept
+    bool insert_batch(map_view data) noexcept
     {
-        if (!store_.insert(data)) {
+        if (!store_.insert_batch(data)) {
             DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
             return false;
         }
         return true;
     }
+
+    bool insert_batches(owned_object data) noexcept
+    {
+        if (!store_.insert_batches(std::move(data))) {
+            DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
+            return false;
+        }
+        return true;
+    }
+
+    bool insert_batches(array_view data) noexcept
+    {
+        if (!store_.insert_batches(data)) {
+            DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
+            return false;
+        }
+        return true;
+    }
+
+    // Internals exposed for testing
+    bool next_batch() { return store_.next_batch(); }
+    bool insert_and_apply(owned_object data) noexcept
+    {
+        return store_.insert_and_apply(std::move(data));
+    }
+    bool insert_and_apply(map_view data) noexcept { return store_.insert_and_apply(data); }
     std::pair<bool, owned_object> eval(timer &deadline);
 
     static evaluation_engine context_engine(std::shared_ptr<ruleset> ruleset, object_store &store,

@@ -63,7 +63,7 @@ TEST(TestAttributeCollector, CollectAvailableScalar)
     auto input = object_builder_da::map({{"input_address", expected}});
 
     object_store store;
-    store.insert(std::move(input));
+    store.insert_and_apply(std::move(input));
 
     attribute_collector collector;
     EXPECT_TRUE(collector.collect(store, get_target_index("input_address"), {}, "output_address"));
@@ -85,7 +85,7 @@ TEST(TestAttributeCollector, CollectAvailableKeyPathScalar)
         object_builder_da::map({{"first", object_builder_da::map({{"second", expected}})}})}});
 
     object_store store;
-    store.insert(std::move(input));
+    store.insert_and_apply(std::move(input));
 
     attribute_collector collector;
     std::vector<std::variant<std::string, int64_t>> key_path{"first", "second"};
@@ -110,7 +110,7 @@ TEST(TestAttributeCollector, CollectAvailableKeyPathSingleValueArray)
             object_builder_da::map({{"second", object_builder_da::array({expected})}})}})}});
 
     object_store store;
-    store.insert(std::move(input));
+    store.insert_and_apply(std::move(input));
 
     attribute_collector collector;
     std::vector<std::variant<std::string, int64_t>> key_path{"first", "second"};
@@ -136,7 +136,7 @@ TEST(TestAttributeCollector, CollectAvailableKeyPathMultiValueArray)
                            object_builder_da::array({expected, "value1", "value2"})}})}})}});
 
     object_store store;
-    store.insert(std::move(input));
+    store.insert_and_apply(std::move(input));
 
     attribute_collector collector;
     std::vector<std::variant<std::string, int64_t>> key_path{"first", "second"};
@@ -162,7 +162,7 @@ TEST(TestAttributeCollector, CollectAvailableKeyPathWithinArrayPositiveIndex)
                            object_builder_da::array({"value0", expected, "value2"})}})}})}});
 
     object_store store;
-    store.insert(std::move(input));
+    store.insert_and_apply(std::move(input));
 
     attribute_collector collector;
     std::vector<std::variant<std::string, int64_t>> key_path{"first", "second", 1};
@@ -188,7 +188,7 @@ TEST(TestAttributeCollector, CollectAvailableKeyPathWithinArrayNegativeIndex)
                            object_builder_da::array({"value0", expected, "value2"})}})}})}});
 
     object_store store;
-    store.insert(std::move(input));
+    store.insert_and_apply(std::move(input));
 
     attribute_collector collector;
     std::vector<std::variant<std::string, int64_t>> key_path{"first", "second", -2};
@@ -212,7 +212,7 @@ TEST(TestAttributeCollector, CollectUnavailableKeyPath)
                                               object_builder_da::map({{"third", "value"}})}})}})}});
 
     object_store store;
-    store.insert(std::move(input));
+    store.insert_and_apply(std::move(input));
 
     attribute_collector collector;
     std::vector<std::variant<std::string, int64_t>> key_path{"first", "second"};
@@ -240,7 +240,7 @@ TEST(TestAttributeCollector, CollectPendingKeyPathScalar)
     EXPECT_EQ(attributes.size(), 0);
     EXPECT_TRUE(collector.has_pending_attributes());
 
-    store.insert(std::move(input));
+    store.insert_and_apply(std::move(input));
     collector.collect_pending(store);
     attributes = collector.get_available_attributes_and_reset();
     EXPECT_FALSE(collector.has_pending_attributes());
@@ -259,7 +259,7 @@ TEST(TestAttributeCollector, CollectAvailableKeyPathInvalidValue)
                                object_builder_da::map({{"second", object_builder_da::map()}})}})}});
 
     object_store store;
-    store.insert(std::move(input));
+    store.insert_and_apply(std::move(input));
 
     attribute_collector collector;
     std::vector<std::variant<std::string, int64_t>> key_path{"first", "second"};
@@ -278,7 +278,7 @@ TEST(TestAttributeCollector, CollectDuplicateScalar)
     auto input = object_builder_da::map({{"input_address", expected}});
 
     object_store store;
-    store.insert(std::move(input));
+    store.insert_and_apply(std::move(input));
 
     attribute_collector collector;
     EXPECT_TRUE(collector.collect(store, get_target_index("input_address"), {}, "output_address"));
@@ -300,7 +300,7 @@ TEST(TestAttributeCollector, CollectAvailableScalarFromSingleValueArray)
     auto input = object_builder_da::map({{"input_address", object_builder_da::array({expected})}});
 
     object_store store;
-    store.insert(std::move(input));
+    store.insert_and_apply(std::move(input));
 
     attribute_collector collector;
     EXPECT_TRUE(collector.collect(store, get_target_index("input_address"), {}, "output_address"));
@@ -322,7 +322,7 @@ TEST(TestAttributeCollector, CollectAvailableScalarFromMultiValueArray)
         {{"input_address", object_builder_da::array({expected, "value1", "value2"})}});
 
     object_store store;
-    store.insert(std::move(input));
+    store.insert_and_apply(std::move(input));
 
     attribute_collector collector;
     EXPECT_TRUE(collector.collect(store, get_target_index("input_address"), {}, "output_address"));
@@ -343,7 +343,7 @@ TEST(TestAttributeCollector, CollectInvalidObjectFromArray)
         {{"input_address", object_builder_da::array({object_builder_da::map()})}});
 
     object_store store;
-    store.insert(std::move(input));
+    store.insert_and_apply(std::move(input));
 
     attribute_collector collector;
     EXPECT_FALSE(collector.collect(store, get_target_index("input_address"), {}, "output_address"));
@@ -374,7 +374,7 @@ TEST(TestAttributeCollector, CollectUnavailableScalar)
     std::string_view expected = "value";
     auto input = object_builder_da::map({{"input_address", expected}});
 
-    store.insert(std::move(input));
+    store.insert_and_apply(std::move(input));
     collector.collect_pending(store);
     EXPECT_FALSE(collector.has_pending_attributes());
 
@@ -409,7 +409,7 @@ TEST(TestAttributeCollector, CollectUnavailableScalarFromSingleValueArray)
     std::string_view expected = "value";
     auto input = object_builder_da::map({{"input_address", object_builder_da::array({expected})}});
 
-    store.insert(std::move(input));
+    store.insert_and_apply(std::move(input));
     collector.collect_pending(store);
     EXPECT_FALSE(collector.has_pending_attributes());
 
@@ -445,7 +445,7 @@ TEST(TestAttributeCollector, CollectUnavailableScalarFromMultiValueArray)
     auto input = object_builder_da::map(
         {{"input_address", object_builder_da::array({expected, "value1", "value2"})}});
 
-    store.insert(std::move(input));
+    store.insert_and_apply(std::move(input));
     collector.collect_pending(store);
     EXPECT_FALSE(collector.has_pending_attributes());
 
@@ -482,7 +482,7 @@ TEST(TestAttributeCollector, CollectUnavailableKeyPathFromWithinArrayPositiveInd
     auto input = object_builder_da::map(
         {{"input_address", object_builder_da::array({expected, "value1", "value2"})}});
 
-    store.insert(std::move(input));
+    store.insert_and_apply(std::move(input));
     collector.collect_pending(store);
     EXPECT_FALSE(collector.has_pending_attributes());
 
@@ -519,7 +519,7 @@ TEST(TestAttributeCollector, CollectUnavailableKeyPathFromWithinArrayNegativeInd
     auto input = object_builder_da::map(
         {{"input_address", object_builder_da::array({expected, "value1", "value2"})}});
 
-    store.insert(std::move(input));
+    store.insert_and_apply(std::move(input));
     collector.collect_pending(store);
     EXPECT_FALSE(collector.has_pending_attributes());
 
@@ -553,7 +553,7 @@ TEST(TestAttributeCollector, CollectUnavailableInvalidObject)
     // the expected attribute
     auto input = object_builder_da::map({{"input_address", object_builder_da::array()}});
 
-    store.insert(std::move(input));
+    store.insert_and_apply(std::move(input));
     collector.collect_pending(store);
     EXPECT_FALSE(collector.has_pending_attributes());
 
@@ -600,7 +600,7 @@ TEST(TestAttributeCollector, CollectMultipleUnavailableScalars)
         std::string_view expected = "value";
         auto input = object_builder_da::map({{"input_address_0", expected}});
 
-        store.insert(std::move(input));
+        store.insert_and_apply(std::move(input));
 
         EXPECT_TRUE(
             collector.collect(store, get_target_index("input_address_2"), {}, "output_address_2"));
@@ -622,7 +622,7 @@ TEST(TestAttributeCollector, CollectMultipleUnavailableScalars)
 
         std::string_view expected = "value";
         auto input = object_builder_da::map({{"input_address_2", expected}});
-        store.insert(std::move(input));
+        store.insert_and_apply(std::move(input));
 
         collector.collect_pending(store);
         EXPECT_TRUE(collector.has_pending_attributes());
@@ -642,7 +642,7 @@ TEST(TestAttributeCollector, CollectMultipleUnavailableScalars)
         std::string_view expected = "value";
         auto input = object_builder_da::map({{"input_address_1", expected}});
 
-        store.insert(std::move(input));
+        store.insert_and_apply(std::move(input));
 
         collector.collect_pending(store);
         EXPECT_FALSE(collector.has_pending_attributes());
