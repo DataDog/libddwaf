@@ -19,7 +19,7 @@ TEST(TestInputFilter, InputExclusionNoConditions)
     object_store store;
 
     auto root = object_builder_da::map({{"query", "value"}});
-    store.insert(root);
+    store.insert_and_apply(root);
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("query"), "query", {});
@@ -45,7 +45,7 @@ TEST(TestInputFilter, ObjectExclusionNoConditions)
     auto child = root.emplace("query", object_builder_da::map());
     child.emplace("params", "param");
 
-    store.insert(root);
+    store.insert_and_apply(root);
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("query"), "query", {"params"});
@@ -73,7 +73,7 @@ TEST(TestInputFilter, PersistentInputExclusionWithPersistentCondition)
 
     auto root = object_builder_da::map({{"http.client_ip", "192.168.0.1"}});
     object_store store;
-    store.insert(root);
+    store.insert_and_apply(root);
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip", {});
@@ -101,7 +101,7 @@ TEST(TestInputFilter, InputExclusionWithConditionAndTransformers)
     auto root = object_builder_da::map({{"usr.id", "ADMIN"}});
 
     object_store store;
-    store.insert(root);
+    store.insert_and_apply(root);
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("usr.id"), "usr.id", {});
@@ -129,7 +129,7 @@ TEST(TestInputFilter, InputExclusionFailedCondition)
     auto root = object_builder_da::map({{"http.client_ip", "192.168.0.2"}});
 
     object_store store;
-    store.insert(root);
+    store.insert_and_apply(root);
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("http.client_ip"), "http.client_ip", {});
@@ -158,7 +158,7 @@ TEST(TestInputFilter, ObjectExclusionWithCondition)
     auto child = root.emplace("query", object_builder_da::map({{"params", "value"}}));
 
     object_store store;
-    store.insert(root);
+    store.insert_and_apply(root);
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("query"), "query", {"params"});
@@ -188,7 +188,7 @@ TEST(TestInputFilter, ObjectExclusionFailedCondition)
         {"query", object_builder_da::map({{"params", "value"}})}});
 
     object_store store;
-    store.insert(root);
+    store.insert_and_apply(root);
 
     auto obj_filter = std::make_shared<object_filter>();
     obj_filter->insert(get_target_index("query"), "query", {"params"});
@@ -229,7 +229,7 @@ TEST(TestInputFilter, InputValidateCachedMatch)
         auto root = object_builder_da::map({{"http.client_ip", "192.168.0.1"}});
 
         object_store store;
-        store.insert(root);
+        store.insert_and_apply(root);
 
         ddwaf::timer deadline{2s};
         EXPECT_FALSE(filter.match(store, cache, {}, deadline).has_value());
@@ -239,7 +239,7 @@ TEST(TestInputFilter, InputValidateCachedMatch)
         auto root = object_builder_da::map({{"usr.id", "admin"}});
 
         object_store store;
-        store.insert(root);
+        store.insert_and_apply(root);
 
         ddwaf::timer deadline{2s};
         auto opt_spec = filter.match(store, cache, {}, deadline);
@@ -277,19 +277,19 @@ TEST(TestInputFilter, InputValidateCachedSubcontextMatch)
     object_store ctx_store;
 
     {
-        defer cleanup{[&]() { ctx_store.clear_last_batch(); }};
+        defer cleanup{[&]() { ctx_store.flush_input_queue(); }};
 
-        ctx_store.insert(objects[1]);
+        ctx_store.insert_and_apply(objects[1]);
 
         ddwaf::timer deadline{2s};
         ASSERT_FALSE(filter.match(ctx_store, ctx_cache, {}, deadline));
     }
 
     {
-        defer cleanup{[&]() { ctx_store.clear_last_batch(); }};
+        defer cleanup{[&]() { ctx_store.flush_input_queue(); }};
 
         auto sctx_store = object_store::from_upstream_store(ctx_store);
-        sctx_store.insert(objects[0]);
+        sctx_store.insert_and_apply(objects[0]);
 
         input_filter::cache_type sctx_cache = ctx_cache;
         ddwaf::timer deadline{2s};
@@ -301,19 +301,19 @@ TEST(TestInputFilter, InputValidateCachedSubcontextMatch)
     }
 
     {
-        defer cleanup{[&]() { ctx_store.clear_last_batch(); }};
+        defer cleanup{[&]() { ctx_store.flush_input_queue(); }};
 
-        ctx_store.insert(objects[2]);
+        ctx_store.insert_and_apply(objects[2]);
 
         ddwaf::timer deadline{2s};
         ASSERT_FALSE(filter.match(ctx_store, ctx_cache, {}, deadline));
     }
 
     {
-        defer cleanup{[&]() { ctx_store.clear_last_batch(); }};
+        defer cleanup{[&]() { ctx_store.flush_input_queue(); }};
 
         auto sctx_store = object_store::from_upstream_store(ctx_store);
-        sctx_store.insert(objects[3]);
+        sctx_store.insert_and_apply(objects[3]);
 
         input_filter::cache_type sctx_cache = ctx_cache;
         ddwaf::timer deadline{2s};
@@ -348,7 +348,7 @@ TEST(TestInputFilter, InputMatchWithoutCache)
         auto root = object_builder_da::map({{"http.client_ip", "192.168.0.1"}});
 
         object_store store;
-        store.insert(root);
+        store.insert_and_apply(root);
 
         ddwaf::timer deadline{2s};
         input_filter::cache_type cache;
@@ -359,7 +359,7 @@ TEST(TestInputFilter, InputMatchWithoutCache)
         auto root = object_builder_da::map({{"usr.id", "admin"}});
 
         object_store store;
-        store.insert(root);
+        store.insert_and_apply(root);
 
         ddwaf::timer deadline{2s};
         input_filter::cache_type cache;
@@ -395,7 +395,7 @@ TEST(TestInputFilter, InputNoMatchWithoutCache)
     objects.emplace_back(object_builder_da::map({{"usr.id", "admin"}}));
 
     {
-        store.insert(objects[0]);
+        store.insert_and_apply(objects[0]);
 
         ddwaf::timer deadline{2s};
         input_filter::cache_type cache;
@@ -403,7 +403,7 @@ TEST(TestInputFilter, InputNoMatchWithoutCache)
     }
 
     {
-        store.insert(objects[1]);
+        store.insert_and_apply(objects[1]);
 
         auto client_ip_ptr = store.get_target("http.client_ip");
 
@@ -447,8 +447,8 @@ TEST(TestInputFilter, InputCachedMatchSecondRun)
     objects.emplace_back(object_builder_da::map({{"random", "random"}}));
 
     {
-        defer cleanup{[&]() { store.clear_last_batch(); }};
-        store.insert(objects[0]);
+        defer cleanup{[&]() { store.flush_input_queue(); }};
+        store.insert_and_apply(objects[0]);
 
         ddwaf::timer deadline{2s};
         auto opt_spec = filter.match(store, cache, {}, deadline);
@@ -459,8 +459,8 @@ TEST(TestInputFilter, InputCachedMatchSecondRun)
     }
 
     {
-        defer cleanup{[&]() { store.clear_last_batch(); }};
-        store.insert(objects[1]);
+        defer cleanup{[&]() { store.flush_input_queue(); }};
+        store.insert_and_apply(objects[1]);
 
         ddwaf::timer deadline{2s};
         ASSERT_FALSE(filter.match(store, cache, {}, deadline).has_value());
@@ -498,7 +498,7 @@ TEST(TestInputFilter, ObjectValidateCachedMatch)
 
     {
         object_store store;
-        store.insert(objects[0]);
+        store.insert_and_apply(objects[0]);
 
         ddwaf::timer deadline{2s};
         EXPECT_FALSE(filter.match(store, cache, {}, deadline).has_value());
@@ -506,7 +506,7 @@ TEST(TestInputFilter, ObjectValidateCachedMatch)
 
     {
         object_store store;
-        store.insert(objects[1]);
+        store.insert_and_apply(objects[1]);
 
         ddwaf::timer deadline{2s};
         auto opt_spec = filter.match(store, cache, {}, deadline);
@@ -540,7 +540,7 @@ TEST(TestInputFilter, ObjectMatchWithoutCache)
         auto root = object_builder_da::map({{"http.client_ip", "192.168.0.1"},
             {"query", object_builder_da::map({{"params", "value"}})}});
         object_store store;
-        store.insert(root);
+        store.insert_and_apply(root);
 
         ddwaf::timer deadline{2s};
         input_filter::cache_type cache;
@@ -552,7 +552,7 @@ TEST(TestInputFilter, ObjectMatchWithoutCache)
         auto root = object_builder_da::map(
             {{"usr.id", "admin"}, {"query", object_builder_da::map({{"params", "value"}})}});
         object_store store;
-        store.insert(root);
+        store.insert_and_apply(root);
 
         ddwaf::timer deadline{2s};
         input_filter::cache_type cache;
@@ -589,7 +589,7 @@ TEST(TestInputFilter, ObjectNoMatchWithoutCache)
     objects.emplace_back(object_builder_da::map({{"usr.id", "admin"}}));
 
     {
-        store.insert(objects[0]);
+        store.insert_and_apply(objects[0]);
 
         ddwaf::timer deadline{2s};
         input_filter::cache_type cache;
@@ -597,7 +597,7 @@ TEST(TestInputFilter, ObjectNoMatchWithoutCache)
     }
 
     {
-        store.insert(objects[1]);
+        store.insert_and_apply(objects[1]);
 
         ddwaf::timer deadline{2s};
         input_filter::cache_type cache;
@@ -638,8 +638,8 @@ TEST(TestInputFilter, ObjectCachedMatchSecondRun)
     objects.emplace_back(object_builder_da::map({{"random", "random"}}));
 
     {
-        defer cleanup{[&]() { store.clear_last_batch(); }};
-        store.insert(objects[0]);
+        defer cleanup{[&]() { store.flush_input_queue(); }};
+        store.insert_and_apply(objects[0]);
 
         ddwaf::timer deadline{2s};
         auto opt_spec = filter.match(store, cache, {}, deadline);
@@ -649,8 +649,8 @@ TEST(TestInputFilter, ObjectCachedMatchSecondRun)
     }
 
     {
-        defer cleanup{[&]() { store.clear_last_batch(); }};
-        store.insert(objects[1]);
+        defer cleanup{[&]() { store.flush_input_queue(); }};
+        store.insert_and_apply(objects[1]);
 
         ddwaf::timer deadline{2s};
         ASSERT_FALSE(filter.match(store, cache, {}, deadline).has_value());
@@ -685,7 +685,7 @@ TEST(TestInputFilter, MatchWithDynamicMatcher)
         object_store store;
         input_filter::cache_type cache;
 
-        store.insert(objects[0]);
+        store.insert_and_apply(objects[0]);
 
         ddwaf::timer deadline{2s};
         auto opt_spec = filter.match(store, cache, {}, deadline);
@@ -696,7 +696,7 @@ TEST(TestInputFilter, MatchWithDynamicMatcher)
         object_store store;
         input_filter::cache_type cache;
 
-        store.insert(objects[1]);
+        store.insert_and_apply(objects[1]);
 
         std::unordered_map<std::string, std::unique_ptr<matcher::base>> matchers;
         matchers["ip_data"] =

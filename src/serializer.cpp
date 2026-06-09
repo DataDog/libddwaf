@@ -373,7 +373,8 @@ std::pair<owned_object, result_components> result_serializer::initialise_result_
                                           {"duration", owned_object::make_unsigned(0)},
                                           {"timeout", owned_object::make_boolean(false)},
                                           {"attributes", object_builder::map({}, alloc_)},
-                                          {"keep", owned_object::make_boolean(false)}},
+                                          {"keep", owned_object::make_boolean(false)},
+                                          {"evaluated", owned_object::make_unsigned(0)}},
         alloc_);
 
     const result_components res{.events = object.at(0),
@@ -381,7 +382,8 @@ std::pair<owned_object, result_components> result_serializer::initialise_result_
         .duration = object.at(2),
         .timeout = object.at(3),
         .attributes = object.at(4),
-        .keep = object.at(5)};
+        .keep = object.at(5),
+        .evaluated = object.at(6)};
 
     return {std::move(object), res};
 }

@@ -39,7 +39,7 @@ TEST(TestLFIDetector, MatchBasicUnix)
             object_builder_da::map({{"server.io.fs.file", path}, {"server.request.query", input}});
 
         object_store store;
-        store.insert(std::move(root));
+        store.insert_and_apply(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -101,7 +101,7 @@ TEST(TestLFIDetector, MatchBasicWindows)
             object_builder_da::map({{"server.io.fs.file", path}, {"server.request.query", input}});
 
         object_store store;
-        store.insert(std::move(root));
+        store.insert_and_apply(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -129,7 +129,7 @@ TEST(TestLFIDetector, MatchWithKeyPath)
         server.request.query: {array: [ {map: ../etc/passwd}]}})");
 
     object_store store;
-    store.insert(std::move(root));
+    store.insert_and_apply(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -155,13 +155,13 @@ TEST(TestLFIDetector, PartialSubcontextMatch)
     {
         auto root =
             object_builder_da::map({{"server.io.fs.file", "/var/www/html/../../../etc/passwd"}});
-        ctx_store.insert(std::move(root));
+        ctx_store.insert_and_apply(std::move(root));
     }
 
     auto sctx_store = object_store::from_upstream_store(ctx_store);
     {
         auto root = object_builder_da::map({{"server.request.query", "../../../etc/passwd"}});
-        sctx_store.insert(std::move(root));
+        sctx_store.insert_and_apply(std::move(root));
     }
 
     ddwaf::timer deadline{2s};
@@ -199,7 +199,7 @@ TEST(TestLFIDetector, NoMatchUnix)
             object_builder_da::map({{"server.io.fs.file", path}, {"server.request.query", input}});
 
         object_store store;
-        store.insert(std::move(root));
+        store.insert_and_apply(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -236,7 +236,7 @@ TEST(TestLFIDetector, NoMatchWindows)
             object_builder_da::map({{"server.io.fs.file", path}, {"server.request.query", input}});
 
         object_store store;
-        store.insert(std::move(root));
+        store.insert_and_apply(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -258,7 +258,7 @@ TEST(TestLFIDetector, NoMatchExcludedPath)
     std::unordered_set<object_cache_key> exclusion{params_map.at(0)};
 
     object_store store;
-    store.insert(std::move(root));
+    store.insert_and_apply(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -276,7 +276,7 @@ TEST(TestLFIDetector, NoMatchExcludedAddress)
     std::unordered_set<object_cache_key> exclusion{root.at(1)};
 
     object_store store;
-    store.insert(std::move(root));
+    store.insert_and_apply(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -294,7 +294,7 @@ TEST(TestLFIDetector, Timeout)
     std::unordered_set<object_cache_key> exclusion{root.at(1)};
 
     object_store store;
-    store.insert(std::move(root));
+    store.insert_and_apply(std::move(root));
 
     ddwaf::timer deadline{0s};
     condition_cache cache;
@@ -311,7 +311,7 @@ TEST(TestLFIDetector, NoParams)
     });
 
     object_store store;
-    store.insert(std::move(root));
+    store.insert_and_apply(std::move(root));
 
     ddwaf::timer deadline{0s};
     condition_cache cache;

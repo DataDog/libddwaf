@@ -208,12 +208,13 @@ public:
                     // If the object is to be evaluated, we clone it before adding it to the
                     // collector using the user-provided allocator.
                     collector.insert(mapping.output.name, object.clone(alloc));
-                    store.insert(mapping.output.index, mapping.output.name, std::move(object));
+                    store.insert_target(
+                        mapping.output.index, mapping.output.name, std::move(object));
                 } else {
                     collector.insert(mapping.output.name, std::move(object));
                 }
             } else {
-                store.insert(mapping.output.index, mapping.output.name, std::move(object));
+                store.insert_target(mapping.output.index, mapping.output.name, std::move(object));
             }
         }
     }

@@ -263,15 +263,19 @@ DDWAF_RET_CODE ddwaf_context_eval(ddwaf_context context, ddwaf_object *data,
 
     try {
         if (alloc != nullptr) {
-            if (!context->insert(
-                    // safety: caller is responsible to ensure that the passed
-                    // allocator can deallocate memory allocated for `data`
-                    owned_object{to_ref(data), to_alloc_ptr(alloc)})) {
+            // safety: caller is responsible to ensure that the passed allocator
+            // can deallocate memory allocated for `data`. An array carries
+            // multiple input batches, anything else is a single (map) batch.
+            owned_object input{to_ref(data), to_alloc_ptr(alloc)};
+            const bool inserted = object_view{input}.is_array()
+                                      ? context->insert_batches(std::move(input))
+                                      : context->insert_batch(std::move(input));
+            if (!inserted) {
                 return DDWAF_ERR_INVALID_OBJECT;
             }
         } else {
             const object_view input{to_ref(data)};
-            if (!input.is_map() || !context->insert(input.as<map_view>())) {
+            if (!input.is_map() || !context->insert_batch(input.as<map_view>())) {
                 return DDWAF_ERR_INVALID_OBJECT;
             }
         }
@@ -287,6 +291,45 @@ DDWAF_RET_CODE ddwaf_context_eval(ddwaf_context context, ddwaf_object *data,
             // avoid to_borrowed(result, res.alloc()) = std::move(res);
             // as that would destroy the current value in result, which could be
             // garbage (result could be uninitialized memory)
+            *to_ptr(result) = res.move();
+        }
+        return code ? DDWAF_MATCH : DDWAF_OK;
+    } catch (const std::exception &e) {
+        DDWAF_ERROR("{}", e.what());
+    } catch (...) {
+        DDWAF_ERROR("unknown exception");
+    }
+
+    return DDWAF_ERR_INTERNAL;
+}
+
+DDWAF_RET_CODE ddwaf_context_multieval(ddwaf_context context, ddwaf_object *data,
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+    ddwaf_allocator alloc, ddwaf_object *result, uint64_t timeout)
+{
+    if (context == nullptr || data == nullptr) {
+        DDWAF_WARN("Illegal WAF call: context or data was null");
+        return DDWAF_ERR_INVALID_ARGUMENT;
+    }
+
+    try {
+        if (alloc != nullptr) {
+            if (!context->insert_batches(owned_object{to_ref(data), to_alloc_ptr(alloc)})) {
+                return DDWAF_ERR_INVALID_OBJECT;
+            }
+        } else {
+            const object_view input{to_ref(data)};
+            if (!input.is_array() || !context->insert_batches(input.as<array_view>())) {
+                return DDWAF_ERR_INVALID_OBJECT;
+            }
+        }
+
+        constexpr uint64_t max_timeout_us = std::chrono::nanoseconds::max().count() / 1000;
+        timeout = std::min(timeout, max_timeout_us);
+
+        timer deadline{std::chrono::microseconds(timeout)};
+        auto [code, res] = context->eval(deadline);
+        if (result != nullptr) {
             *to_ptr(result) = res.move();
         }
         return code ? DDWAF_MATCH : DDWAF_OK;
@@ -335,20 +378,63 @@ DDWAF_RET_CODE ddwaf_subcontext_eval(ddwaf_subcontext subcontext, ddwaf_object *
 
     try {
         if (alloc != nullptr) {
-            if (!subcontext->insert(
-                    // safety: caller is responsible to ensure that the passed
-                    // allocator can deallocate memory allocated for `data`
-                    owned_object{to_ref(data), to_alloc_ptr(alloc)})) {
+            // safety: caller is responsible to ensure that the passed allocator
+            // can deallocate memory allocated for `data`. An array carries
+            // multiple input batches, anything else is a single (map) batch.
+            owned_object input{to_ref(data), to_alloc_ptr(alloc)};
+            const bool inserted = object_view{input}.is_array()
+                                      ? subcontext->insert_batches(std::move(input))
+                                      : subcontext->insert_batch(std::move(input));
+            if (!inserted) {
                 return DDWAF_ERR_INVALID_OBJECT;
             }
         } else {
             const object_view input{to_ref(data)};
-            if (!input.is_map() || !subcontext->insert(input.as<map_view>())) {
+            if (!input.is_map() || !subcontext->insert_batch(input.as<map_view>())) {
                 return DDWAF_ERR_INVALID_OBJECT;
             }
         }
         // The timers will actually count nanoseconds, std::chrono doesn't
         // deal well with durations being beyond range.
+        constexpr uint64_t max_timeout_us = std::chrono::nanoseconds::max().count() / 1000;
+        timeout = std::min(timeout, max_timeout_us);
+
+        timer deadline{std::chrono::microseconds(timeout)};
+        auto [code, res] = subcontext->eval(deadline);
+        if (result != nullptr) {
+            *to_ptr(result) = res.move();
+        }
+        return code ? DDWAF_MATCH : DDWAF_OK;
+    } catch (const std::exception &e) {
+        DDWAF_ERROR("{}", e.what());
+    } catch (...) {
+        DDWAF_ERROR("unknown exception");
+    }
+
+    return DDWAF_ERR_INTERNAL;
+}
+
+DDWAF_RET_CODE ddwaf_subcontext_multieval(ddwaf_subcontext subcontext, ddwaf_object *data,
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+    ddwaf_allocator alloc, ddwaf_object *result, uint64_t timeout)
+{
+    if (subcontext == nullptr || data == nullptr) {
+        DDWAF_WARN("Illegal WAF call: subcontext or data was null");
+        return DDWAF_ERR_INVALID_ARGUMENT;
+    }
+
+    try {
+        if (alloc != nullptr) {
+            if (!subcontext->insert_batches(owned_object{to_ref(data), to_alloc_ptr(alloc)})) {
+                return DDWAF_ERR_INVALID_OBJECT;
+            }
+        } else {
+            const object_view input{to_ref(data)};
+            if (!input.is_array() || !subcontext->insert_batches(input.as<array_view>())) {
+                return DDWAF_ERR_INVALID_OBJECT;
+            }
+        }
+
         constexpr uint64_t max_timeout_us = std::chrono::nanoseconds::max().count() / 1000;
         timeout = std::min(timeout, max_timeout_us);
 

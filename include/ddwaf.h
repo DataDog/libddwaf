@@ -317,6 +317,12 @@ ddwaf_context ddwaf_context_init(const ddwaf_handle handle, ddwaf_allocator outp
  *                             format: {tag, value}
  *               - keep: whether the data contained herein must override any
  *                       transport sampling through the relevant mechanism.
+ *               - evaluated: an unsigned integer indicating the number of input
+ *                            batches that were fully evaluated. For this single
+ *                            evaluation it is 1 when a non-empty batch was
+ *                            evaluated and 0 otherwise (e.g. an empty input or a
+ *                            timeout before evaluation completed). See
+ *                            ddwaf_context_multieval for the multi-batch case.
  *               This structure must be freed by the caller using the output
  *               allocator provided through ddwaf_context_init. The object will
  *               contain all specified keys when the value returned by
@@ -348,6 +354,90 @@ ddwaf_context ddwaf_context_init(const ddwaf_handle handle, ddwaf_allocator outp
  **/
 DDWAF_RET_CODE ddwaf_context_eval(ddwaf_context context, ddwaf_object *data,
     ddwaf_allocator alloc, ddwaf_object *result,  uint64_t timeout);
+
+/**
+ * Perform multiple matching operations on the provided data, evaluating each
+ * batch in sequence and returning a single combined result.
+ *
+ * This function operates identically to ddwaf_context_eval, with the
+ * distinction that data must be an array of maps. Each element is treated as
+ * a separate input batch and is evaluated in order. Addresses provided in
+ * earlier batches persist in the store and remain available when evaluating
+ * later batches, so a rule that requires multiple addresses can be satisfied
+ * by data spread across different batches within a single call. The result
+ * reflects all events, actions, and attributes accumulated across the entire
+ * sequence of batches.
+ *
+ * @param context WAF context to be used in this run, this will determine the
+ *                ruleset which will be used and it will also ensure that
+ *                parameters are taken into account across runs. (nonnull)
+ *
+ * @param data (nonnull) Array of input batches to evaluate. Each element must
+ *    be a map of {string, <value>} where each key represents the relevant
+ *    address associated to the value, which can be of an arbitrary type. The
+ *    batches are evaluated in order. If the same address appears in multiple
+ *    batches, the later value replaces the earlier one. Passing a non-array
+ *    object will return DDWAF_ERR_INVALID_OBJECT.
+ *    Ownership and lifetime semantics are identical to ddwaf_context_eval:
+ *    the data is stored by the context and the provided allocator is used to
+ *    free it once the context is destroyed.
+ *
+ * @param alloc (nullable) Allocator used to free the data provided. If NULL,
+ *              the data will not be freed.
+ *
+ * @param result (nullable) Object map containing the following items:
+ *               - events: an array of all events generated across all batches.
+ *               - actions: a map of all actions generated across all batches
+ *                          in the format: "{action type: { <parameter map> }, ...}"
+ *               - duration: an unsigned specifying the total runtime of the
+ *                           call in nanoseconds.
+ *               - timeout: whether there has been a timeout during the call.
+ *               - attributes: a map containing all derived objects in the
+ *                             format: {tag, value}
+ *               - keep: whether the data contained herein must override any
+ *                       transport sampling through the relevant mechanism.
+ *               - evaluated: an unsigned integer indicating the number of
+ *                            batches that were fully evaluated. In the normal
+ *                            case this equals the number of non-empty batches.
+ *                            On timeout or error occurring during batch I
+ *                            (0-based, counting only non-empty batches), this
+ *                            value equals I, which is also the index of the
+ *                            batch where the problem occurred. Empty batches are
+ *                            skipped and do not count towards this value.
+ *               This structure must be freed by the caller using the output
+ *               allocator provided through ddwaf_context_init. The object will
+ *               contain all specified keys when the value returned by
+ *               ddwaf_context_multieval is either DDWAF_OK or DDWAF_MATCH and
+ *               will be empty otherwise.
+ *               IMPORTANT: This object is not allocated with the allocator
+ *               passed in this call. It uses the allocator given to
+ *               ddwaf_context_init instead.
+ * @param timeout Maximum time budget in microseconds.
+ *
+ * @return Return code of the operation.
+ * @retval DDWAF_ERR_INVALID_ARGUMENT The context is invalid, the data will not
+ *                                   be freed.
+ * @retval DDWAF_ERR_INVALID_OBJECT The data provided didn't match the desired
+ *                                 structure or contained invalid objects, the
+ *                                 data will be freed by this function.
+ * @retval DDWAF_ERR_INTERNAL There was an unexpected error and the operation did
+ *                           not succeed. The state of the WAF is undefined if
+ *                           this error is produced and the ownership of the
+ *                           data is unknown. The result structure will not be
+ *                           filled if this error occurs.
+ *
+ * Notes on addresses:
+ * - Within a single batch, addresses provided should be unique.
+ *   If duplicate addresses are provided within the same batch, the latest one
+ *   in the structure will be used for evaluation.
+ * - Addresses from earlier batches persist in the store and are accessible
+ *   during evaluation of subsequent batches within the same call. If the same
+ *   address appears in a later batch, the later value replaces the earlier one.
+ * - A rule that requires multiple addresses can be satisfied by data spread
+ *   across different batches within a single call.
+ **/
+DDWAF_RET_CODE ddwaf_context_multieval(ddwaf_context context, ddwaf_object *data,
+    ddwaf_allocator alloc, ddwaf_object *result, uint64_t timeout);
 
 /**
  * Performs the destruction of the context, freeing the data passed to it through
@@ -395,6 +485,12 @@ ddwaf_subcontext ddwaf_subcontext_init(ddwaf_context context);
  *                             format: {tag, value}
  *               - keep: whether the data contained herein must override any
  *                       transport sampling through the relevant mechanism.
+ *               - evaluated: an unsigned integer indicating the number of input
+ *                            batches that were fully evaluated. For this single
+ *                            evaluation it is 1 when a non-empty batch was
+ *                            evaluated and 0 otherwise (e.g. an empty input or a
+ *                            timeout before evaluation completed). See
+ *                            ddwaf_subcontext_multieval for the multi-batch case.
  *               This structure must be freed by the caller and will contain all
  *               specified keys when the value returned by ddwaf_subcontext_eval
  *               is either DDWAF_OK or DDWAF_MATCH and will be empty otherwise.
@@ -424,6 +520,89 @@ ddwaf_subcontext ddwaf_subcontext_init(ddwaf_context context);
  **/
 DDWAF_RET_CODE ddwaf_subcontext_eval(ddwaf_subcontext subcontext, ddwaf_object *data,
     ddwaf_allocator alloc, ddwaf_object *result,  uint64_t timeout);
+
+/**
+ * Perform multiple matching operations on the provided data, evaluating each
+ * batch in sequence and returning a single combined result.
+ *
+ * This function operates identically to ddwaf_subcontext_eval, with the
+ * distinction that data must be an array of maps. Each element is treated as
+ * a separate input batch and is evaluated in order. Addresses provided in
+ * earlier batches persist in the store and remain available when evaluating
+ * later batches, so a rule that requires multiple addresses can be satisfied
+ * by data spread across different batches within a single call. The result
+ * reflects all events, actions, and attributes accumulated across the entire
+ * sequence of batches.
+ *
+ * @param subcontext WAF subcontext to be used in this run, this will determine
+ *                   the ruleset which will be used and it will also ensure that
+ *                   parameters are taken into account across runs. (nonnull)
+ *
+ * @param data (nonnull) Array of input batches to evaluate. Each element must
+ *    be a map of {string, <value>} where each key represents the relevant
+ *    address associated to the value, which can be of an arbitrary type. The
+ *    batches are evaluated in order. If the same address appears in multiple
+ *    batches, the later value replaces the earlier one. Passing a non-array
+ *    object will return DDWAF_ERR_INVALID_OBJECT.
+ *    Ownership and lifetime semantics are identical to ddwaf_subcontext_eval:
+ *    the data is stored by the subcontext and the provided allocator is used
+ *    to free it once the subcontext is destroyed.
+ *
+ * @param alloc (nullable) Allocator used to free the data provided. If NULL,
+ *              the data will not be freed.
+ *
+ * @param result (nullable) Object map containing the following items:
+ *               - events: an array of all events generated across all batches.
+ *               - actions: a map of all actions generated across all batches
+ *                          in the format: "{action type: { <parameter map> }, ...}"
+ *               - duration: an unsigned specifying the total runtime of the
+ *                           call in nanoseconds.
+ *               - timeout: whether there has been a timeout during the call.
+ *               - attributes: a map containing all derived objects in the
+ *                             format: {tag, value}
+ *               - keep: whether the data contained herein must override any
+ *                       transport sampling through the relevant mechanism.
+ *               - evaluated: an unsigned integer indicating the number of
+ *                            batches that were fully evaluated. In the normal
+ *                            case this equals the number of non-empty batches.
+ *                            On timeout or error occurring during batch I
+ *                            (0-based, counting only non-empty batches), this
+ *                            value equals I, which is also the index of the
+ *                            batch where the problem occurred. Empty batches are
+ *                            skipped and do not count towards this value.
+ *               This structure must be freed by the caller and will contain all
+ *               specified keys when the value returned by
+ *               ddwaf_subcontext_multieval is either DDWAF_OK or DDWAF_MATCH
+ *               and will be empty otherwise.
+ *               IMPORTANT: This object is not allocated with the allocator
+ *               passed in this call. It uses the allocator given to
+ *               ddwaf_context_init instead.
+ * @param timeout Maximum time budget in microseconds.
+ *
+ * @return Return code of the operation.
+ * @retval DDWAF_ERR_INVALID_ARGUMENT The subcontext is invalid, the data will
+ *                                   not be freed.
+ * @retval DDWAF_ERR_INVALID_OBJECT The data provided didn't match the desired
+ *                                 structure or contained invalid objects, the
+ *                                 data will be freed by this function.
+ * @retval DDWAF_ERR_INTERNAL There was an unexpected error and the operation did
+ *                           not succeed. The state of the WAF is undefined if
+ *                           this error is produced and the ownership of the
+ *                           data is unknown. The result structure will not be
+ *                           filled if this error occurs.
+ *
+ * Notes on addresses:
+ * - Within a single batch, addresses provided should be unique.
+ *   If duplicate addresses are provided within the same batch, the latest one
+ *   in the structure will be used for evaluation.
+ * - Addresses from earlier batches persist in the store and are accessible
+ *   during evaluation of subsequent batches within the same call. If the same
+ *   address appears in a later batch, the later value replaces the earlier one.
+ * - A rule that requires multiple addresses can be satisfied by data spread
+ *   across different batches within a single call.
+ **/
+DDWAF_RET_CODE ddwaf_subcontext_multieval(ddwaf_subcontext subcontext, ddwaf_object *data,
+    ddwaf_allocator alloc, ddwaf_object *result, uint64_t timeout);
 
 /**
  * Performs the destruction of the subcontext, freeing the data passed to it through
