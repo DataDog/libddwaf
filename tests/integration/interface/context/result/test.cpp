@@ -98,6 +98,35 @@ TEST(TestContextResultIntegration, ResultInvalidObjectInvalidPersistentDataSchem
     ddwaf_destroy(handle);
 }
 
+TEST(TestContextResultIntegration, ResultInvalidObjectInvalidPersistentDataSchemaNullAlloc)
+{
+    auto *alloc = ddwaf_get_default_allocator();
+    auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_destroy(&rule, alloc);
+
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
+    ASSERT_NE(context, nullptr);
+
+    ddwaf_object persistent;
+    ddwaf_object_set_array(&persistent, 1, alloc);
+    ddwaf_object_set_string(ddwaf_object_insert(&persistent, alloc), STRL("rule1"), alloc);
+
+    ddwaf_object result;
+    ddwaf_object_set_invalid(&result);
+
+    EXPECT_EQ(ddwaf_context_eval(context, &persistent, nullptr, &result, LONG_TIME),
+        DDWAF_ERR_INVALID_OBJECT);
+    EXPECT_EQ(ddwaf_object_get_type(&result), DDWAF_OBJ_INVALID);
+
+    ddwaf_object_destroy(&persistent, alloc);
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
+
 TEST(TestContextResultIntegration, ResultInvalidObjectInvalidSubcontextDataSchema)
 {
     auto *alloc = ddwaf_get_default_allocator();
@@ -127,6 +156,37 @@ TEST(TestContextResultIntegration, ResultInvalidObjectInvalidSubcontextDataSchem
     ddwaf_subcontext_destroy(subctx);
 
     // The ephemeral object, even though invalid, is freed on context destruction
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
+
+TEST(TestContextResultIntegration, ResultInvalidObjectInvalidSubcontextDataSchemaNullAlloc)
+{
+    auto *alloc = ddwaf_get_default_allocator();
+    auto rule = read_file<ddwaf_object>("interface.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_destroy(&rule, alloc);
+
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
+    ASSERT_NE(context, nullptr);
+
+    ddwaf_object ephemeral;
+    ddwaf_object_set_array(&ephemeral, 1, alloc);
+    ddwaf_object_set_string(ddwaf_object_insert(&ephemeral, alloc), STRL("rule1"), alloc);
+
+    ddwaf_object result;
+    ddwaf_object_set_invalid(&result);
+
+    auto *subctx = ddwaf_subcontext_init(context);
+    EXPECT_EQ(ddwaf_subcontext_eval(subctx, &ephemeral, nullptr, &result, LONG_TIME),
+        DDWAF_ERR_INVALID_OBJECT);
+    EXPECT_EQ(ddwaf_object_get_type(&result), DDWAF_OBJ_INVALID);
+    ddwaf_subcontext_destroy(subctx);
+
+    ddwaf_object_destroy(&ephemeral, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }

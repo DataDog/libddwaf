@@ -70,6 +70,14 @@ TEST(TestObjectStore, InsertAndGetObject)
     EXPECT_FALSE(store.get_target(url).has_value());
 }
 
+TEST(TestObjectStore, InsertAndApplyInvalidObject)
+{
+    object_store store;
+    EXPECT_FALSE(store.insert_and_apply(owned_object{}));
+    EXPECT_TRUE(store.empty());
+    EXPECT_FALSE(store.next_batch());
+}
+
 TEST(TestObjectStore, InsertAndGetSubcontextObject)
 {
     auto query = get_target_index("query");
@@ -152,6 +160,38 @@ TEST(TestObjectStore, InsertMultipleUniqueObjects)
     EXPECT_FALSE(ctx_store.is_new_target(url));
     EXPECT_TRUE(ctx_store.get_target(query).has_value());
     EXPECT_FALSE(ctx_store.get_target(url).has_value());
+}
+
+TEST(TestObjectStore, InsertBatchesWithInvalidElement)
+{
+    object_store store;
+
+    auto batches =
+        object_builder_da::array({object_builder_da::map({{"query", "hello"}}), "invalid"});
+    EXPECT_FALSE(store.insert_batches(object_view{batches}.as<array_view>()));
+    EXPECT_FALSE(store.next_batch());
+    EXPECT_TRUE(store.empty());
+}
+
+TEST(TestObjectStore, FlushAppliesQueuedBatchesWithoutMarkingNewTargets)
+{
+    object_store store;
+
+    auto batches = object_builder_da::array(
+        {object_builder_da::map({{"query", "hello"}}), object_builder_da::map({{"url", "world"}})});
+    ASSERT_TRUE(store.insert_batches(std::move(batches)));
+
+    EXPECT_FALSE(store.empty());
+    EXPECT_FALSE(store.has_new_targets());
+    EXPECT_FALSE(store.get_target("query").has_value());
+    EXPECT_FALSE(store.get_target("url").has_value());
+
+    store.flush_input_queue();
+
+    EXPECT_TRUE(store.get_target("query").has_value());
+    EXPECT_TRUE(store.get_target("url").has_value());
+    EXPECT_FALSE(store.has_new_targets());
+    EXPECT_FALSE(store.next_batch());
 }
 
 TEST(TestObjectStore, InsertMultipleUniqueObjectBatches)

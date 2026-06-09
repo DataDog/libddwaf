@@ -6,12 +6,16 @@
 
 #include "common/gtest_utils.hpp"
 #include "ddwaf.h"
+#include <stdexcept>
 
 using namespace ddwaf;
 
 namespace {
 
 constexpr std::string_view base_dir = "integration/interface/context/multieval/";
+
+void *throwing_alloc(void *, size_t, size_t) { throw std::runtime_error("allocation failure"); }
+void noop_free(void *, void *, size_t, size_t) {}
 
 //------------------------------------------------------------------------------
 // ddwaf_context_multieval tests
@@ -88,6 +92,69 @@ TEST(TestContextMultievalIntegration, InvalidArgumentNotArray)
     ddwaf_object_destroy(&data, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
+}
+
+TEST(TestContextMultievalIntegration, InvalidArgumentNotArrayWithNullAlloc)
+{
+    auto *alloc = ddwaf_get_default_allocator();
+    auto rule = read_file<ddwaf_object>("rules.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_destroy(&rule, alloc);
+
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
+    ASSERT_NE(context, nullptr);
+
+    ddwaf_object data;
+    ddwaf_object_set_map(&data, 0, alloc);
+
+    ddwaf_object result;
+    ddwaf_object_set_invalid(&result);
+
+    EXPECT_EQ(ddwaf_context_multieval(context, &data, nullptr, &result, LONG_TIME),
+        DDWAF_ERR_INVALID_OBJECT);
+
+    ddwaf_object_destroy(&data, alloc);
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
+
+TEST(TestContextMultievalIntegration, InternalErrorWhenInputAllocatorThrows)
+{
+    auto *alloc = ddwaf_get_default_allocator();
+    auto *throwing_alloc_handle =
+        ddwaf_user_allocator_init(throwing_alloc, noop_free, nullptr, nullptr);
+    ASSERT_NE(throwing_alloc_handle, nullptr);
+
+    auto rule = read_file<ddwaf_object>("rules.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_destroy(&rule, alloc);
+
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
+    ASSERT_NE(context, nullptr);
+
+    ddwaf_object data;
+    ddwaf_object_set_array(&data, 1, alloc);
+    ddwaf_object *elem = ddwaf_object_insert(&data, alloc);
+    ddwaf_object_set_map(elem, 1, alloc);
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(elem, STRL("value1"), alloc), STRL("rule1"), alloc);
+
+    ddwaf_object result;
+    ddwaf_object_set_invalid(&result);
+
+    EXPECT_EQ(ddwaf_context_multieval(context, &data, throwing_alloc_handle, &result, LONG_TIME),
+        DDWAF_ERR_INTERNAL);
+
+    ddwaf_object_destroy(&data, alloc);
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+    ddwaf_allocator_destroy(throwing_alloc_handle);
 }
 
 TEST(TestContextMultievalIntegration, SingleMapNoMatch)
@@ -706,6 +773,77 @@ TEST(TestSubcontextMultievalIntegration, InvalidArgumentNotArray)
     ddwaf_subcontext_destroy(subctx);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
+}
+
+TEST(TestSubcontextMultievalIntegration, InvalidArgumentNotArrayWithNullAlloc)
+{
+    auto *alloc = ddwaf_get_default_allocator();
+    auto rule = read_file<ddwaf_object>("rules.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_destroy(&rule, alloc);
+
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
+    ASSERT_NE(context, nullptr);
+
+    ddwaf_subcontext subctx = ddwaf_subcontext_init(context);
+    ASSERT_NE(subctx, nullptr);
+
+    ddwaf_object data;
+    ddwaf_object_set_map(&data, 0, alloc);
+
+    ddwaf_object result;
+    ddwaf_object_set_invalid(&result);
+
+    EXPECT_EQ(ddwaf_subcontext_multieval(subctx, &data, nullptr, &result, LONG_TIME),
+        DDWAF_ERR_INVALID_OBJECT);
+
+    ddwaf_object_destroy(&data, alloc);
+    ddwaf_subcontext_destroy(subctx);
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
+
+TEST(TestSubcontextMultievalIntegration, InternalErrorWhenInputAllocatorThrows)
+{
+    auto *alloc = ddwaf_get_default_allocator();
+    auto *throwing_alloc_handle =
+        ddwaf_user_allocator_init(throwing_alloc, noop_free, nullptr, nullptr);
+    ASSERT_NE(throwing_alloc_handle, nullptr);
+
+    auto rule = read_file<ddwaf_object>("rules.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_destroy(&rule, alloc);
+
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
+    ASSERT_NE(context, nullptr);
+
+    ddwaf_subcontext subctx = ddwaf_subcontext_init(context);
+    ASSERT_NE(subctx, nullptr);
+
+    ddwaf_object data;
+    ddwaf_object_set_array(&data, 1, alloc);
+    ddwaf_object *elem = ddwaf_object_insert(&data, alloc);
+    ddwaf_object_set_map(elem, 1, alloc);
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(elem, STRL("value1"), alloc), STRL("rule1"), alloc);
+
+    ddwaf_object result;
+    ddwaf_object_set_invalid(&result);
+
+    EXPECT_EQ(ddwaf_subcontext_multieval(subctx, &data, throwing_alloc_handle, &result, LONG_TIME),
+        DDWAF_ERR_INTERNAL);
+
+    ddwaf_object_destroy(&data, alloc);
+    ddwaf_subcontext_destroy(subctx);
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+    ddwaf_allocator_destroy(throwing_alloc_handle);
 }
 
 TEST(TestSubcontextMultievalIntegration, SingleMapNoMatch)

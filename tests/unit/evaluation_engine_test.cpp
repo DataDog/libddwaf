@@ -2189,4 +2189,32 @@ TEST(TestEvaluationEngine, InputFilterMultipleRulesMultipleFiltersMultipleObject
     }
 }
 
+TEST(TestEvaluationEngine, ContextAndSubcontextMapViewInsertBatch)
+{
+    test::ruleset_builder rbuilder{};
+    context ctx{rbuilder.build()};
+
+    auto root = object_builder_da::map({{"value", "hello"}});
+    EXPECT_TRUE(ctx.insert_batch(object_view{root}.as<map_view>()));
+    EXPECT_TRUE(ctx.next_batch());
+
+    auto sctx = ctx.create_subcontext();
+    auto ephemeral = object_builder_da::map({{"ephemeral", "world"}});
+    EXPECT_TRUE(sctx.insert_batch(object_view{ephemeral}.as<map_view>()));
+    EXPECT_TRUE(sctx.next_batch());
+}
+
+TEST(TestEvaluationEngine, ContextAndSubcontextArrayViewInsertBatchesInvalid)
+{
+    test::ruleset_builder rbuilder{};
+    context ctx{rbuilder.build()};
+
+    auto invalid_batches =
+        object_builder_da::array({object_builder_da::map({{"value", "hello"}}), "bad"});
+    EXPECT_FALSE(ctx.insert_batches(object_view{invalid_batches}.as<array_view>()));
+
+    auto sctx = ctx.create_subcontext();
+    EXPECT_FALSE(sctx.insert_batches(object_view{invalid_batches}.as<array_view>()));
+}
+
 } // namespace
