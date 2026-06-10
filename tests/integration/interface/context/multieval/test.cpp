@@ -85,7 +85,6 @@ TEST(TestContextMultievalIntegration, InvalidArgumentNotArray)
     EXPECT_EQ(ddwaf_context_multieval(context, &data, alloc, &result, LONG_TIME),
         DDWAF_ERR_INVALID_OBJECT);
 
-    ddwaf_object_destroy(&data, alloc);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);
 }
@@ -702,7 +701,6 @@ TEST(TestSubcontextMultievalIntegration, InvalidArgumentNotArray)
     EXPECT_EQ(ddwaf_subcontext_multieval(subctx, &data, alloc, &result, LONG_TIME),
         DDWAF_ERR_INVALID_OBJECT);
 
-    ddwaf_object_destroy(&data, alloc);
     ddwaf_subcontext_destroy(subctx);
     ddwaf_context_destroy(context);
     ddwaf_destroy(handle);

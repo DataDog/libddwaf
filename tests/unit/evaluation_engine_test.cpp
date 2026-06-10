@@ -751,7 +751,7 @@ TEST(TestEvaluationEngine, RuleFilterWithSubcontextConditionMatch)
         auto persistent = object_builder_da::map({{"usr.id", "admin"}});
         auto ephemeral = object_builder_da::map({{"http.client_ip", "192.168.0.1"}});
 
-        EXPECT_TRUE(ctx.insert_batch(std::move(persistent)));
+        EXPECT_TRUE(ctx.insert_and_apply(std::move(persistent)));
 
         auto sctx = ctx.create_subcontext();
         EXPECT_TRUE(sctx.insert_batch(std::move(ephemeral)));
@@ -820,7 +820,7 @@ TEST(TestEvaluationEngine, OverlappingRuleFiltersSubcontextBypassPersistentMonit
         auto persistent = object_builder_da::map({{"usr.id", "admin"}, {"http.route", "unrouted"}});
         auto ephemeral = object_builder_da::map({{"http.client_ip", "192.168.0.1"}});
 
-        EXPECT_TRUE(ctx.insert_batch(std::move(persistent)));
+        EXPECT_TRUE(ctx.insert_and_apply(std::move(persistent)));
 
         auto sctx = ctx.create_subcontext();
         EXPECT_TRUE(sctx.insert_batch(std::move(ephemeral)));
@@ -892,7 +892,7 @@ TEST(TestEvaluationEngine, OverlappingRuleFiltersSubcontextMonitorPersistentBypa
         auto persistent = object_builder_da::map({{"usr.id", "admin"}, {"http.route", "unrouted"}});
         auto ephemeral = object_builder_da::map({{"http.client_ip", "192.168.0.1"}});
 
-        EXPECT_TRUE(ctx.insert_batch(std::move(persistent)));
+        EXPECT_TRUE(ctx.insert_and_apply(std::move(persistent)));
 
         auto sctx = ctx.create_subcontext();
         EXPECT_TRUE(sctx.insert_batch(std::move(ephemeral)));
@@ -1751,7 +1751,7 @@ TEST(TestEvaluationEngine, InputFilterWithSubcontextCondition)
         auto persistent = object_builder_da::map({{"http.client_ip", "192.168.0.1"}});
         auto ephemeral = object_builder_da::map({{"usr.id", "admin"}});
 
-        EXPECT_TRUE(ctx.insert_batch(std::move(persistent)));
+        EXPECT_TRUE(ctx.insert_and_apply(std::move(persistent)));
 
         auto sctx = ctx.create_subcontext();
 
