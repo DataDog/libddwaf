@@ -284,7 +284,9 @@ The subcontext follows the same lifecycle pattern as the context:
 2. **Evaluate**: `ddwaf_subcontext_eval(subctx, data, alloc, result, timeout)` - Evaluates data which must be valid during the lifecycle of the subcontext.
 3. **Destroy**: `ddwaf_subcontext_destroy(subctx)` - Cleans up subcontext.
 
-Note that the subcontext inherits the output allocator of the parent context.
+Some things to consider:
+- The subcontext inherits the output allocator of the parent context.
+- In this version (v2.0) the subcontext is independent of the context, meaning that the context may be destroyed before the subcontext. Any shared objects are reference counted and freed when the last subcontext or context is destroyed.
 
 ### Multiple Subcontexts
 
