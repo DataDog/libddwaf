@@ -16,7 +16,6 @@ constexpr std::string_view base_dir = "integration/interface/context/multieval/"
 
 void *throwing_alloc(void *, size_t, size_t) { throw std::runtime_error("allocation failure"); }
 void noop_free(void *, void *, size_t, size_t) {}
-
 //------------------------------------------------------------------------------
 // ddwaf_context_multieval tests
 //------------------------------------------------------------------------------
@@ -156,7 +155,6 @@ TEST(TestContextMultievalIntegration, InternalErrorWhenInputAllocatorThrows)
     ddwaf_destroy(handle);
     ddwaf_allocator_destroy(throwing_alloc_handle);
 }
-
 TEST(TestContextMultievalIntegration, SingleMapNoMatch)
 {
     auto *alloc = ddwaf_get_default_allocator();
@@ -845,7 +843,6 @@ TEST(TestSubcontextMultievalIntegration, InternalErrorWhenInputAllocatorThrows)
     ddwaf_destroy(handle);
     ddwaf_allocator_destroy(throwing_alloc_handle);
 }
-
 TEST(TestSubcontextMultievalIntegration, SingleMapNoMatch)
 {
     auto *alloc = ddwaf_get_default_allocator();

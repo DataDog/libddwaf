@@ -267,10 +267,7 @@ DDWAF_RET_CODE ddwaf_context_eval(ddwaf_context context, ddwaf_object *data,
             // can deallocate memory allocated for `data`. An array carries
             // multiple input batches, anything else is a single (map) batch.
             owned_object input{to_ref(data), to_alloc_ptr(alloc)};
-            const bool inserted = object_view{input}.is_array()
-                                      ? context->insert_batches(std::move(input))
-                                      : context->insert_batch(std::move(input));
-            if (!inserted) {
+            if (!context->insert_batch(std::move(input))) {
                 return DDWAF_ERR_INVALID_OBJECT;
             }
         } else {
@@ -382,10 +379,7 @@ DDWAF_RET_CODE ddwaf_subcontext_eval(ddwaf_subcontext subcontext, ddwaf_object *
             // can deallocate memory allocated for `data`. An array carries
             // multiple input batches, anything else is a single (map) batch.
             owned_object input{to_ref(data), to_alloc_ptr(alloc)};
-            const bool inserted = object_view{input}.is_array()
-                                      ? subcontext->insert_batches(std::move(input))
-                                      : subcontext->insert_batch(std::move(input));
-            if (!inserted) {
+            if (!subcontext->insert_batch(std::move(input))) {
                 return DDWAF_ERR_INVALID_OBJECT;
             }
         } else {
