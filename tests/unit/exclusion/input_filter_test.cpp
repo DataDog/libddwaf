@@ -277,7 +277,7 @@ TEST(TestInputFilter, InputValidateCachedSubcontextMatch)
     object_store ctx_store;
 
     {
-        defer cleanup{[&]() { ctx_store.flush_input_queue(); }};
+        defer cleanup{[&]() { ctx_store.clear_latest_batch(); }};
 
         ctx_store.insert_and_apply(objects[1]);
 
@@ -286,7 +286,7 @@ TEST(TestInputFilter, InputValidateCachedSubcontextMatch)
     }
 
     {
-        defer cleanup{[&]() { ctx_store.flush_input_queue(); }};
+        defer cleanup{[&]() { ctx_store.clear_latest_batch(); }};
 
         auto sctx_store = object_store::from_upstream_store(ctx_store);
         sctx_store.insert_and_apply(objects[0]);
@@ -301,7 +301,7 @@ TEST(TestInputFilter, InputValidateCachedSubcontextMatch)
     }
 
     {
-        defer cleanup{[&]() { ctx_store.flush_input_queue(); }};
+        defer cleanup{[&]() { ctx_store.clear_latest_batch(); }};
 
         ctx_store.insert_and_apply(objects[2]);
 
@@ -310,7 +310,7 @@ TEST(TestInputFilter, InputValidateCachedSubcontextMatch)
     }
 
     {
-        defer cleanup{[&]() { ctx_store.flush_input_queue(); }};
+        defer cleanup{[&]() { ctx_store.clear_latest_batch(); }};
 
         auto sctx_store = object_store::from_upstream_store(ctx_store);
         sctx_store.insert_and_apply(objects[3]);
@@ -447,7 +447,7 @@ TEST(TestInputFilter, InputCachedMatchSecondRun)
     objects.emplace_back(object_builder_da::map({{"random", "random"}}));
 
     {
-        defer cleanup{[&]() { store.flush_input_queue(); }};
+        defer cleanup{[&]() { store.clear_latest_batch(); }};
         store.insert_and_apply(objects[0]);
 
         ddwaf::timer deadline{2s};
@@ -459,7 +459,7 @@ TEST(TestInputFilter, InputCachedMatchSecondRun)
     }
 
     {
-        defer cleanup{[&]() { store.flush_input_queue(); }};
+        defer cleanup{[&]() { store.clear_latest_batch(); }};
         store.insert_and_apply(objects[1]);
 
         ddwaf::timer deadline{2s};
@@ -638,7 +638,7 @@ TEST(TestInputFilter, ObjectCachedMatchSecondRun)
     objects.emplace_back(object_builder_da::map({{"random", "random"}}));
 
     {
-        defer cleanup{[&]() { store.flush_input_queue(); }};
+        defer cleanup{[&]() { store.clear_latest_batch(); }};
         store.insert_and_apply(objects[0]);
 
         ddwaf::timer deadline{2s};
@@ -649,7 +649,7 @@ TEST(TestInputFilter, ObjectCachedMatchSecondRun)
     }
 
     {
-        defer cleanup{[&]() { store.flush_input_queue(); }};
+        defer cleanup{[&]() { store.clear_latest_batch(); }};
         store.insert_and_apply(objects[1]);
 
         ddwaf::timer deadline{2s};

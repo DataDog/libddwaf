@@ -10,6 +10,7 @@
 #include "object.hpp"
 #include "target_address.hpp"
 #include <string_view>
+#include <utility>
 
 namespace ddwaf {
 
@@ -23,48 +24,51 @@ public:
     object_store &operator=(const object_store &other) = delete;
     object_store &operator=(object_store &&) = default;
 
-    // Enqueue a single batch of input addresses (a map). The batch is not
-    // applied to the store until consumed via next_batch(); a batch with no
-    // addresses is accepted as a harmless no-op. Returns false if the object is
-    // not a map.
-    bool insert_batch(owned_object &&input);
-    bool insert_batch(map_view input);
+    // Take ownership of an input object so that views into it remain valid for
+    // the lifetime of the store; returns a view over the stored object. This
+    // registers no targets.
+    object_view insert(owned_object &&input)
+    {
+        return input_objects_.emplace_back(std::move(input));
+    }
 
-    // Enqueue a sequence of input batches: an array whose every element is a
-    // map, each queued as a separate batch. Returns false if the object is not
-    // an array or any element is not a map.
-    bool insert_batches(owned_object &&input);
-    bool insert_batches(array_view input);
-    // Insert a single derived target (e.g. produced by a processor) directly,
-    // marking it as new. Unlike the batch insert overloads above this takes
-    // effect immediately rather than being queued.
-    bool insert_target(target_index target, std::string_view key, owned_object &&input);
+    // Apply a batch of addresses (a map) to the store's targets. When mark_new
+    // is true the addresses are added to the new-target set and will be
+    // evaluated. The map must be backed by storage that outlives the store
+    // (e.g. an object owned via insert, or caller-owned input).
+    void apply(map_view batch, bool mark_new = true);
 
-    // Consume the next queued input batch, applying its addresses to the store
-    // and marking them as new. Returns false once the queue is drained.
-    bool next_batch();
-
-    // Enqueue and immediately apply a single batch. Used for testing only.
+    // Own and apply a single batch as a self-contained unit: the previous
+    // new-target set is reset first, then the batch is applied as new. An empty
+    // batch only performs the reset. Returns false if the object is not a map.
     bool insert_and_apply(owned_object &&input)
     {
-        if (!insert_batch(std::move(input))) {
+        const object_view view = insert(std::move(input));
+        if (!view.is_map()) {
             return false;
         }
-        next_batch();
-        return true;
+        return insert_and_apply(map_view{view});
     }
+
     bool insert_and_apply(map_view input)
     {
-        insert_batch(input);
-        next_batch();
+        clear_latest_batch();
+        apply(input, /*mark_new=*/true);
         return true;
     }
 
-    // Apply any remaining queued batches as targets *without* marking them as
-    // new (so they won't be evaluated) and clear the new-target set. Invoked
-    // once evaluation finishes, on any exit path including a timeout, mirroring
-    // the inputs being carried over to a subsequent ddwaf_context_eval call.
-    void flush_input_queue();
+    // Own and register a single derived target (e.g. produced by a processor),
+    // flagging it as new. Unlike insert_and_apply this does not reset the
+    // new-target set, since derived targets accumulate within the current batch.
+    bool insert_and_apply(target_index target, std::string_view key, owned_object &&input)
+    {
+        register_target(target, key, insert(std::move(input)), /*mark_new=*/true);
+        return true;
+    }
+
+    // Reset the new-target set at a batch boundary so the next batch can
+    // identify newly-provided addresses; the targets themselves are retained.
+    void clear_latest_batch() { latest_batch_.clear(); }
 
     [[nodiscard]] object_view get_target(target_index target) const
     {
@@ -101,16 +105,12 @@ public:
     }
 
 private:
-    // Append a single input batch to the queue, ignoring empty batches.
-    void enqueue_batch(map_view input);
-
-    // Apply a single input batch's addresses to the store. When mark_new is
-    // true the addresses are added to the new-target set and will be evaluated.
-    void apply_batch(map_view input, bool mark_new);
+    // Register a single resolved target, optionally flagging it as new. Shared
+    // by apply and insert_and_apply.
+    void register_target(
+        target_index target, std::string_view key, object_view value, bool mark_new);
 
     memory::list<owned_object> input_objects_;
-
-    memory::list<map_view> object_queue_;
     memory::unordered_set<target_index> latest_batch_;
     memory::unordered_map<target_index, object_view> targets_;
 };

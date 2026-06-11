@@ -38,7 +38,7 @@ TEST(TestRule, Match)
 
     core_rule::cache_type cache;
     {
-        defer cleanup{[&]() { store.flush_input_queue(); }};
+        defer cleanup{[&]() { store.clear_latest_batch(); }};
         store.insert_and_apply(root.clone(memory::get_default_resource()));
 
         auto [verdict, result] = rule.match(store, cache, {}, {}, deadline);

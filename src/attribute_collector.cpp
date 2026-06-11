@@ -35,6 +35,17 @@ bool attribute_collector::insert(std::string_view key, owned_object &&object)
     return true;
 }
 
+bool attribute_collector::insert_or_assign(std::string_view key, owned_object &&object)
+{
+    if (pending_.contains(key)) {
+        // If the attribute was pending, it no longer is
+        pending_.erase(key);
+    }
+
+    insert_helper(key, std::move(object));
+    return true;
+}
+
 bool attribute_collector::collect(const object_store &store, target_index input_target,
     std::span<const std::variant<std::string, int64_t>> input_key_path,
     std::string_view attribute_key)
@@ -88,14 +99,14 @@ attribute_collector::collection_state attribute_collector::collect_helper(const 
     }
 
     if (resolved.is_scalar()) {
-        insert_helper(attribute_key, resolved.clone(attributes_.alloc()));
+        insert_helper(attribute_key, resolved.clone(alloc_));
         return collection_state::success;
     }
 
     if (resolved.is_array() && !resolved.empty()) {
         auto candidate = resolved.at_value(0);
         if (candidate.is_scalar()) {
-            insert_helper(attribute_key, candidate.clone(attributes_.alloc()));
+            insert_helper(attribute_key, candidate.clone(alloc_));
             return collection_state::success;
         }
     }
@@ -104,9 +115,8 @@ attribute_collector::collection_state attribute_collector::collect_helper(const 
 
 void attribute_collector::insert_helper(std::string_view key, owned_object &&object)
 {
-    attributes_.emplace(key, std::move(object));
+    inserted_.insert_or_assign(key, std::move(object));
     DDWAF_DEBUG("Collected attribute: {}", key);
-    inserted_.insert(key);
 }
 
 } // namespace ddwaf

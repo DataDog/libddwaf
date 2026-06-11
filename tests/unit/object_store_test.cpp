@@ -20,9 +20,9 @@ TEST(TestObjectStore, InsertInvalidObject)
     auto url = get_target_index("url");
 
     object_store store;
-    // An empty owned_object is not a map, so insert_batch returns false and
-    // nothing is queued; no next_batch() call needed.
-    store.insert_batch(owned_object{});
+    // An empty owned_object is not a map, so insert returns false and
+    // the store is left untouched.
+    store.insert_and_apply(owned_object{});
 
     EXPECT_TRUE(store.empty());
     EXPECT_FALSE(store.has_new_targets());
@@ -39,9 +39,9 @@ TEST(TestObjectStore, InsertStringObject)
 
     object_store store;
 
-    // A string is not a map, so insert_batch returns false and nothing is
-    // queued; no next_batch() call needed.
-    store.insert_batch(test::ddwaf_object_da::make_string("hello"));
+    // A string is not a map, so insert returns false and the store is
+    // left untouched.
+    store.insert_and_apply(test::ddwaf_object_da::make_string("hello"));
 
     EXPECT_TRUE(store.empty());
     EXPECT_FALSE(store.has_new_targets());
@@ -77,7 +77,7 @@ TEST(TestObjectStore, InsertAndGetSubcontextObject)
 
     object_store ctx_store;
     {
-        defer cleanup{[&]() { ctx_store.flush_input_queue(); }};
+        defer cleanup{[&]() { ctx_store.clear_latest_batch(); }};
 
         auto root = test::ddwaf_object_da::make_map();
         root.emplace("query", test::ddwaf_object_da::make_string("hello"));
@@ -132,8 +132,8 @@ TEST(TestObjectStore, InsertMultipleUniqueObjects)
     }
 
     {
-        // An empty owned_object is not a map, so nothing is queued; latest_batch_
-        // still contains query from the first insert above.
+        // An empty map resets the new-target set (clearing query from the first
+        // insert above) and is otherwise a no-op.
         ctx_store.insert_and_apply(object_builder_da::map({}));
 
         EXPECT_FALSE(ctx_store.empty());
@@ -144,7 +144,7 @@ TEST(TestObjectStore, InsertMultipleUniqueObjects)
         EXPECT_FALSE(ctx_store.get_target(url).has_value());
     }
 
-    ctx_store.flush_input_queue();
+    ctx_store.clear_latest_batch();
 
     EXPECT_FALSE(ctx_store.empty());
     EXPECT_FALSE(ctx_store.has_new_targets());
@@ -161,7 +161,7 @@ TEST(TestObjectStore, InsertMultipleUniqueObjectBatches)
 
     object_store store;
     {
-        defer cleanup{[&]() { store.flush_input_queue(); }};
+        defer cleanup{[&]() { store.clear_latest_batch(); }};
 
         auto first = test::ddwaf_object_da::make_map();
         first.emplace("query", test::ddwaf_object_da::make_string("hello"));
@@ -177,7 +177,7 @@ TEST(TestObjectStore, InsertMultipleUniqueObjectBatches)
     }
 
     {
-        defer cleanup{[&]() { store.flush_input_queue(); }};
+        defer cleanup{[&]() { store.clear_latest_batch(); }};
 
         auto second = test::ddwaf_object_da::make_map();
         second.emplace("url", test::ddwaf_object_da::make_string("hello"));
@@ -193,12 +193,12 @@ TEST(TestObjectStore, InsertMultipleUniqueObjectBatches)
     }
 
     {
-        defer cleanup{[&]() { store.flush_input_queue(); }};
+        defer cleanup{[&]() { store.clear_latest_batch(); }};
 
-        // An empty owned_object is not a map, so nothing is queued; latest_batch_
-        // was already cleared by the previous flush_input_queue().
+        // An empty owned_object is not a map, so insert is a no-op;
+        // latest_batch_ was already cleared by the previous clear_latest_batch().
         owned_object third = owned_object{};
-        store.insert_batch(std::move(third));
+        store.insert_and_apply(std::move(third));
         EXPECT_FALSE(store.empty());
         EXPECT_FALSE(store.has_new_targets());
         EXPECT_FALSE(store.is_new_target(query));
@@ -215,7 +215,7 @@ TEST(TestObjectStore, InsertMultipleOverlappingObjects)
 
     object_store store;
     {
-        defer cleanup{[&]() { store.flush_input_queue(); }};
+        defer cleanup{[&]() { store.clear_latest_batch(); }};
 
         auto first = test::ddwaf_object_da::make_map();
         first.emplace("query", test::ddwaf_object_da::make_string("hello"));
@@ -235,7 +235,7 @@ TEST(TestObjectStore, InsertMultipleOverlappingObjects)
     }
 
     {
-        defer cleanup{[&]() { store.flush_input_queue(); }};
+        defer cleanup{[&]() { store.clear_latest_batch(); }};
 
         // Reinsert query
         auto second = test::ddwaf_object_da::make_map();
@@ -264,7 +264,7 @@ TEST(TestObjectStore, InsertMultipleOverlappingObjects)
     }
 
     {
-        defer cleanup{[&]() { store.flush_input_queue(); }};
+        defer cleanup{[&]() { store.clear_latest_batch(); }};
         // Reinsert url
         auto third = test::ddwaf_object_da::make_map();
         third.emplace("url", test::ddwaf_object_da::make_string("bye"));
@@ -290,7 +290,7 @@ TEST(TestObjectStore, InsertSingleTargets)
 
     object_store ctx_store;
 
-    ctx_store.insert_target(query, "query", test::ddwaf_object_da::make_string("hello"));
+    ctx_store.insert_and_apply(query, "query", test::ddwaf_object_da::make_string("hello"));
 
     EXPECT_FALSE(ctx_store.empty());
     EXPECT_TRUE(ctx_store.has_new_targets());
@@ -301,7 +301,7 @@ TEST(TestObjectStore, InsertSingleTargets)
 
     {
         auto sctx_store = object_store::from_upstream_store(ctx_store);
-        sctx_store.insert_target(url, "url", test::ddwaf_object_da::make_string("hello"));
+        sctx_store.insert_and_apply(url, "url", test::ddwaf_object_da::make_string("hello"));
 
         EXPECT_FALSE(sctx_store.empty());
         EXPECT_TRUE(sctx_store.has_new_targets());
@@ -311,7 +311,7 @@ TEST(TestObjectStore, InsertSingleTargets)
         EXPECT_TRUE(sctx_store.get_target(url).has_value());
     }
 
-    ctx_store.flush_input_queue();
+    ctx_store.clear_latest_batch();
 
     EXPECT_FALSE(ctx_store.empty());
     EXPECT_FALSE(ctx_store.has_new_targets());
@@ -328,9 +328,9 @@ TEST(TestObjectStore, InsertSingleTargetBatches)
 
     object_store ctx_store;
     {
-        defer cleanup{[&]() { ctx_store.flush_input_queue(); }};
+        defer cleanup{[&]() { ctx_store.clear_latest_batch(); }};
 
-        ctx_store.insert_target(query, "query", test::ddwaf_object_da::make_string("hello"));
+        ctx_store.insert_and_apply(query, "query", test::ddwaf_object_da::make_string("hello"));
 
         EXPECT_FALSE(ctx_store.empty());
         EXPECT_TRUE(ctx_store.has_new_targets());
@@ -341,10 +341,10 @@ TEST(TestObjectStore, InsertSingleTargetBatches)
     }
 
     {
-        defer cleanup{[&]() { ctx_store.flush_input_queue(); }};
+        defer cleanup{[&]() { ctx_store.clear_latest_batch(); }};
 
         auto sctx_store = object_store::from_upstream_store(ctx_store);
-        sctx_store.insert_target(url, "url", test::ddwaf_object_da::make_string("hello"));
+        sctx_store.insert_and_apply(url, "url", test::ddwaf_object_da::make_string("hello"));
 
         EXPECT_FALSE(sctx_store.empty());
         EXPECT_TRUE(sctx_store.has_new_targets());
@@ -368,10 +368,10 @@ TEST(TestObjectStore, DuplicatePersistentTarget)
 
     object_store store;
     {
-        defer cleanup{[&]() { store.flush_input_queue(); }};
+        defer cleanup{[&]() { store.clear_latest_batch(); }};
 
         EXPECT_TRUE(
-            store.insert_target(query, "query", test::ddwaf_object_da::make_string("hello")));
+            store.insert_and_apply(query, "query", test::ddwaf_object_da::make_string("hello")));
 
         EXPECT_FALSE(store.empty());
         EXPECT_TRUE(store.has_new_targets());
@@ -383,9 +383,10 @@ TEST(TestObjectStore, DuplicatePersistentTarget)
     }
 
     {
-        defer cleanup{[&]() { store.flush_input_queue(); }};
+        defer cleanup{[&]() { store.clear_latest_batch(); }};
 
-        EXPECT_TRUE(store.insert_target(query, "query", test::ddwaf_object_da::make_string("bye")));
+        EXPECT_TRUE(
+            store.insert_and_apply(query, "query", test::ddwaf_object_da::make_string("bye")));
 
         EXPECT_FALSE(store.empty());
         EXPECT_TRUE(store.has_new_targets());
@@ -410,10 +411,10 @@ TEST(TestObjectStore, DuplicateSubcontextTarget)
     object_store store;
 
     {
-        defer cleanup{[&]() { store.flush_input_queue(); }};
+        defer cleanup{[&]() { store.clear_latest_batch(); }};
         {
-            EXPECT_TRUE(
-                store.insert_target(query, "query", test::ddwaf_object_da::make_string("hello")));
+            EXPECT_TRUE(store.insert_and_apply(
+                query, "query", test::ddwaf_object_da::make_string("hello")));
 
             EXPECT_FALSE(store.empty());
             EXPECT_TRUE(store.has_new_targets());
@@ -426,7 +427,7 @@ TEST(TestObjectStore, DuplicateSubcontextTarget)
 
         {
             EXPECT_TRUE(
-                store.insert_target(query, "query", test::ddwaf_object_da::make_string("bye")));
+                store.insert_and_apply(query, "query", test::ddwaf_object_da::make_string("bye")));
 
             EXPECT_FALSE(store.empty());
             EXPECT_TRUE(store.has_new_targets());
@@ -452,10 +453,10 @@ TEST(TestObjectStore, ReplaceSubcontextWithPersistent)
     object_store ctx_store;
 
     {
-        defer cleanup{[&]() { ctx_store.flush_input_queue(); }};
+        defer cleanup{[&]() { ctx_store.clear_latest_batch(); }};
         {
             object_store sctx_store;
-            EXPECT_TRUE(sctx_store.insert_target(
+            EXPECT_TRUE(sctx_store.insert_and_apply(
                 query, "query", test::ddwaf_object_da::make_string("hello")));
 
             EXPECT_FALSE(sctx_store.empty());
@@ -468,8 +469,8 @@ TEST(TestObjectStore, ReplaceSubcontextWithPersistent)
         }
 
         {
-            EXPECT_TRUE(
-                ctx_store.insert_target(query, "query", test::ddwaf_object_da::make_string("bye")));
+            EXPECT_TRUE(ctx_store.insert_and_apply(
+                query, "query", test::ddwaf_object_da::make_string("bye")));
 
             EXPECT_FALSE(ctx_store.empty());
             EXPECT_TRUE(ctx_store.has_new_targets());
@@ -495,9 +496,9 @@ TEST(TestObjectStore, ReplacePersistentWithSubcontextSameBatch)
     object_store ctx_store;
 
     {
-        defer cleanup{[&]() { ctx_store.flush_input_queue(); }};
+        defer cleanup{[&]() { ctx_store.clear_latest_batch(); }};
         {
-            EXPECT_TRUE(ctx_store.insert_target(
+            EXPECT_TRUE(ctx_store.insert_and_apply(
                 query, "query", test::ddwaf_object_da::make_string("hello")));
 
             EXPECT_FALSE(ctx_store.empty());
@@ -511,7 +512,7 @@ TEST(TestObjectStore, ReplacePersistentWithSubcontextSameBatch)
 
         {
             object_store sctx_store;
-            EXPECT_TRUE(sctx_store.insert_target(
+            EXPECT_TRUE(sctx_store.insert_and_apply(
                 query, "query", test::ddwaf_object_da::make_string("bye")));
 
             EXPECT_FALSE(sctx_store.empty());
@@ -538,10 +539,10 @@ TEST(TestObjectStore, ReplacePersistentWithSubcontextDifferentBatch)
     object_store ctx_store;
 
     {
-        defer cleanup{[&]() { ctx_store.flush_input_queue(); }};
+        defer cleanup{[&]() { ctx_store.clear_latest_batch(); }};
 
-        EXPECT_TRUE(
-            ctx_store.insert_target(query, "query", test::ddwaf_object_da::make_string("hello")));
+        EXPECT_TRUE(ctx_store.insert_and_apply(
+            query, "query", test::ddwaf_object_da::make_string("hello")));
 
         EXPECT_FALSE(ctx_store.empty());
         EXPECT_TRUE(ctx_store.has_new_targets());
@@ -555,7 +556,7 @@ TEST(TestObjectStore, ReplacePersistentWithSubcontextDifferentBatch)
     {
         auto sctx_store = object_store::from_upstream_store(ctx_store);
         EXPECT_TRUE(
-            sctx_store.insert_target(query, "query", test::ddwaf_object_da::make_string("bye")));
+            sctx_store.insert_and_apply(query, "query", test::ddwaf_object_da::make_string("bye")));
 
         EXPECT_FALSE(sctx_store.empty());
         EXPECT_TRUE(sctx_store.has_new_targets());

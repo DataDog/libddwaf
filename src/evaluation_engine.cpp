@@ -5,11 +5,16 @@
 // Copyright 2025 Datadog, Inc.
 
 #include <cstddef>
+#include <cstdint>
+#include <iterator>
 #include <memory>
+#include <string>
 #include <string_view>
 #include <utility>
+#include <variant>
 #include <vector>
 
+#include "attribute_collector.hpp"
 #include "clock.hpp"
 #include "evaluation_engine.hpp"
 #include "exception.hpp"
@@ -42,7 +47,34 @@ void set_context_event_address(object_store &store)
         return;
     }
 
-    store.insert_target(event_addr_idx, event_addr, owned_object::make_boolean(true));
+    store.insert_and_apply(event_addr_idx, event_addr, owned_object::make_boolean(true));
+}
+
+void collect_attributes(const object_store &store, const std::vector<rule_result> &results,
+    attribute_collector &collector)
+{
+
+    // First collect any pending attributes from previous runs
+    collector.collect_pending(store);
+
+    for (const auto &result : results) {
+        for (const auto &attr : result.attributes.get()) {
+            if (std::holds_alternative<rule_attribute::input_target>(attr.value_or_target)) {
+                auto input = std::get<rule_attribute::input_target>(attr.value_or_target);
+                collector.collect(store, input.index, input.key_path, attr.key);
+            } else if (std::holds_alternative<std::string>(attr.value_or_target)) {
+                collector.insert(attr.key, std::get<std::string>(attr.value_or_target));
+            } else if (std::holds_alternative<uint64_t>(attr.value_or_target)) {
+                collector.insert(attr.key, std::get<uint64_t>(attr.value_or_target));
+            } else if (std::holds_alternative<int64_t>(attr.value_or_target)) {
+                collector.insert(attr.key, std::get<int64_t>(attr.value_or_target));
+            } else if (std::holds_alternative<double>(attr.value_or_target)) {
+                collector.insert(attr.key, std::get<double>(attr.value_or_target));
+            } else if (std::holds_alternative<bool>(attr.value_or_target)) {
+                collector.insert(attr.key, std::get<bool>(attr.value_or_target));
+            }
+        }
+    }
 }
 
 } // namespace
@@ -57,14 +89,17 @@ std::pair<bool, owned_object> evaluation_engine::eval(timer &deadline)
     // Once evaluation finishes (on any exit path, including a timeout) flush any
     // input batches left unevaluated and reset the new-target set so that the
     // next eval can identify new targets.
-    auto on_exit = defer([this]() { store_.flush_input_queue(); });
+    auto on_exit = defer([this]() { input_batches_.flush(store_); });
 
-    std::vector<rule_result> results;
+    std::vector<rule_result> all_results;
     std::size_t batches_evaluated = 0;
+    bool event_addr_added = false;
 
     // Each queued input batch is evaluated as if it were a separate eval call,
-    // draining the store's queue one batch at a time.
-    while (store_.next_batch()) {
+    // draining the queue one batch at a time.
+    while (input_batches_.next_batch(store_)) {
+        std::vector<rule_result> results;
+        auto verdict = rule_verdict::none;
         try {
             // Evaluate preprocessors first in their own try-catch, if there's a
             // timeout we still need to evaluate rules unaffected by it.
@@ -84,16 +119,27 @@ std::pair<bool, owned_object> evaluation_engine::eval(timer &deadline)
                 const auto &policy = eval_filters(deadline);
 
                 if (should_eval_rules) {
-                    eval_rules(policy, results, deadline);
-                    if (!results.empty()) {
+                    verdict = eval_rules(policy, results, deadline);
+                    if (!event_addr_added && !results.empty()) {
                         set_context_event_address(store_);
+                        event_addr_added = true;
                     }
                 }
             }
 
             eval_postprocessors(deadline);
             ++batches_evaluated;
-        } catch (const ddwaf::timeout_exception &) {
+            // NOLINTNEXTLINE(bugprone-empty-catch)
+        } catch (const ddwaf::timeout_exception &) {}
+
+        collect_attributes(store_, results, collector_);
+
+        if (!results.empty()) {
+            all_results.insert(all_results.end(), std::make_move_iterator(results.begin()),
+                std::make_move_iterator(results.end()));
+        }
+
+        if (deadline.expired() || verdict == rule_verdict::block) {
             break;
         }
     }
@@ -104,7 +150,7 @@ std::pair<bool, owned_object> evaluation_engine::eval(timer &deadline)
     // available (e.g. from a postprocessor) and return a map of all attributes
     // generated during this call.
     // object::assign(result.attributes, collector_.collect_pending(store));
-    serializer.serialize(store_, results, collector_, deadline, output);
+    serializer.serialize(all_results, collector_, deadline, output);
     return {!output.attributes.empty() || !output.actions.empty() || !output.events.empty(),
         std::move(result_object)};
 }
@@ -200,18 +246,20 @@ exclusion_policy &evaluation_engine::eval_filters(timer &deadline)
     return cache_.exclusions;
 }
 
-void evaluation_engine::eval_rules(
+rule_verdict evaluation_engine::eval_rules(
     const exclusion_policy &policy, std::vector<rule_result> &results, timer &deadline)
 {
+    auto verdict = rule_verdict::none;
     for (std::size_t i = 0; i < ruleset_->rule_modules.size(); ++i) {
         const auto &mod = ruleset_->rule_modules[i];
         auto &cache = cache_.rule_modules[i];
 
-        auto verdict = mod.eval(results, store_, cache, policy, *ruleset_->rule_matchers, deadline);
+        verdict = mod.eval(results, store_, cache, policy, *ruleset_->rule_matchers, deadline);
         if (verdict == rule_module::verdict_type::block) {
             break;
         }
     }
+    return verdict;
 }
 
 } // namespace ddwaf

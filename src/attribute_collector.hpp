@@ -11,7 +11,6 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
-#include <unordered_set>
 #include <utility>
 
 #include "memory_resource.hpp"
@@ -40,7 +39,7 @@ class attribute_collector {
 public:
     explicit attribute_collector(
         nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
-        : attributes_(owned_object::make_map(alloc))
+        : alloc_(alloc)
     {}
     attribute_collector(const attribute_collector &) = delete;
     attribute_collector &operator=(const attribute_collector &) = delete;
@@ -80,11 +79,12 @@ public:
                  (!std::is_integral_v<std::remove_cvref_t<T>>) &&
                  (!std::is_floating_point_v<std::remove_cvref_t<T>>)
     {
-        return insert(key, owned_object::make_string(
-                               std::string_view(std::forward<T>(value)), attributes_.alloc()));
+        return insert(
+            key, owned_object::make_string(std::string_view(std::forward<T>(value)), alloc_));
     }
 
     bool insert(std::string_view key, owned_object &&object);
+    bool insert_or_assign(std::string_view key, owned_object &&object);
 
     bool collect(const object_store &store, target_index input_target,
         std::span<const std::variant<std::string, int64_t>> input_key_path,
@@ -97,12 +97,11 @@ public:
     // and the list of previously collected attributes.
     owned_object get_available_attributes_and_reset()
     {
-        auto output_object = std::move(attributes_);
-        // Reset attributes
-        attributes_ = owned_object::make_map(output_object.alloc());
+        auto attributes = owned_object::make_map(inserted_.size(), alloc_);
+        for (auto &[key, value] : inserted_) { attributes.emplace(key, std::move(value)); }
         inserted_.clear();
 
-        return output_object;
+        return attributes;
     }
 
     // Only used for testing
@@ -110,7 +109,7 @@ public:
 
     static attribute_collector from_upstream_collector(const attribute_collector &upstream)
     {
-        attribute_collector collector{upstream.attributes_.alloc()};
+        attribute_collector collector{upstream.alloc_};
         collector.pending_ = upstream.pending_;
         return collector;
     }
@@ -132,8 +131,8 @@ protected:
         std::pair<target_index, std::span<const std::variant<std::string, int64_t>>>;
     std::unordered_map<std::string_view, target_type> pending_;
 
-    std::unordered_set<std::string_view> inserted_;
-    owned_object attributes_;
+    nonnull_ptr<memory::memory_resource> alloc_;
+    std::unordered_map<std::string_view, owned_object> inserted_;
 };
 
 } // namespace ddwaf

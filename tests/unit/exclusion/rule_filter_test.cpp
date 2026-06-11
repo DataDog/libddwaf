@@ -190,7 +190,7 @@ TEST(TestRuleFilter, CachedMatchAndSubcontextMatch)
     // only the latest address. This ensures that the IP condition can't be
     // matched on the second run.
     {
-        defer cleanup{[&]() { store.flush_input_queue(); }};
+        defer cleanup{[&]() { store.clear_latest_batch(); }};
 
         store.insert_and_apply(object_builder_da::map({{"http.client_ip", "192.168.0.1"}}));
 

@@ -91,7 +91,7 @@ TEST(TestExpression, MultiInputMatchOnSecondEval)
     expression::cache_type cache;
 
     {
-        defer cleanup{[&]() { store.flush_input_queue(); }};
+        defer cleanup{[&]() { store.clear_latest_batch(); }};
 
         auto root = object_builder_da::map({{"server.request.query", "bad"}});
 
@@ -103,7 +103,7 @@ TEST(TestExpression, MultiInputMatchOnSecondEval)
     }
 
     {
-        defer cleanup{[&]() { store.flush_input_queue(); }};
+        defer cleanup{[&]() { store.clear_latest_batch(); }};
 
         auto root = object_builder_da::map({{"server.request.body", "value"}});
 
@@ -138,7 +138,7 @@ TEST(TestExpression, DuplicateInput)
     object_store store;
 
     {
-        defer cleanup{[&]() { store.flush_input_queue(); }};
+        defer cleanup{[&]() { store.clear_latest_batch(); }};
 
         auto root = object_builder_da::map({{"server.request.query", "bad"}});
 
@@ -150,7 +150,7 @@ TEST(TestExpression, DuplicateInput)
     }
 
     {
-        defer cleanup{[&]() { store.flush_input_queue(); }};
+        defer cleanup{[&]() { store.clear_latest_batch(); }};
 
         auto root = object_builder_da::map({{"server.request.query", "value"}});
 
@@ -174,7 +174,7 @@ TEST(TestExpression, MatchDuplicateInputNoCache)
 
     object_store store;
     {
-        defer cleanup{[&]() { store.flush_input_queue(); }};
+        defer cleanup{[&]() { store.clear_latest_batch(); }};
 
         auto root = object_builder_da::map({{"server.request.query", "bad"}});
 
@@ -187,7 +187,7 @@ TEST(TestExpression, MatchDuplicateInputNoCache)
     }
 
     {
-        defer cleanup{[&]() { store.flush_input_queue(); }};
+        defer cleanup{[&]() { store.clear_latest_batch(); }};
 
         auto root = object_builder_da::map({{"server.request.query", "value"}});
 
@@ -229,7 +229,7 @@ TEST(TestExpression, TwoConditionsSingleInputNoMatch)
     object_store store;
 
     {
-        defer cleanup{[&]() { store.flush_input_queue(); }};
+        defer cleanup{[&]() { store.clear_latest_batch(); }};
 
         auto root = object_builder_da::map({{"server.request.query", "bad_value"}});
 
@@ -241,7 +241,7 @@ TEST(TestExpression, TwoConditionsSingleInputNoMatch)
     }
 
     {
-        defer cleanup{[&]() { store.flush_input_queue(); }};
+        defer cleanup{[&]() { store.clear_latest_batch(); }};
 
         auto root = object_builder_da::map({{"server.request.query", "value"}});
 
@@ -326,7 +326,7 @@ TEST(TestExpression, TwoConditionsMultiInputMultiEvalMatch)
     expression::cache_type cache;
 
     {
-        defer cleanup{[&]() { store.flush_input_queue(); }};
+        defer cleanup{[&]() { store.clear_latest_batch(); }};
 
         auto root = object_builder_da::map({{"server.request.query", "query"}});
 
@@ -338,7 +338,7 @@ TEST(TestExpression, TwoConditionsMultiInputMultiEvalMatch)
     }
 
     {
-        defer cleanup{[&]() { store.flush_input_queue(); }};
+        defer cleanup{[&]() { store.clear_latest_batch(); }};
 
         auto root = object_builder_da::map(
             {{"server.request.query", "red-herring"}, {"server.request.body", "body"}});

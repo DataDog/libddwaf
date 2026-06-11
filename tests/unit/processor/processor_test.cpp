@@ -123,14 +123,12 @@ TEST(TestProcessor, MultiMappingOutputNoEvalUnconditional)
     auto attributes = collector.get_available_attributes_and_reset();
     EXPECT_EQ(attributes.size(), 2);
     {
-        const auto [obtained_key, obtained_value] = object_view{attributes}.at(0);
-        EXPECT_STRV(obtained_key.as<std::string_view>(), "output_address");
+        auto obtained_value = object_view{attributes}.find("output_address");
         EXPECT_STRV(obtained_value.as<std::string_view>(), "first_output_string");
     }
 
     {
-        const auto [obtained_key, obtained_value] = object_view{attributes}.at(1);
-        EXPECT_STRV(obtained_key.as<std::string_view>(), "output_address.second");
+        auto obtained_value = object_view{attributes}.find("output_address.second");
         EXPECT_STRV(obtained_value.as<std::string_view>(), "second_output_string");
     }
 }
