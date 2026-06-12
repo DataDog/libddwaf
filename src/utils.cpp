@@ -25,7 +25,9 @@ namespace ddwaf {
 namespace {
 
 template <typename T>
-concept has_from_chars = requires(T v) { std::from_chars(nullptr, nullptr, std::declval<T>()); };
+concept has_from_chars = requires(T v) { std::from_chars(nullptr, nullptr, v); };
+
+static_assert(has_from_chars<int64_t>);
 
 } // namespace
 
