@@ -319,9 +319,8 @@ ddwaf_context ddwaf_context_init(const ddwaf_handle handle, ddwaf_allocator outp
  *                       transport sampling through the relevant mechanism.
  *               - evaluated: an unsigned integer indicating the number of input
  *                            batches that were fully evaluated. For this single
- *                            evaluation it is 1 when a non-empty batch was
- *                            evaluated and 0 otherwise (e.g. an empty input or a
- *                            timeout before evaluation completed). See
+ *                            evaluation it is 1 once the batch has been
+ *                            evaluated, or 0 if a timeout prevented that. See
  *                            ddwaf_context_multieval for the multi-batch case.
  *               This structure must be freed by the caller using the output
  *               allocator provided through ddwaf_context_init. The object will
@@ -396,14 +395,13 @@ DDWAF_RET_CODE ddwaf_context_eval(ddwaf_context context, ddwaf_object *data,
  *                             format: {tag, value}
  *               - keep: whether the data contained herein must override any
  *                       transport sampling through the relevant mechanism.
- *               - evaluated: an unsigned integer indicating the number of
+ *               - evaluated: an unsigned integer indicating the number of input
  *                            batches that were fully evaluated. In the normal
- *                            case this equals the number of non-empty batches.
- *                            On timeout or error occurring during batch I
- *                            (0-based, counting only non-empty batches), this
- *                            value equals I, which is also the index of the
- *                            batch where the problem occurred. Empty batches are
- *                            skipped and do not count towards this value.
+ *                            case this equals the total number of batches
+ *                            provided; it is lower when evaluation stops early,
+ *                            e.g. on a timeout or once a batch produces a
+ *                            blocking result. Empty batches are evaluated like
+ *                            any other and count towards this value.
  *               This structure must be freed by the caller using the output
  *               allocator provided through ddwaf_context_init. The object will
  *               contain all specified keys when the value returned by
@@ -487,9 +485,8 @@ ddwaf_subcontext ddwaf_subcontext_init(ddwaf_context context);
  *                       transport sampling through the relevant mechanism.
  *               - evaluated: an unsigned integer indicating the number of input
  *                            batches that were fully evaluated. For this single
- *                            evaluation it is 1 when a non-empty batch was
- *                            evaluated and 0 otherwise (e.g. an empty input or a
- *                            timeout before evaluation completed). See
+ *                            evaluation it is 1 once the batch has been
+ *                            evaluated, or 0 if a timeout prevented that. See
  *                            ddwaf_subcontext_multieval for the multi-batch case.
  *               This structure must be freed by the caller and will contain all
  *               specified keys when the value returned by ddwaf_subcontext_eval
@@ -562,14 +559,13 @@ DDWAF_RET_CODE ddwaf_subcontext_eval(ddwaf_subcontext subcontext, ddwaf_object *
  *                             format: {tag, value}
  *               - keep: whether the data contained herein must override any
  *                       transport sampling through the relevant mechanism.
- *               - evaluated: an unsigned integer indicating the number of
+ *               - evaluated: an unsigned integer indicating the number of input
  *                            batches that were fully evaluated. In the normal
- *                            case this equals the number of non-empty batches.
- *                            On timeout or error occurring during batch I
- *                            (0-based, counting only non-empty batches), this
- *                            value equals I, which is also the index of the
- *                            batch where the problem occurred. Empty batches are
- *                            skipped and do not count towards this value.
+ *                            case this equals the total number of batches
+ *                            provided; it is lower when evaluation stops early,
+ *                            e.g. on a timeout or once a batch produces a
+ *                            blocking result. Empty batches are evaluated like
+ *                            any other and count towards this value.
  *               This structure must be freed by the caller and will contain all
  *               specified keys when the value returned by
  *               ddwaf_subcontext_multieval is either DDWAF_OK or DDWAF_MATCH

@@ -5,11 +5,10 @@
 // Copyright 2025 Datadog, Inc.
 
 #include <cstddef>
-#include <cstdint>
 #include <iterator>
 #include <memory>
-#include <string>
 #include <string_view>
+#include <type_traits>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -59,20 +58,17 @@ void collect_attributes(const object_store &store, const std::vector<rule_result
 
     for (const auto &result : results) {
         for (const auto &attr : result.attributes.get()) {
-            if (std::holds_alternative<rule_attribute::input_target>(attr.value_or_target)) {
-                auto input = std::get<rule_attribute::input_target>(attr.value_or_target);
-                collector.collect(store, input.index, input.key_path, attr.key);
-            } else if (std::holds_alternative<std::string>(attr.value_or_target)) {
-                collector.insert(attr.key, std::get<std::string>(attr.value_or_target));
-            } else if (std::holds_alternative<uint64_t>(attr.value_or_target)) {
-                collector.insert(attr.key, std::get<uint64_t>(attr.value_or_target));
-            } else if (std::holds_alternative<int64_t>(attr.value_or_target)) {
-                collector.insert(attr.key, std::get<int64_t>(attr.value_or_target));
-            } else if (std::holds_alternative<double>(attr.value_or_target)) {
-                collector.insert(attr.key, std::get<double>(attr.value_or_target));
-            } else if (std::holds_alternative<bool>(attr.value_or_target)) {
-                collector.insert(attr.key, std::get<bool>(attr.value_or_target));
-            }
+            std::visit(
+                [&](const auto &value) {
+                    using value_type = std::decay_t<decltype(value)>;
+
+                    if constexpr (std::is_same_v<value_type, rule_attribute::input_target>) {
+                        collector.collect(store, value.index, value.key_path, attr.key);
+                    } else {
+                        collector.insert(attr.key, value);
+                    }
+                },
+                attr.value_or_target);
         }
     }
 }

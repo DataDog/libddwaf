@@ -205,14 +205,12 @@ public:
 
             if (output_) {
                 if (evaluate_) {
-                    DDWAF_DEBUG("Inserting");
                     // If the object is to be evaluated, we clone it before adding it to the
                     // collector using the user-provided allocator.
                     collector.insert_or_assign(mapping.output.name, object.clone(alloc));
                     store.insert_and_apply(
                         mapping.output.index, mapping.output.name, std::move(object));
                 } else {
-                    DDWAF_DEBUG("Inserting");
                     collector.insert_or_assign(mapping.output.name, std::move(object));
                 }
             } else {
