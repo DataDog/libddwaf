@@ -1,6 +1,6 @@
-# v2.0.0-alpha0
+# v2.0.0
 
-libddwaf v2.0.0 represents a significant redesign of the C API, focusing on explicit memory ownership, reduced memory footprint, and a more consistent interface. Beyond the public API, the internals have also been refactored to use safer and more C++-native abstractions. This is an alpha release intended for early adopters and binding library maintainers to begin integration work.
+libddwaf v2.0.0 represents a significant redesign of the C API, focusing on explicit memory ownership, reduced memory footprint, and a more consistent interface. Beyond the public API, the internals have also been refactored to use safer and more C++-native abstractions.
 
 As expected, this release is not backwards compatible; the upgrading guide at `docs/upgrading/UPGRADING-v2.0.md` provides detailed migration examples for each of the breaking changes.
 
@@ -29,6 +29,7 @@ The function `ddwaf_run` has been renamed to `ddwaf_context_eval` for consistenc
 - Instantiate obfuscator through configuration and remove `ddwaf_config` ([#464](https://github.com/DataDog/libddwaf/pull/464)).
 - Return `DDWAF_MATCH` when events, attributes, or actions are present ([#455](https://github.com/DataDog/libddwaf/pull/455)).
 - Remove legacy configuration schema (v1) support ([#482](https://github.com/DataDog/libddwaf/pull/482)).
+- Introduce ddwaf_(context|subcontext)_multieval to evaluate multiple batches in sequence ([#494](https://github.com/DataDog/libddwaf/pull/494)).
 
 ### Fixes
 
