@@ -27,7 +27,7 @@ TEST(TestExistsCondition, AddressAvailable)
     auto root = object_builder_da::map({{"server.request.uri_raw", owned_object{}}});
 
     object_store store;
-    store.insert(std::move(root));
+    store.insert_and_apply(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -46,7 +46,7 @@ TEST(TestExistsCondition, KeyPathAvailable)
                           {{"to", object_builder_da::map({{"object", owned_object{}}})}})}})}});
 
     object_store store;
-    store.insert(std::move(root));
+    store.insert_and_apply(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -60,7 +60,7 @@ TEST(TestExistsCondition, AddressNotAvaialble)
     auto root = object_builder_da::map({{"server.request.query", owned_object{}}});
 
     object_store store;
-    store.insert(std::move(root));
+    store.insert_and_apply(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -77,7 +77,7 @@ TEST(TestExistsCondition, KeyPathNotAvailable)
         object_builder_da::map({{"path", object_builder_da::map({{"to", owned_object{}}})}})}});
 
     object_store store;
-    store.insert(std::move(root));
+    store.insert_and_apply(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -94,7 +94,7 @@ TEST(TestExistsCondition, KeyPathPositiveIndexOnArray)
         object_builder_da::map({{"path", object_builder_da::array({"item"})}})}});
 
     object_store store;
-    store.insert(std::move(root));
+    store.insert_and_apply(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -111,7 +111,7 @@ TEST(TestExistsCondition, KeyPathNegativeIndexOnArray)
         object_builder_da::map({{"path", object_builder_da::array({"item"})}})}});
 
     object_store store;
-    store.insert(std::move(root));
+    store.insert_and_apply(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -128,7 +128,7 @@ TEST(TestExistsCondition, KeyPathIndexOnNonArray)
         {{"server.request.uri_raw", object_builder_da::map({{"path", owned_object{}}})}});
 
     object_store store;
-    store.insert(std::move(root));
+    store.insert_and_apply(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -148,7 +148,7 @@ TEST(TestExistsCondition, KeyPathAvailableButExcluded)
 
     std::unordered_set<object_cache_key> excluded = {root.at(0)};
     object_store store;
-    store.insert(std::move(root));
+    store.insert_and_apply(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -168,7 +168,7 @@ TEST(TestExistsCondition, MultipleAddresses)
         auto root = object_builder_da::map({{address, owned_object{}}});
 
         object_store store;
-        store.insert(std::move(root));
+        store.insert_and_apply(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -202,7 +202,7 @@ TEST(TestExistsCondition, MultipleAddressesAndKeyPaths)
         }
 
         object_store store;
-        store.insert(std::move(root));
+        store.insert_and_apply(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -233,7 +233,7 @@ TEST(TestNegatedExistsCondition, KeyPathAvailable)
                           {{"to", object_builder_da::map({{"object", owned_object{}}})}})}})}});
 
     object_store store;
-    store.insert(std::move(root));
+    store.insert_and_apply(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -250,7 +250,7 @@ TEST(TestNegativeExistsCondition, KeyPathAvailablePositiveIndexOnArray)
         object_builder_da::map({{"path", object_builder_da::array({"item"})}})}});
 
     object_store store;
-    store.insert(std::move(root));
+    store.insert_and_apply(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -267,7 +267,7 @@ TEST(TestNegativeExistsCondition, KeyPathAvailableNegativeIndexOnArray)
         object_builder_da::map({{"path", object_builder_da::array({"item"})}})}});
 
     object_store store;
-    store.insert(std::move(root));
+    store.insert_and_apply(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -284,7 +284,7 @@ TEST(TestNegativeExistsCondition, KeyPathUnvailablePositiveIndexOnArray)
         object_builder_da::map({{"path", object_builder_da::array({})}})}});
 
     object_store store;
-    store.insert(std::move(root));
+    store.insert_and_apply(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -301,7 +301,7 @@ TEST(TestNegativeExistsCondition, KeyPathUnvailableNegativeIndexOnArray)
         object_builder_da::map({{"path", object_builder_da::array({})}})}});
 
     object_store store;
-    store.insert(std::move(root));
+    store.insert_and_apply(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -317,7 +317,7 @@ TEST(TestNegatedExistsCondition, KeyPathNotAvailable)
     auto root = object_builder_da::map({{"server.request.uri_raw",
         object_builder_da::map({{"path", object_builder_da::map({{"to", owned_object{}}})}})}});
     object_store store;
-    store.insert(std::move(root));
+    store.insert_and_apply(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -338,7 +338,7 @@ TEST(TestNegatedExistsCondition, KeyPathAvailableButExcluded)
     std::unordered_set<object_cache_key> excluded = {root.at(0)};
 
     object_store store;
-    store.insert(std::move(root));
+    store.insert_and_apply(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;

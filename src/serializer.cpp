@@ -20,7 +20,6 @@
 #include "memory_resource.hpp"
 #include "obfuscator.hpp"
 #include "object.hpp"
-#include "object_store.hpp"
 #include "pointer.hpp"
 #include "rule.hpp"
 #include "serializer.hpp"
@@ -306,40 +305,16 @@ void serialize_actions(const action_tracker &actions, borrowed_object action_map
     }
 }
 
-void collect_attributes(const object_store &store, const std::vector<rule_attribute> &attributes,
-    attribute_collector &collector)
-{
-    for (const auto &attr : attributes) {
-        if (std::holds_alternative<rule_attribute::input_target>(attr.value_or_target)) {
-            auto input = std::get<rule_attribute::input_target>(attr.value_or_target);
-            collector.collect(store, input.index, input.key_path, attr.key);
-        } else if (std::holds_alternative<std::string>(attr.value_or_target)) {
-            collector.insert(attr.key, std::get<std::string>(attr.value_or_target));
-        } else if (std::holds_alternative<uint64_t>(attr.value_or_target)) {
-            collector.insert(attr.key, std::get<uint64_t>(attr.value_or_target));
-        } else if (std::holds_alternative<int64_t>(attr.value_or_target)) {
-            collector.insert(attr.key, std::get<int64_t>(attr.value_or_target));
-        } else if (std::holds_alternative<double>(attr.value_or_target)) {
-            collector.insert(attr.key, std::get<double>(attr.value_or_target));
-        } else if (std::holds_alternative<bool>(attr.value_or_target)) {
-            collector.insert(attr.key, std::get<bool>(attr.value_or_target));
-        }
-    }
-}
-
 } // namespace
 
-void result_serializer::serialize(const object_store &store, std::vector<rule_result> &results,
-    attribute_collector &collector, const timer &deadline, result_components output)
+void result_serializer::serialize(std::vector<rule_result> &results, attribute_collector &collector,
+    const timer &deadline, result_components output)
 {
     action_tracker actions{.blocking_action = {},
         .stack_id = {},
         .block_id = {},
         .non_blocking_actions = {},
         .mapper = actions_};
-
-    // First collect any pending attributes from previous runs
-    collector.collect_pending(store);
 
     bool final_keep = false;
     for (auto &result : results) {
@@ -353,8 +328,6 @@ void result_serializer::serialize(const object_store &store, std::vector<rule_re
             serialize_event(result.event.value(), obfuscator_, result.action_override,
                 result.actions, actions, output.events);
         }
-
-        collect_attributes(store, result.attributes.get(), collector);
     }
 
     // Using the interface functions would replace the key contained within the
@@ -373,7 +346,8 @@ std::pair<owned_object, result_components> result_serializer::initialise_result_
                                           {"duration", owned_object::make_unsigned(0)},
                                           {"timeout", owned_object::make_boolean(false)},
                                           {"attributes", object_builder::map({}, alloc_)},
-                                          {"keep", owned_object::make_boolean(false)}},
+                                          {"keep", owned_object::make_boolean(false)},
+                                          {"evaluated", owned_object::make_unsigned(0)}},
         alloc_);
 
     const result_components res{.events = object.at(0),
@@ -381,7 +355,8 @@ std::pair<owned_object, result_components> result_serializer::initialise_result_
         .duration = object.at(2),
         .timeout = object.at(3),
         .attributes = object.at(4),
-        .keep = object.at(5)};
+        .keep = object.at(5),
+        .evaluated = object.at(6)};
 
     return {std::move(object), res};
 }

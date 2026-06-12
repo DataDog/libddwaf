@@ -5,7 +5,6 @@
 // Copyright 2021 Datadog, Inc.
 #include <cstddef>
 #include <string_view>
-#include <utility>
 
 #include "log.hpp"
 #include "object.hpp"
@@ -14,49 +13,27 @@
 
 namespace ddwaf {
 
-bool object_store::insert(owned_object &&input)
+void object_store::apply(map_view batch, bool mark_new)
 {
-    const object_view view = input_objects_.emplace_back(std::move(input));
-    if (!view.is_map()) {
-        return false;
-    }
-
-    return insert(view);
-}
-
-bool object_store::insert(map_view input)
-{
-    const auto size = input.size();
-    if (size == 0) {
-        // Objects with no addresses are considered valid as they are harmless
-        return true;
-    }
-
+    const auto size = batch.size();
     targets_.reserve(targets_.size() + size);
-    latest_batch_.reserve(latest_batch_.size() + size);
+    if (mark_new) {
+        latest_batch_.reserve(latest_batch_.size() + size);
+    }
 
     for (std::size_t i = 0; i < size; ++i) {
-        auto [key_obj, value] = input.at(i);
+        auto [key_obj, value] = batch.at(i);
         if (key_obj.empty()) {
             continue;
         }
 
         auto key = key_obj.as<std::string_view>();
-        auto target = get_target_index(key);
-        insert_target_helper(target, key, value);
+        register_target(get_target_index(key), key, value, mark_new);
     }
-
-    return true;
 }
 
-bool object_store::insert(target_index target, std::string_view key, owned_object &&input)
-{
-    const object_view view = input_objects_.emplace_back(std::move(input));
-
-    return insert_target_helper(target, key, view);
-}
-
-bool object_store::insert_target_helper(target_index target, std::string_view key, object_view view)
+void object_store::register_target(
+    target_index target, std::string_view key, object_view value, bool mark_new)
 {
     if (targets_.contains(target)) {
         DDWAF_DEBUG("Replacing target '{}' in object store", key);
@@ -64,10 +41,10 @@ bool object_store::insert_target_helper(target_index target, std::string_view ke
         DDWAF_DEBUG("Inserting target '{}' into object store", key);
     }
 
-    targets_[target] = view;
-    latest_batch_.emplace(target);
-
-    return true;
+    targets_[target] = value;
+    if (mark_new) {
+        latest_batch_.emplace(target);
+    }
 }
 
 } // namespace ddwaf

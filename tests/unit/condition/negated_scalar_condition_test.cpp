@@ -53,7 +53,7 @@ TEST(TestNegatedScalarCondition, NoMatch)
     auto root = object_builder_da::map({{"server.request.uri.raw", "hello"}});
 
     object_store store;
-    store.insert(root);
+    store.insert_and_apply(root);
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -73,7 +73,7 @@ TEST(TestNegatedScalarCondition, NoMatchWithKeyPath)
                 object_builder_da::map({{"object", object_builder_da::array({{"bye"}})}})}})}})}});
 
     object_store store;
-    store.insert(root);
+    store.insert_and_apply(root);
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -88,7 +88,7 @@ TEST(TestNegatedScalarCondition, Timeout)
     auto root = object_builder_da::map({{"server.request.uri.raw", "hello"}});
 
     object_store store;
-    store.insert(root);
+    store.insert_and_apply(root);
 
     ddwaf::timer deadline{0s};
     condition_cache cache;
@@ -103,7 +103,7 @@ TEST(TestNegatedScalarCondition, SimpleMatch)
     auto root = object_builder_da::map({{"server.request.uri.raw", "bye"}});
 
     object_store store;
-    store.insert(root);
+    store.insert_and_apply(root);
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -127,7 +127,7 @@ TEST(TestNegatedScalarCondition, SimpleMatchWithKeyPath)
             object_builder_da::map({{"to", object_builder_da::map({{"object", "bye"}})}})}})}});
 
     object_store store;
-    store.insert(root);
+    store.insert_and_apply(root);
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -149,7 +149,7 @@ TEST(TestNegatedScalarCondition, SingleValueArrayMatch)
         object_builder_da::map({{"server.request.uri.raw", object_builder_da::array({"bye"})}});
 
     object_store store;
-    store.insert(root);
+    store.insert_and_apply(root);
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -175,7 +175,7 @@ TEST(TestNegatedScalarCondition, SingleValueArrayMatchWithKeyPath)
                 object_builder_da::map({{"object", object_builder_da::array({"bye"})}})}})}})}});
 
     object_store store;
-    store.insert(root);
+    store.insert_and_apply(root);
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -197,7 +197,7 @@ TEST(TestNegatedScalarCondition, MultiValueArrayMatch)
         {{"server.request.uri.raw", object_builder_da::array({"bye", "greetings"})}});
 
     object_store store;
-    store.insert(root);
+    store.insert_and_apply(root);
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -224,7 +224,7 @@ TEST(TestNegatedScalarCondition, MultiValueArrayMatchWithKeyPath)
                                       object_builder_da::array({"bye", "greetings"})}})}})}})}});
 
     object_store store;
-    store.insert(root);
+    store.insert_and_apply(root);
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -252,7 +252,7 @@ TEST(TestNegatedScalarCondition, ExcludedRootObject)
                                       object_builder_da::array({"bye", "greetings"})}})}})}})}});
 
     object_store store;
-    store.insert(root);
+    store.insert_and_apply(root);
 
     std::unordered_set<object_cache_key> excluded_objects;
     excluded_objects.emplace(store.get_target(target_index));
@@ -281,7 +281,7 @@ TEST(TestNegatedScalarCondition, ExcludedIntermediateObject)
     excluded_objects.emplace(object_view{root}.find_key_path(kp).at_value(0));
 
     object_store store;
-    store.insert(root);
+    store.insert_and_apply(root);
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -307,7 +307,7 @@ TEST(TestNegatedScalarCondition, ExcludedFinalObject)
     std::unordered_set<object_cache_key> excluded_objects;
     excluded_objects.emplace(object_view{root}.find_key_path(kp).at_value(0));
     object_store store;
-    store.insert(root);
+    store.insert_and_apply(root);
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -326,14 +326,14 @@ TEST(TestNegatedScalarCondition, CachedMatch)
 
     {
         object_store store;
-        store.insert(root);
+        store.insert_and_apply(root);
 
         ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
     }
 
     {
         object_store store;
-        store.insert(root);
+        store.insert_and_apply(root);
 
         ASSERT_FALSE(cond.eval(cache, store, {}, {}, deadline));
     }
@@ -351,7 +351,7 @@ TEST(TestNegatedScalarCondition, SimpleMatchOnKeys)
         {{"server.request.uri.raw", object_builder_da::map({{"bye", "hello"}})}});
 
     object_store store;
-    store.insert(root);
+    store.insert_and_apply(root);
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -368,7 +368,7 @@ TEST(TestNegatedScalarCondition, SimplesubcontextMatch)
     object_store ctx_store;
     {
         auto sctx_store = object_store::from_upstream_store(ctx_store);
-        sctx_store.insert(root);
+        sctx_store.insert_and_apply(root);
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -377,7 +377,7 @@ TEST(TestNegatedScalarCondition, SimplesubcontextMatch)
 
     {
         auto sctx_store = object_store::from_upstream_store(ctx_store);
-        sctx_store.insert(root);
+        sctx_store.insert_and_apply(root);
 
         ddwaf::timer deadline{2s};
         condition_cache cache;

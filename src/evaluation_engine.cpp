@@ -5,11 +5,15 @@
 // Copyright 2025 Datadog, Inc.
 
 #include <cstddef>
+#include <iterator>
 #include <memory>
 #include <string_view>
+#include <type_traits>
 #include <utility>
+#include <variant>
 #include <vector>
 
+#include "attribute_collector.hpp"
 #include "clock.hpp"
 #include "evaluation_engine.hpp"
 #include "exception.hpp"
@@ -42,63 +46,107 @@ void set_context_event_address(object_store &store)
         return;
     }
 
-    store.insert(event_addr_idx, event_addr, owned_object::make_boolean(true));
+    store.insert_and_apply(event_addr_idx, event_addr, owned_object::make_boolean(true));
+}
+
+void collect_attributes(const object_store &store, const std::vector<rule_result> &results,
+    attribute_collector &collector)
+{
+
+    // First collect any pending attributes from previous runs
+    collector.collect_pending(store);
+
+    for (const auto &result : results) {
+        for (const auto &attr : result.attributes.get()) {
+            std::visit(
+                [&](const auto &value) {
+                    using value_type = std::decay_t<decltype(value)>;
+
+                    if constexpr (std::is_same_v<value_type, rule_attribute::input_target>) {
+                        collector.collect(store, value.index, value.key_path, attr.key);
+                    } else {
+                        collector.insert(attr.key, value);
+                    }
+                },
+                attr.value_or_target);
+        }
+    }
 }
 
 } // namespace
 
 std::pair<bool, owned_object> evaluation_engine::eval(timer &deadline)
 {
-    // Clear the last batch of targets on exit so that the process can identify
-    // new targets in the next eval
-    auto on_exit = defer([this]() { store_.clear_last_batch(); });
-
     result_serializer serializer(ruleset_->obfuscator.get(), *ruleset_->actions, output_alloc_);
 
     // Generate result object once relevant checks have been made
     auto [result_object, output] = serializer.initialise_result_object();
 
-    if (!store_.has_new_targets()) {
-        return {false, std::move(result_object)};
-    }
+    // Once evaluation finishes (on any exit path, including a timeout) flush any
+    // input batches left unevaluated and reset the new-target set so that the
+    // next eval can identify new targets.
+    auto on_exit = defer([this]() { input_batches_.flush(store_); });
 
-    try {
-        // Evaluate preprocessors first in their own try-catch, if there's a
-        // timeout we still need to evaluate rules unaffected by it.
-        eval_preprocessors(deadline);
-        // NOLINTNEXTLINE(bugprone-empty-catch)
-    } catch (const ddwaf::timeout_exception &) {}
+    std::vector<rule_result> all_results;
+    std::size_t batches_evaluated = 0;
+    bool event_addr_added = false;
 
-    std::vector<rule_result> results;
+    // Each queued input batch is evaluated as if it were a separate eval call,
+    // draining the queue one batch at a time.
+    while (input_batches_.next_batch(store_)) {
+        std::vector<rule_result> results;
+        auto verdict = rule_verdict::none;
+        try {
+            // Evaluate preprocessors first in their own try-catch, if there's a
+            // timeout we still need to evaluate rules unaffected by it.
+            eval_preprocessors(deadline);
+            // NOLINTNEXTLINE(bugprone-empty-catch)
+        } catch (const ddwaf::timeout_exception &) {}
 
-    try {
-        // If no rule targets are available, there is no point in evaluating them
-        const bool should_eval_rules = check_new_rule_targets();
-        const bool should_eval_filters = should_eval_rules || check_new_filter_targets();
+        try {
+            // If no rule targets are available, there is no point in evaluating them
+            const bool should_eval_rules = check_new_rule_targets();
+            const bool should_eval_filters = should_eval_rules || check_new_filter_targets();
 
-        if (should_eval_filters) {
-            // Filters need to be evaluated even if rules don't, otherwise it'll
-            // break the current condition cache mechanism which requires knowing
-            // if an address is new to this run.
-            const auto &policy = eval_filters(deadline);
+            if (should_eval_filters) {
+                // Filters need to be evaluated even if rules don't, otherwise it'll
+                // break the current condition cache mechanism which requires knowing
+                // if an address is new to this run.
+                const auto &policy = eval_filters(deadline);
 
-            if (should_eval_rules) {
-                eval_rules(policy, results, deadline);
-                if (!results.empty()) {
-                    set_context_event_address(store_);
+                if (should_eval_rules) {
+                    verdict = eval_rules(policy, results, deadline);
+                    if (!event_addr_added && !results.empty()) {
+                        set_context_event_address(store_);
+                        event_addr_added = true;
+                    }
                 }
             }
+
+            eval_postprocessors(deadline);
+            ++batches_evaluated;
+            // NOLINTNEXTLINE(bugprone-empty-catch)
+        } catch (const ddwaf::timeout_exception &) {}
+
+        collect_attributes(store_, results, collector_);
+
+        if (!results.empty()) {
+            all_results.insert(all_results.end(), std::make_move_iterator(results.begin()),
+                std::make_move_iterator(results.end()));
         }
 
-        eval_postprocessors(deadline);
-        // NOLINTNEXTLINE(bugprone-empty-catch)
-    } catch (const ddwaf::timeout_exception &) {}
+        if (deadline.expired() || verdict == rule_verdict::block) {
+            break;
+        }
+    }
+
+    output.evaluated = owned_object::make_unsigned(batches_evaluated);
 
     // Collect pending attributes, this will check if any new attributes are
     // available (e.g. from a postprocessor) and return a map of all attributes
     // generated during this call.
     // object::assign(result.attributes, collector_.collect_pending(store));
-    serializer.serialize(store_, results, collector_, deadline, output);
+    serializer.serialize(all_results, collector_, deadline, output);
     return {!output.attributes.empty() || !output.actions.empty() || !output.events.empty(),
         std::move(result_object)};
 }
@@ -194,18 +242,20 @@ exclusion_policy &evaluation_engine::eval_filters(timer &deadline)
     return cache_.exclusions;
 }
 
-void evaluation_engine::eval_rules(
+rule_verdict evaluation_engine::eval_rules(
     const exclusion_policy &policy, std::vector<rule_result> &results, timer &deadline)
 {
+    auto verdict = rule_verdict::none;
     for (std::size_t i = 0; i < ruleset_->rule_modules.size(); ++i) {
         const auto &mod = ruleset_->rule_modules[i];
         auto &cache = cache_.rule_modules[i];
 
-        auto verdict = mod.eval(results, store_, cache, policy, *ruleset_->rule_matchers, deadline);
+        verdict = mod.eval(results, store_, cache, policy, *ruleset_->rule_matchers, deadline);
         if (verdict == rule_module::verdict_type::block) {
             break;
         }
     }
+    return verdict;
 }
 
 } // namespace ddwaf

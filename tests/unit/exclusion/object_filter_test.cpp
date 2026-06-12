@@ -23,7 +23,7 @@ TEST(TestObjectFilter, RootTarget)
     auto root = object_builder_da::map({
         {"query", object_builder_da::map({{"params", "paramsvalue"}, {"uri", "uri_value"}})},
     });
-    store.insert(root);
+    store.insert_and_apply(root);
 
     object_filter filter;
     filter.insert(query, "query", {});
@@ -58,7 +58,7 @@ TEST(TestObjectFilter, DuplicateTarget)
         {"query", object_builder_da::map({{"params", "paramsvalue"}, {"uri", "uri_value"}})},
     }));
     {
-        store.insert(objects[0]);
+        store.insert_and_apply(objects[0]);
 
         auto objects_filtered = filter.match(store, cache, deadline);
 
@@ -67,7 +67,7 @@ TEST(TestObjectFilter, DuplicateTarget)
     }
 
     {
-        store.insert(objects[1]);
+        store.insert_and_apply(objects[1]);
 
         auto objects_filtered = filter.match(store, cache, deadline);
 
@@ -91,7 +91,7 @@ TEST(TestObjectFilter, DuplicateCachedTarget)
     auto root = object_builder_da::map({
         {"query", object_builder_da::map({{"params", "paramsvalue"}, {"uri", "uri_value"}})},
     });
-    store.insert(root);
+    store.insert_and_apply(root);
 
     {
         auto objects_filtered = filter.match(store, cache, deadline);
@@ -115,7 +115,7 @@ TEST(TestObjectFilter, SingleTarget)
     auto child = root.emplace(
         "query", object_builder_da::map({{"params", "paramsvalue"}, {"uri", "uri_value"}}));
 
-    store.insert(root);
+    store.insert_and_apply(root);
 
     object_filter filter;
     filter.insert(query, "query", {"params"});
@@ -145,7 +145,7 @@ TEST(TestObjectFilter, DuplicateSingleTarget)
         auto child = root.emplace(
             "query", object_builder_da::map({{"params", "paramsvalue"}, {"uri", "uri_value"}}));
 
-        store.insert(std::move(root));
+        store.insert_and_apply(std::move(root));
 
         auto objects_filtered = filter.match(store, cache, deadline);
         ASSERT_EQ(objects_filtered.size(), 1);
@@ -157,7 +157,7 @@ TEST(TestObjectFilter, DuplicateSingleTarget)
         auto child = root.emplace(
             "query", object_builder_da::map({{"params", "paramsvalue"}, {"uri", "uri_value"}}));
 
-        store.insert(std::move(root));
+        store.insert_and_apply(std::move(root));
 
         auto objects_filtered = filter.match(store, cache, deadline);
         ASSERT_EQ(objects_filtered.size(), 1);
@@ -184,7 +184,7 @@ TEST(TestObjectFilter, MultipleTargets)
     auto object = sibling.emplace(
         "token", object_builder_da::map({{"value", "naskjdnakjsd"}, {"expiration", "yesterday"}}));
 
-    store.insert(root);
+    store.insert_and_apply(root);
 
     object_filter filter;
     filter.insert(query, "query", {"uri"});
@@ -225,7 +225,7 @@ TEST(TestObjectFilter, DuplicateMultipleTargets)
         auto object = sibling.emplace("token",
             object_builder_da::map({{"value", "naskjdnakjsd"}, {"expiration", "yesterday"}}));
 
-        store.insert(std::move(root));
+        store.insert_and_apply(std::move(root));
 
         auto objects_filtered = filter.match(store, cache, deadline);
 
@@ -246,7 +246,7 @@ TEST(TestObjectFilter, DuplicateMultipleTargets)
         auto object = sibling.emplace("token",
             object_builder_da::map({{"value", "naskjdnakjsd"}, {"expiration", "yesterday"}}));
 
-        store.insert(std::move(root));
+        store.insert_and_apply(std::move(root));
 
         auto objects_filtered = filter.match(store, cache, deadline);
 
@@ -270,7 +270,7 @@ TEST(TestObjectFilter, MissingTarget)
                             {"token", object_builder_da::map({{"value", "naskjdnakjsd"},
                                           {"expiration", "yesterday"}})}})},
     });
-    store.insert(root);
+    store.insert_and_apply(root);
 
     object_filter filter;
     filter.insert(status, "status", {"value"});
@@ -291,7 +291,7 @@ TEST(TestObjectFilter, SingleTargetCache)
     auto child = root.emplace(
         "query", object_builder_da::map({{"params", "paramsvalue"}, {"uri", "uri_value"}}));
 
-    store.insert(root);
+    store.insert_and_apply(root);
 
     object_filter filter;
     filter.insert(query, "query", {"params"});
@@ -328,7 +328,7 @@ TEST(TestObjectFilter, MultipleTargetsCache)
         auto child = root.emplace(
             "query", object_builder_da::map({{"params", "paramsvalue"}, {"uri", "uri_value"}}));
 
-        store.insert(std::move(root));
+        store.insert_and_apply(std::move(root));
 
         auto objects_filtered = filter.match(store, cache, deadline);
         ASSERT_EQ(objects_filtered.size(), 1);
@@ -343,7 +343,7 @@ TEST(TestObjectFilter, MultipleTargetsCache)
         auto object = sibling.emplace("token",
             object_builder_da::map({{"value", "naskjdnakjsd"}, {"expiration", "yesterday"}}));
 
-        store.insert(std::move(root));
+        store.insert_and_apply(std::move(root));
 
         auto objects_filtered = filter.match(store, cache, deadline);
         ASSERT_EQ(objects_filtered.size(), 1);
@@ -371,7 +371,7 @@ TEST(TestObjectFilter, SingleGlobTarget)
         auto child = root.emplace(
             "query", object_builder_da::map({{"params", "paramsvalue"}, {"uri", "uri_value"}}));
 
-        store.insert(root);
+        store.insert_and_apply(root);
 
         auto objects_filtered = filter.match(store, cache, deadline);
         ASSERT_EQ(objects_filtered.size(), 2);
@@ -388,7 +388,7 @@ TEST(TestObjectFilter, SingleGlobTarget)
             object_builder_da::map({{"params", object_builder_da::map({{"value", "paramsvalue"}})},
                 {"uri", "uri_value"}}));
 
-        store.insert(root);
+        store.insert_and_apply(root);
 
         auto objects_filtered = filter.match(store, cache, deadline);
         ASSERT_EQ(objects_filtered.size(), 2);
@@ -401,7 +401,7 @@ TEST(TestObjectFilter, SingleGlobTarget)
         object_filter::cache_type cache;
 
         auto root = object_builder_da::map({{"query", owned_object{}}});
-        store.insert(root);
+        store.insert_and_apply(root);
 
         auto objects_filtered = filter.match(store, cache, deadline);
         ASSERT_EQ(objects_filtered.size(), 0);
@@ -425,7 +425,7 @@ TEST(TestObjectFilter, GlobAndKeyTarget)
         auto child = root.emplace(
             "query", object_builder_da::map({{"params", "paramsvalue"}, {"uri", "uri_value"}}));
 
-        store.insert(root);
+        store.insert_and_apply(root);
 
         auto objects_filtered = filter.match(store, cache, deadline);
         ASSERT_EQ(objects_filtered.size(), 2);
@@ -442,7 +442,7 @@ TEST(TestObjectFilter, GlobAndKeyTarget)
             object_builder_da::map({{"params", object_builder_da::map({{"value", "paramsvalue"}})},
                 {"uri", "uri_value"}}));
 
-        store.insert(root);
+        store.insert_and_apply(root);
 
         auto objects_filtered = filter.match(store, cache, deadline);
         ASSERT_EQ(objects_filtered.size(), 2);
@@ -455,7 +455,7 @@ TEST(TestObjectFilter, GlobAndKeyTarget)
         object_filter::cache_type cache;
 
         auto root = object_builder_da::map({{"query", owned_object{}}});
-        store.insert(root);
+        store.insert_and_apply(root);
 
         auto objects_filtered = filter.match(store, cache, deadline);
         ASSERT_EQ(objects_filtered.size(), 0);
@@ -482,7 +482,7 @@ TEST(TestObjectFilter, MultipleComponentsGlobAndKeyTargets)
                          {{"params", object_builder_da::map({{"other", "paramsvalue"}})}}));
         auto grandnephew = child.emplace("uri", object_builder_da::map({{"other", "paramsvalue"}}));
 
-        store.insert(root);
+        store.insert_and_apply(root);
 
         auto objects_filtered = filter.match(store, cache, deadline);
         ASSERT_EQ(objects_filtered.size(), 1);
@@ -499,7 +499,7 @@ TEST(TestObjectFilter, MultipleComponentsGlobAndKeyTargets)
             child.emplace("params", object_builder_da::map({{"value", "paramsvalue"}}));
         auto grandnephew = child.emplace("uri", object_builder_da::map({{"value", "paramsvalue"}}));
 
-        store.insert(root);
+        store.insert_and_apply(root);
 
         auto objects_filtered = filter.match(store, cache, deadline);
         ASSERT_EQ(objects_filtered.size(), 2);
@@ -515,7 +515,7 @@ TEST(TestObjectFilter, MultipleComponentsGlobAndKeyTargets)
                            {{"value", object_builder_da::map({{"whatever", "paramsvalue"}})},
                                {"other", object_builder_da::map({{"random", "paramsvalue"}})}})}});
 
-        store.insert(root);
+        store.insert_and_apply(root);
 
         auto objects_filtered = filter.match(store, cache, deadline);
         ASSERT_EQ(objects_filtered.size(), 0);
@@ -528,7 +528,7 @@ TEST(TestObjectFilter, MultipleComponentsGlobAndKeyTargets)
         owned_object root =
             object_builder_da::map({{"query", object_builder_da::map({{"value", "value"}})}});
 
-        store.insert(root);
+        store.insert_and_apply(root);
 
         auto objects_filtered = filter.match(store, cache, deadline);
         ASSERT_EQ(objects_filtered.size(), 0);
@@ -557,7 +557,7 @@ TEST(TestObjectFilter, MultipleGlobsTargets)
         auto greatgrandnephew = grandnephew.emplace("random",
             object_builder_da::map({{"other", "paramsvalue"}, {"somethingelse", "paramsvalue"}}));
 
-        store.insert(root);
+        store.insert_and_apply(root);
 
         auto objects_filtered = filter.match(store, cache, deadline);
         ASSERT_EQ(objects_filtered.size(), 4);
@@ -575,7 +575,7 @@ TEST(TestObjectFilter, MultipleGlobsTargets)
             object_builder_da::map({{"params", object_builder_da::map({{"something", "value"}})},
                 {"uri", object_builder_da::map({{"random", "value"}})}})}});
 
-        store.insert(root);
+        store.insert_and_apply(root);
 
         auto objects_filtered = filter.match(store, cache, deadline);
         ASSERT_EQ(objects_filtered.size(), 0);
@@ -588,7 +588,7 @@ TEST(TestObjectFilter, MultipleGlobsTargets)
         auto root = object_builder_da::map(
             {{"query", object_builder_da::map({{"params", "value"}, {"uri", "value"}})}});
 
-        store.insert(root);
+        store.insert_and_apply(root);
 
         auto objects_filtered = filter.match(store, cache, deadline);
         ASSERT_EQ(objects_filtered.size(), 0);
@@ -624,7 +624,7 @@ TEST(TestObjectFilter, MultipleComponentsMultipleGlobAndKeyTargets)
             object_store store;
             object_filter::cache_type cache;
             auto root = yaml_to_object<owned_object>(object);
-            store.insert(root);
+            store.insert_and_apply(root);
 
             ddwaf::timer deadline{2s};
             auto objects_filtered = filter.match(store, cache, deadline);
@@ -651,7 +651,7 @@ TEST(TestObjectFilter, MultipleComponentsMultipleGlobAndKeyTargets)
             object_store store;
             object_filter::cache_type cache;
             auto root = yaml_to_object<owned_object>(object);
-            store.insert(root);
+            store.insert_and_apply(root);
 
             ddwaf::timer deadline{2s};
             auto objects_filtered = filter.match(store, cache, deadline);
@@ -674,7 +674,7 @@ TEST(TestObjectFilter, ArrayWithGlobTargets)
             object_builder_da::map({{"a", object_builder_da::array({object_builder_da::map({{"c",
                                               object_builder_da::map({{"d", "value"}})}})})}})}});
 
-        store.insert(root);
+        store.insert_and_apply(root);
 
         ddwaf::timer deadline{2s};
         auto objects_filtered = filter.match(store, cache, deadline);
@@ -690,7 +690,7 @@ TEST(TestObjectFilter, Timeout)
 
     auto root = object_builder_da::map(
         {{"query", object_builder_da::map({{"params", "paramsvalue"}, {"uri", "uri_value"}})}});
-    store.insert(root);
+    store.insert_and_apply(root);
 
     object_filter filter;
     filter.insert(query, "query", {});

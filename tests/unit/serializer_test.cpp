@@ -28,7 +28,7 @@ TEST(TestEventSerializer, SerializeNothing)
 
     ddwaf::timer deadline{2s};
     auto [result_object, output] = serializer.initialise_result_object();
-    serializer.serialize(store, results, collector, deadline, output);
+    serializer.serialize(results, collector, deadline, output);
 
     EXPECT_EVENTS(result_object, ); // This means no results
     EXPECT_ACTIONS(result_object, {});
@@ -60,7 +60,7 @@ TEST(TestEventSerializer, SerializeEmptyEvent)
     };
 
     std::vector<rule_result> results{result};
-    serializer.serialize(store, results, collector, deadline, output);
+    serializer.serialize(results, collector, deadline, output);
 
     EXPECT_EVENTS(result_object, {});
     EXPECT_ACTIONS(result_object, {});
@@ -102,7 +102,7 @@ TEST(TestEventSerializer, SerializeSingleEventSingleMatch)
 
     ddwaf::timer deadline{2s};
     auto [result_object, output] = serializer.initialise_result_object();
-    serializer.serialize(store, results, collector, deadline, output);
+    serializer.serialize(results, collector, deadline, output);
     EXPECT_EVENTS(result_object, {.id = "xasd1022",
                                      .name = "random rule",
                                      .block_id = "*",
@@ -179,7 +179,7 @@ TEST(TestEventSerializer, SerializeSingleEventMultipleMatches)
 
     ddwaf::timer deadline{2s};
     auto [result_object, output] = serializer.initialise_result_object();
-    serializer.serialize(store, results, collector, deadline, output);
+    serializer.serialize(results, collector, deadline, output);
 
     EXPECT_EVENTS(result_object, {.id = "xasd1022",
                                      .name = "random rule",
@@ -311,7 +311,7 @@ TEST(TestEventSerializer, SerializeMultipleEvents)
 
     ddwaf::timer deadline{2s};
     auto [result_object, output] = serializer.initialise_result_object();
-    serializer.serialize(store, results, collector, deadline, output);
+    serializer.serialize(results, collector, deadline, output);
     EXPECT_EVENTS(result_object,
         {.id = "xasd1022",
             .name = "random rule",
@@ -396,7 +396,7 @@ TEST(TestEventSerializer, SerializeEventNoActions)
 
     ddwaf::timer deadline{2s};
     auto [result_object, output] = serializer.initialise_result_object();
-    serializer.serialize(store, results, collector, deadline, output);
+    serializer.serialize(results, collector, deadline, output);
     EXPECT_EVENTS(result_object, {.id = "xasd1022",
                                      .name = "random rule",
                                      .tags = {{"type", "test"}, {"category", "none"}},
@@ -452,7 +452,7 @@ TEST(TestEventSerializer, SerializeAllTags)
 
     ddwaf::timer deadline{2s};
     auto [result_object, output] = serializer.initialise_result_object();
-    serializer.serialize(store, results, collector, deadline, output);
+    serializer.serialize(results, collector, deadline, output);
     EXPECT_EVENTS(
         result_object, {.id = "xasd1022",
                            .name = "random rule",
@@ -509,7 +509,7 @@ TEST(TestEventSerializer, NoMonitorActions)
 
     ddwaf::timer deadline{2s};
     auto [result_object, output] = serializer.initialise_result_object();
-    serializer.serialize(store, results, collector, deadline, output);
+    serializer.serialize(results, collector, deadline, output);
     EXPECT_EVENTS(
         result_object, {.id = "xasd1022",
                            .name = "random rule",
@@ -567,7 +567,7 @@ TEST(TestEventSerializer, UndefinedActions)
 
     ddwaf::timer deadline{2s};
     auto [result_object, output] = serializer.initialise_result_object();
-    serializer.serialize(store, results, collector, deadline, output);
+    serializer.serialize(results, collector, deadline, output);
     EXPECT_EVENTS(
         result_object, {.id = "xasd1022",
                            .name = "random rule",
@@ -625,7 +625,7 @@ TEST(TestEventSerializer, StackTraceAction)
 
     ddwaf::timer deadline{2s};
     auto [result_object, output] = serializer.initialise_result_object();
-    serializer.serialize(store, results, collector, deadline, output);
+    serializer.serialize(results, collector, deadline, output);
     EXPECT_EVENTS(
         result_object, {.id = "xasd1022",
                            .name = "random rule",
@@ -701,7 +701,7 @@ TEST(TestEventSerializer, SerializeMultiArgMatchWithKeyPaths)
 
     ddwaf::timer deadline{2s};
     auto [result_object, output] = serializer.initialise_result_object();
-    serializer.serialize(store, results, collector, deadline, output);
+    serializer.serialize(results, collector, deadline, output);
 
     EXPECT_EVENTS(result_object,
         {.id = "rule-multi",

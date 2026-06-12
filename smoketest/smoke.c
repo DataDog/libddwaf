@@ -273,5 +273,34 @@ int main() {
     puts("result is valid");
     ddwaf_object_destroy(&result, alloc);
 
+    // Exercise the multieval entrypoint. It takes an array of input batches
+    // (each a map of addresses); the actual data is irrelevant here, this just
+    // verifies the symbol is exported and the library loads correctly.
+    ddwaf_context multi_ctx = ddwaf_context_init(handle, alloc);
+    if (!multi_ctx) {
+        puts("multi_ctx is null");
+        return 1;
+    }
+
+    ddwaf_object multi_data;
+    ddwaf_object_set_array(&multi_data, 1, alloc);
+
+    ddwaf_object *batch = ddwaf_object_insert(&multi_data, alloc);
+    ddwaf_object_set_map(batch, 1, alloc);
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(batch, STRL("key"), alloc), STRL("Arachni"), alloc);
+
+    ddwaf_object multi_result = {0};
+    ddwaf_context_multieval(multi_ctx, &multi_data, alloc, &multi_result, (uint32_t)-1);
+
+    const ddwaf_object *multi_events =
+        ddwaf_object_find(&multi_result, "events", sizeof("events") - 1);
+    if (ddwaf_object_get_size(multi_events) == 0) {
+        puts("multieval result is empty");
+        return 1;
+    }
+    puts("multieval result is valid");
+    ddwaf_object_destroy(&multi_result, alloc);
+
     return 0;
 }

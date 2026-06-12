@@ -12,7 +12,6 @@
 #include "memory_resource.hpp"
 #include "obfuscator.hpp"
 #include "object.hpp"
-#include "object_store.hpp"
 #include "pointer.hpp"
 #include "rule.hpp"
 #include <utility>
@@ -28,6 +27,7 @@ struct result_components {
     borrowed_object timeout;
     borrowed_object attributes;
     borrowed_object keep;
+    borrowed_object evaluated;
 };
 // NOLINTEND(cppcoreguidelines-avoid-const-or-ref-data-members)
 
@@ -38,8 +38,8 @@ public:
         : obfuscator_(obfuscator), actions_(actions), alloc_(alloc)
     {}
 
-    void serialize(const object_store &store, std::vector<rule_result> &results,
-        attribute_collector &collector, const timer &deadline, result_components output);
+    void serialize(std::vector<rule_result> &results, attribute_collector &collector,
+        const timer &deadline, result_components output);
 
     std::pair<owned_object, result_components> initialise_result_object();
 

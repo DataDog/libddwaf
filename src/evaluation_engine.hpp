@@ -18,6 +18,7 @@
 #include "exclusion/common.hpp"
 #include "exclusion/input_filter.hpp"
 #include "exclusion/rule_filter.hpp"
+#include "input_batch_queue.hpp"
 #include "log.hpp"
 #include "memory_resource.hpp"
 #include "module.hpp"
@@ -48,23 +49,49 @@ public:
     evaluation_engine &operator=(evaluation_engine &&) = delete;
     ~evaluation_engine() = default;
 
-    bool insert(owned_object data) noexcept
+    bool insert_batch(owned_object data) noexcept
     {
-        if (!store_.insert(std::move(data))) {
+        if (!input_batches_.insert_batch(store_, std::move(data))) {
             DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
             return false;
         }
         return true;
     }
 
-    bool insert(map_view data) noexcept
+    bool insert_batch(map_view data) noexcept
     {
-        if (!store_.insert(data)) {
+        if (!input_batches_.insert_batch(store_, data)) {
             DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
             return false;
         }
         return true;
     }
+
+    bool insert_batches(owned_object data) noexcept
+    {
+        if (!input_batches_.insert_batches(store_, std::move(data))) {
+            DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
+            return false;
+        }
+        return true;
+    }
+
+    bool insert_batches(array_view data) noexcept
+    {
+        if (!input_batches_.insert_batches(store_, data)) {
+            DDWAF_WARN("Illegal WAF call: parameter structure invalid!");
+            return false;
+        }
+        return true;
+    }
+
+    // Internals exposed for testing
+    bool next_batch() { return input_batches_.next_batch(store_); }
+    bool insert_and_apply(owned_object data) noexcept
+    {
+        return store_.insert_and_apply(std::move(data));
+    }
+    bool insert_and_apply(map_view data) noexcept { return store_.insert_and_apply(data); }
     std::pair<bool, owned_object> eval(timer &deadline);
 
     static evaluation_engine context_engine(std::shared_ptr<ruleset> ruleset, object_store &store,
@@ -86,7 +113,7 @@ public:
     // This function below returns a reference to an internal object,
     // however using them this way helps with testing
     exclusion_policy &eval_filters(timer &deadline);
-    void eval_rules(
+    rule_verdict eval_rules(
         const exclusion_policy &policy, std::vector<rule_result> &results, timer &deadline);
 
 protected:
@@ -135,6 +162,8 @@ protected:
     std::shared_ptr<ruleset> ruleset_;
     // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
     object_store &store_;
+    // Queue of pending input batches fed into the store during evaluation
+    input_batch_queue input_batches_;
     attribute_collector collector_;
 
     // Caches

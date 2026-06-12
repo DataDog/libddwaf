@@ -1037,9 +1037,10 @@ TEST(TestExtractSchemaIntegration, ProcessorSubcontextExpression)
         const auto *attributes = ddwaf_object_find(&out, STRL("attributes"));
         EXPECT_EQ(ddwaf_object_get_size(attributes), 2);
 
-        auto schema = test::object_to_json(*attributes);
-        EXPECT_STR(
-            schema, R"({"server.request.body.schema":[8],"server.request.query.schema":[8]})");
+        // The attribute collector orders entries via an unordered_map, so the
+        // serialised key order is unspecified; compare structurally.
+        EXPECT_JSON(
+            *attributes, R"({"server.request.body.schema":[8],"server.request.query.schema":[8]})");
 
         ddwaf_object_destroy(&out, alloc);
         ddwaf_subcontext_destroy(subctx);

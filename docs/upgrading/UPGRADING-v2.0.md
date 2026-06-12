@@ -591,3 +591,57 @@ ddwaf_object_set_string(
 
 ddwaf_object_destroy(&root, alloc);
 ```
+
+## 5. Batched Evaluation: `ddwaf_context_multieval` and `ddwaf_subcontext_multieval`
+
+v2.x introduces `ddwaf_context_multieval` and `ddwaf_subcontext_multieval`, which evaluate multiple input batches in sequence within a single call and return a single combined result. These functions have no v1.x equivalent.
+
+They behave like `ddwaf_context_eval` / `ddwaf_subcontext_eval`, except that `data` must be an *array of maps*: each element is treated as a separate input batch and evaluated in order. Addresses provided in earlier batches persist in the store and remain available when evaluating later batches, so a rule that requires several addresses can be satisfied by data spread across different batches within the same call. The result accumulates all events, actions and attributes generated across the whole sequence.
+
+The ownership and allocator semantics are identical to the single-batch functions: the data is stored by the context (or subcontext) and freed with the provided allocator on destruction, while the result must be destroyed with the output allocator given to `ddwaf_context_init`. Passing a non-array object returns `DDWAF_ERR_INVALID_OBJECT`.
+
+In addition to the usual keys, the result contains an `evaluated` field: an unsigned integer with the number of batches that were fully evaluated. In the normal case it equals the number of batches provided; it is lower when evaluation stops early, e.g. on a timeout or once a batch produces a blocking result.
+
+```c
+ddwaf_allocator alloc = ddwaf_get_default_allocator();
+ddwaf_context context = ddwaf_context_init(handle, alloc);
+
+// An array of batches; each element is a map of addresses
+ddwaf_object data;
+ddwaf_object_set_array(&data, 2, alloc);
+
+// First batch
+ddwaf_object *batch1 = ddwaf_object_insert(&data, alloc);
+ddwaf_object_set_map(batch1, 1, alloc);
+ddwaf_object_set_string(
+    ddwaf_object_insert_key(batch1, "value_a", 7, alloc), "hello", 5, alloc);
+
+// Second batch - value_a above is still available while this batch is evaluated,
+// so a rule depending on both value_a and value_b can match here
+ddwaf_object *batch2 = ddwaf_object_insert(&data, alloc);
+ddwaf_object_set_map(batch2, 1, alloc);
+ddwaf_object_set_string(
+    ddwaf_object_insert_key(batch2, "value_b", 7, alloc), "world", 5, alloc);
+
+ddwaf_object result;
+DDWAF_RET_CODE code = ddwaf_context_multieval(context, &data, alloc, &result, timeout);
+if (code == DDWAF_MATCH) {
+    // Handle matches accumulated across all batches...
+}
+
+// Destroy result using the output allocator from ddwaf_context_init
+ddwaf_object_destroy(&result, alloc);
+```
+
+The subcontext variant is equivalent and follows the same lifecycle as `ddwaf_subcontext_eval`, evaluating the batches against the data inherited from the parent context without persisting beyond the subcontext:
+
+```c
+ddwaf_subcontext subctx = ddwaf_subcontext_init(context);
+
+ddwaf_object data = ...;  // array of batch maps
+ddwaf_object result;
+ddwaf_subcontext_multieval(subctx, &data, alloc, &result, timeout);
+ddwaf_object_destroy(&result, alloc);
+
+ddwaf_subcontext_destroy(subctx);
+```

@@ -26,7 +26,7 @@ TEST(TestShiDetectorArray, InvalidType)
         {{"server.sys.shell.cmd", object_builder_da::map()}, {"server.request.query", "whatever"}});
 
     object_store store;
-    store.insert(std::move(root));
+    store.insert_and_apply(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -41,7 +41,7 @@ TEST(TestShiDetectorArray, EmptyResource)
         {"server.request.query", "whatever"}});
 
     object_store store;
-    store.insert(std::move(root));
+    store.insert_and_apply(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -56,7 +56,7 @@ TEST(TestShiDetectorArray, InvalidTypeWithinArray)
                                      object_builder_da::map(), "cat /etc/passwd"})}});
 
     object_store store;
-    store.insert(std::move(root));
+    store.insert_and_apply(std::move(root));
 
     ddwaf::timer deadline{2s};
     condition_cache cache;
@@ -112,7 +112,7 @@ TEST(TestShiDetectorArray, NoMatchAndFalsePositives)
         for (const auto &arg : resource) { array.emplace_back(arg); }
 
         object_store store;
-        store.insert(std::move(root));
+        store.insert_and_apply(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -155,7 +155,7 @@ TEST(TestShiDetectorArray, ExecutablesAndRedirections)
         }
 
         object_store store;
-        store.insert(std::move(root));
+        store.insert_and_apply(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -208,7 +208,7 @@ TEST(TestShiDetectorArray, OverlappingInjections)
         }
 
         object_store store;
-        store.insert(std::move(root));
+        store.insert_and_apply(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -247,7 +247,7 @@ TEST(TestShiDetectorArray, InjectionsWithinCommandSubstitution)
         }
 
         object_store store;
-        store.insert(std::move(root));
+        store.insert_and_apply(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -290,7 +290,7 @@ TEST(TestShiDetectorArray, InjectionsWithinProcessSubstitution)
         }
 
         object_store store;
-        store.insert(std::move(root));
+        store.insert_and_apply(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
@@ -339,7 +339,7 @@ TEST(TestShiDetectorArray, OffByOnePayloadsMatch)
         }
 
         object_store store;
-        store.insert(std::move(root));
+        store.insert_and_apply(std::move(root));
 
         ddwaf::timer deadline{2s};
         condition_cache cache;
