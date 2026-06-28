@@ -221,10 +221,11 @@ owned_object node_serialize::operator()(const node_array_ptr &node) const
     }
 
     if (node->truncated) {
-        array.emplace_back(
-            object_builder::map({{"len", node->length}, {"truncated", true}}, alloc));
+        array.emplace_back(object_builder::map(
+            {{"len", static_cast<uint64_t>(node->length)}, {"truncated", true}}, alloc));
     } else {
-        array.emplace_back(object_builder::map({{"len", node->length}}, alloc));
+        array.emplace_back(
+            object_builder::map({{"len", static_cast<uint64_t>(node->length)}}, alloc));
     }
 
     return array;
