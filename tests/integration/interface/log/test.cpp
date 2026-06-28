@@ -29,10 +29,6 @@ TEST(TestLogging, Basic)
 
     DDWAF_TRACE("test message");
     EXPECT_EQ(lastLevel, DDWAF_LOG_TRACE);
-    /*     the files emitting messages are expected to be in src/, so we*/
-    // remove the number of characters in the full path up to src/.
-    // But tests are in tests/, a sibling of src. Because tests is two chars
-    /*longer than src, we get the "s/" in the beginning */
     EXPECT_EQ(lastFile, "test.cpp");
     EXPECT_TRUE(lastFunction.find("TestBody") != std::string::npos);
     EXPECT_EQ(lastMessage, "test message");
