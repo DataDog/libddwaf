@@ -247,26 +247,6 @@ jobs:
           name: coverage-xml
           path: ${{ github.workspace }}/coverage.xml
 
-  upload-to-codecov:
-    needs: [ generate-coverage ]
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-        with:
-          submodules: recursive
-
-      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
-        with:
-          name: coverage-xml
-          path: .
-
-      - name: Submit coverage (CodeCov)
-        uses: codecov/codecov-action@5a1091511ad55cbe89839c7260b706298ca349f7
-        with:
-          flags: waf_test
-          verbose: true
-          files: coverage.xml
-
   upload-to-datadog:
     needs: [ generate-coverage ]
     runs-on: ubuntu-24.04
