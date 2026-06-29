@@ -13,27 +13,48 @@
 #include <fmt/core.h> // IWYU pragma: keep
 
 // NOLINTBEGIN(cppcoreguidelines-macro-usage)
-constexpr const char *base_name(const char *path)
+// Reduces an absolute __FILE__ path to one relative to the repository root by
+// stripping everything before the library's `src/` directory, e.g.
+// "/home/user/libddwaf/src/object_store.cpp" -> "object_store.cpp". When no
+// `src/` segment is present it falls back to the basename. The result is a
+// pointer into the original string literal, so it has static storage duration.
+consteval const char *relative_name(const char *path)
 {
-    const char *base = path;
-    while (*path != '\0') {
+    const char *relative = path;
+    const char *after_last_slash = path;
+    bool sep_before = true;
+
 #ifdef _WIN32
-        char separator = '\\';
+    auto is_sep = [](char c) consteval { return c == '/' || c == '\\'; };
 #else
-        const char separator = '/';
+    auto is_sep = [](char c) consteval { return c == '/'; };
 #endif
-        if (*path++ == separator) {
-            base = path;
+
+    for (const char *p = path; *p != '\0'; ++p) {
+        if (sep_before && p[0] == 's' && p[1] == 'r' && p[2] == 'c' && is_sep(p[3])) {
+            relative = p + 4;
+        }
+        if (is_sep(*p)) {
+            sep_before = true;
+            after_last_slash = p + 1;
+        } else {
+            sep_before = false;
         }
     }
-    return base;
+    return relative != path ? relative : after_last_slash;
 }
+
+static_assert(std::string_view{relative_name("src/bar.cpp")} == std::string_view{"bar.cpp"});
+static_assert(
+    std::string_view{relative_name("/foo/src/bar/src/bar.cpp")} == std::string_view{"bar.cpp"});
+static_assert(std::string_view{relative_name(__FILE__)} == std::string_view{"log.hpp"});
+static_assert(std::string_view{relative_name("/srcsrc/bar.cpp")} == std::string_view{"bar.cpp"});
 
 #define DDWAF_LOG_HELPER(level, function, file, line, fmt_str, ...)                                \
     {                                                                                              \
         if (ddwaf::logger::valid(level)) {                                                         \
             try {                                                                                  \
-                constexpr const char *filename = base_name(file);                                  \
+                constexpr const char *filename = relative_name(file);                              \
                 auto message = ddwaf::fmt::format(fmt_str, ##__VA_ARGS__);                         \
                 ddwaf::logger::log(                                                                \
                     level, function, filename, line, message.c_str(), message.size());             \
