@@ -42,10 +42,12 @@ bool base64_encode::transform_impl(cow_string &str)
     cow_string::size_type write = 0;
 
     for (; read + 2 < str.length(); read += 3) {
-        const std::array<uint8_t, 4> quartet{str.at<uint8_t>(read) >> 2,
-            (str.at<uint8_t>(read) & 0x3) << 4 | (str.at<uint8_t>(read + 1) >> 4),
-            (str.at<uint8_t>(read + 1) & 0xf) << 2 | str.at<uint8_t>(read + 2) >> 6,
-            str.at<uint8_t>(read + 2) & 0x3f};
+        const std::array<uint8_t, 4> quartet{static_cast<uint8_t>(str.at<uint8_t>(read) >> 2),
+            static_cast<uint8_t>(
+                (str.at<uint8_t>(read) & 0x3) << 4 | (str.at<uint8_t>(read + 1) >> 4)),
+            static_cast<uint8_t>(
+                (str.at<uint8_t>(read + 1) & 0xf) << 2 | str.at<uint8_t>(read + 2) >> 6),
+            static_cast<uint8_t>(str.at<uint8_t>(read + 2) & 0x3f)};
 
         new_string[write++] = b64Encoding[quartet[0]];
         new_string[write++] = b64Encoding[quartet[1]];
