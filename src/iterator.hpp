@@ -65,7 +65,7 @@ public:
         }
 
         if (size_ < InlineCapacity) {
-            T *ptr = inline_ptr(size_);
+            T *ptr = inline_ptr_no_obj(size_);
             std::construct_at(ptr, std::forward<Args>(args)...);
             ++size_;
             return *ptr;
@@ -108,6 +108,11 @@ public:
     [[nodiscard]] const T *end() const noexcept { return size_ == 0 ? nullptr : data() + size_; }
 
 private:
+    [[nodiscard]] T *inline_ptr_no_obj(std::size_t index) noexcept
+    {
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+        return reinterpret_cast<T *>(inline_storage_ + (index * sizeof(T)));
+    }
     [[nodiscard]] T *inline_ptr(std::size_t index) noexcept
     {
         // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
