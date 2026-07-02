@@ -9,11 +9,10 @@
 #include "memory_resource.hpp"
 #include <cstddef>
 #include <stdexcept>
-#include <typeinfo>
 
 namespace ddwaf::memory {
 
-class user_resource : public memory::memory_resource {
+class user_resource final : public memory::memory_resource {
 public:
     using alloc_fn_type = void *(*)(void *, size_t, size_t);
     using free_fn_type = void (*)(void *, void *, size_t, size_t);
@@ -27,6 +26,10 @@ public:
             throw std::invalid_argument("undefined user alloc/free function");
         }
     }
+    user_resource(const user_resource &) = delete;
+    user_resource(user_resource &&) = delete;
+    user_resource &operator=(const user_resource &) = delete;
+    user_resource &operator=(user_resource &&) = delete;
 
     ~user_resource() override
     {
@@ -50,12 +53,11 @@ private:
     {
         // Two memory_resources compare equal if and only if memory allocated from one
         //  memory_resource can be deallocated from the other and vice versa.
-        try {
-            const auto &user_mr = dynamic_cast<const user_resource &>(other);
-            return free_fn_ == user_mr.free_fn_;
-        } catch (const std::bad_cast &) {
+        const auto *user_mr = dynamic_cast<const user_resource *>(&other);
+        if (user_mr == nullptr) {
             return false;
         }
+        return free_fn_ == user_mr->free_fn_;
     }
 
     alloc_fn_type alloc_fn_;
