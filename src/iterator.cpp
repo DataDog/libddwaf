@@ -22,9 +22,7 @@ namespace ddwaf {
 
 template <typename T>
 iterator_base<T>::iterator_base(const object_set_ref &exclude) : excluded_(exclude)
-{
-    stack_.reserve(initial_stack_size);
-}
+{}
 
 template <typename T> bool iterator_base<T>::operator++()
 {
