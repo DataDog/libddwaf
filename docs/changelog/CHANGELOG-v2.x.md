@@ -1,4 +1,6 @@
-# v2.0.0
+# libddwaf release
+
+## v2.0.0
 
 libddwaf v2.0.0 represents a significant redesign of the C API, focusing on explicit memory ownership, reduced memory footprint, and a more consistent interface. Beyond the public API, the internals have also been refactored to use safer and more C++-native abstractions.
 
@@ -18,8 +20,9 @@ Object creation functions have been renamed to follow a consistent `ddwaf_object
 
 The function `ddwaf_run` has been renamed to `ddwaf_context_eval` for consistency with the rest of the API. More significantly, ephemeral data semantics have been replaced with a new subcontext mechanism. In v1, ephemeral data was passed as a separate parameter to each `ddwaf_run` call and was not retained. In v2, a subcontext is explicitly created from a parent context via `ddwaf_subcontext_init`, evaluated with `ddwaf_subcontext_eval`, and destroyed with `ddwaf_subcontext_destroy`. Subcontexts inherit all data from their parent context but maintain their own isolated evaluation state. Multiple concurrent subcontexts can be created from the same parent context, each defining its own data scope and lifetime.
 
-## Release Changelog
-### Changes
+### Release changelog
+
+#### Changes
 
 - Object model overhaul: immutable `object_view`, owned/borrowed writable objects, raw configuration on `object_view`, container view types, and updated unit tests ([#341](https://github.com/DataDog/libddwaf/pull/341), [#378](https://github.com/DataDog/libddwaf/pull/378), [#382](https://github.com/DataDog/libddwaf/pull/382), [#387](https://github.com/DataDog/libddwaf/pull/387), [#390](https://github.com/DataDog/libddwaf/pull/390), [#391](https://github.com/DataDog/libddwaf/pull/391), [#394](https://github.com/DataDog/libddwaf/pull/394), [#408](https://github.com/DataDog/libddwaf/pull/408), [#413](https://github.com/DataDog/libddwaf/pull/413), [#476](https://github.com/DataDog/libddwaf/pull/476)).
 - Allocator API: propagate allocators through contexts/subcontexts, expose allocator-aware interfaces, and stop generating zero-terminated strings ([#418](https://github.com/DataDog/libddwaf/pull/418), [#420](https://github.com/DataDog/libddwaf/pull/420), [#427](https://github.com/DataDog/libddwaf/pull/427), [#452](https://github.com/DataDog/libddwaf/pull/452)).
@@ -31,12 +34,12 @@ The function `ddwaf_run` has been renamed to `ddwaf_context_eval` for consistenc
 - Remove legacy configuration schema (v1) support ([#482](https://github.com/DataDog/libddwaf/pull/482)).
 - Introduce ddwaf_(context|subcontext)_multieval to evaluate multiple batches in sequence ([#494](https://github.com/DataDog/libddwaf/pull/494)).
 
-### Fixes
+#### Fixes
 
 - Report input attribute addresses on `ddwaf_known_addresses` ([#485](https://github.com/DataDog/libddwaf/pull/485)).
 - Remove default allocator arguments ([#486](https://github.com/DataDog/libddwaf/pull/486)).
 
-### Miscellaneous
+#### Miscellaneous
 
 - Upgrade fmt dependency and use as header-only ([#478](https://github.com/DataDog/libddwaf/pull/478)).
 - Increase macOS target to 14.2.1 ([#477](https://github.com/DataDog/libddwaf/pull/477)).
