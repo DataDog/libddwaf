@@ -984,7 +984,7 @@ TEST(TestBaseRuleParser, CompatibleVersion)
     ruleset_info::section_info section;
 
     auto rule_object = yaml_to_object<owned_object>(
-        R"([{id: 1, name: rule1, tags: {type: flow1, category: category1}, min_version: 0.0.99, max_version: 2.0.0, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}]}])");
+        R"([{id: 1, name: rule1, tags: {type: flow1, category: category1}, min_version: 0.0.99, max_version: 99.0.0, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}]}])");
 
     auto rule_array = static_cast<raw_configuration::vector>(raw_configuration(rule_object));
     EXPECT_EQ(rule_array.size(), 1);
