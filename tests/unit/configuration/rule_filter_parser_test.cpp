@@ -935,7 +935,7 @@ TEST(TestRuleFilterParser, IncompatibleMaxVersion)
 TEST(TestRuleFilterParser, CompatibleVersion)
 {
     auto object = yaml_to_object<owned_object>(
-        R"([{id: 1, rules_target: [{rule_id: 2939}], min_version: 0.0.99, max_version: 2.0.0, on_match: monitor}])");
+        R"([{id: 1, rules_target: [{rule_id: 2939}], min_version: 0.0.99, max_version: 99.0.0, on_match: monitor}])");
 
     configuration_spec cfg;
     configuration_change_spec change;

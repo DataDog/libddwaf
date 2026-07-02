@@ -839,7 +839,7 @@ TEST(TestProcessorParser, IncompatibleMaxVersion)
 TEST(TestProcessorParser, CompatibleVersion)
 {
     auto object = yaml_to_object<owned_object>(
-        R"([{id: 1, generator: extract_schema, parameters: {mappings: [{inputs: [{address: in}], output: out}]}, min_version: 0.0.99, max_version: 2.0.0, evaluate: false, output: true}])");
+        R"([{id: 1, generator: extract_schema, parameters: {mappings: [{inputs: [{address: in}], output: out}]}, min_version: 0.0.99, max_version: 99.0.0, evaluate: false, output: true}])");
 
     configuration_spec cfg;
     configuration_change_spec change;

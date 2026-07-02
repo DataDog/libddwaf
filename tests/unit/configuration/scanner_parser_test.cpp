@@ -874,7 +874,7 @@ TEST(TestScannerParser, IncompatibleMaxVersion)
 TEST(TestScannerParser, CompatibleVersion)
 {
     auto definition = yaml_to_object<owned_object>(
-        R"([{"id":"ecd","key":{"operator":"match_regex","parameters":{"regex":"email"}},"tags":{"type":"email","category":"pii"}, "min_version": "0.0.99", "max_version": "2.0.0"}])");
+        R"([{"id":"ecd","key":{"operator":"match_regex","parameters":{"regex":"email"}},"tags":{"type":"email","category":"pii"}, "min_version": "0.0.99", "max_version": "99.0.0"}])");
     auto scanners_array = static_cast<raw_configuration::vector>(raw_configuration(definition));
 
     configuration_spec cfg;

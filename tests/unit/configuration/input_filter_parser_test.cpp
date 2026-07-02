@@ -732,7 +732,7 @@ TEST(TestInputFilterParser, IncompatibleMaxVersion)
 TEST(TestInputFilterParser, CompatibleVersion)
 {
     auto object = yaml_to_object<owned_object>(
-        R"([{id: 1, inputs: [{address: http.client_ip}], min_version: 0.0.99, max_version: 2.0.0}])");
+        R"([{id: 1, inputs: [{address: http.client_ip}], min_version: 0.0.99, max_version: 99.0.0}])");
 
     configuration_spec cfg;
     configuration_change_spec change;
