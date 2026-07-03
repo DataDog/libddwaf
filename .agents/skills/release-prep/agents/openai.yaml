@@ -1,0 +1,4 @@
+interface:
+  display_name: "Release Prep"
+  short_description: "Prepare release branches and checks"
+  default_prompt: "Use $release-prep to prepare a release in this repository."
