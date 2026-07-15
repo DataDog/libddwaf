@@ -32,6 +32,22 @@ static float ceilf_local_sse41(float x)
     );
     return result;
 }
+
+static int cpu_supports_sse41(void)
+{
+    uint32_t eax = 1;
+    uint32_t ecx;
+
+    // clang 8+ assumes that __cpu_model and __cpu_indicator_init bind locally
+    // and emits direct relocations incompatible with shared libraries, even
+    // when compiling with -fPIC. While libgcc_s/libclang_rt.builtins
+    // (compiler-rt) provide these as hidden and therefore non-preemptible
+    // definitions, Rust does not link against them and ships with its own
+    // compiler intrinsics crate, which provides neither symbol. So avoid
+    // __builtin_cpu_supports altogether.
+    __asm__("cpuid" : "+a" (eax), "=c" (ecx) : : "ebx", "edx");
+    return (ecx & (1U << 19)) != 0;
+}
 #endif
 /* fp_force_eval ensures that the input value is computed when that's
    otherwise unused.  To prevent the constant folding of the input
@@ -92,8 +108,7 @@ float ceilf(float x)
         void *ceilf_sym = dlsym(RTLD_DEFAULT, "ceilf");
         if (ceilf_sym == NULL || ceilf_sym == &ceilf) {
 #if defined(__x86_64__)
-            __builtin_cpu_init();
-            if (__builtin_cpu_supports("sse4.1")) {
+            if (cpu_supports_sse41()) {
                 ceilf_global_ = &ceilf_local_sse41;
             } else {
                 ceilf_global_ = &ceilf_local;
