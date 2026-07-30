@@ -1,0 +1,20 @@
+{
+  name: "Basic run with float greater_equal operator",
+  runs: [
+    {
+      input: {
+        rule3-input: 4.2
+      },
+      rules: [
+        {
+          3: [
+            {
+              address: rule3-input
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}

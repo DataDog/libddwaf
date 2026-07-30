@@ -281,8 +281,8 @@ void test_runner::validate_matches(const YAML::Node &expected, const YAML::Node 
 
     static std::set<std::string_view, std::less<>> scalar_operators{"match_regex", "phrase_match",
         "exact_match", "ip_match", "equals", "is_sqli", "is_xss", "exists", "greater_than",
-        "lower_than", "!match_regex", "!phrase_match", "!exact_match", "!ip_match", "!equals",
-        "!is_sqli", "!is_xss", "!exists"};
+        "lower_than", "lower_equal", "greater_equal", "!match_regex", "!phrase_match",
+        "!exact_match", "!ip_match", "!equals", "!is_sqli", "!is_xss", "!exists"};
 
     // Iterate through matches, assume they are in the same order as rule
     // conditions for now.

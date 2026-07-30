@@ -1141,4 +1141,111 @@ TEST(TestBaseRuleParser, InvalidOutputType)
     EXPECT_TRUE(cfg.rule_overrides_by_tags.empty());
 }
 
+TEST(TestBaseRuleParser, ParseRuleWithComparisonAliases)
+{
+    configuration_spec cfg;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
+    ruleset_info::section_info section;
+
+    auto rule_object = yaml_to_object<owned_object>(
+        R"([{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: lower_equal, parameters: {inputs: [{address: arg1}], type: signed, value: 5}}, {operator: greater_equal, parameters: {inputs: [{address: arg2}], type: unsigned, value: 5}}]}])");
+
+    auto rule_array = static_cast<raw_configuration::vector>(raw_configuration(rule_object));
+    parse_base_rules(rule_array, collector, section);
+
+    {
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
+
+        auto root_map = static_cast<raw_configuration::map>(root);
+
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 1);
+        EXPECT_NE(loaded.find("1"), loaded.end());
+
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 0);
+
+        auto errors = at<raw_configuration::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 0);
+    }
+
+    ASSERT_EQ(cfg.base_rules.size(), 1);
+    EXPECT_EQ(cfg.base_rules["1"].expr->size(), 2);
+}
+
+// Unlike greater_than and lower_than, the negated aliases are backed by
+// negated_scalar_condition, which only supports a single target
+TEST(TestBaseRuleParser, ParseRuleWithVariadicComparisonAlias)
+{
+    configuration_spec cfg;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
+    ruleset_info::section_info section;
+
+    auto rule_object = yaml_to_object<owned_object>(
+        R"([{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: lower_equal, parameters: {inputs: [{address: arg1}, {address: arg2}], type: signed, value: 5}}]}])");
+
+    auto rule_array = static_cast<raw_configuration::vector>(raw_configuration(rule_object));
+    parse_base_rules(rule_array, collector, section);
+
+    {
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
+
+        auto root_map = static_cast<raw_configuration::map>(root);
+
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 0);
+
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 1);
+        EXPECT_NE(failed.find("1"), failed.end());
+
+        auto errors = at<raw_configuration::map>(root_map, "errors");
+        ASSERT_EQ(errors.size(), 1);
+        auto it = errors.find("multiple targets for non-variadic argument");
+        EXPECT_NE(it, errors.end());
+    }
+
+    EXPECT_TRUE(cfg.base_rules.empty());
+}
+
+// The aliases are already the negated form, so they can't be negated again
+TEST(TestBaseRuleParser, ParseRuleWithNegatedComparisonAlias)
+{
+    configuration_spec cfg;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
+    ruleset_info::section_info section;
+
+    auto rule_object = yaml_to_object<owned_object>(
+        R"([{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: "!lower_equal", parameters: {inputs: [{address: arg1}], type: signed, value: 5}}]}])");
+
+    auto rule_array = static_cast<raw_configuration::vector>(raw_configuration(rule_object));
+    parse_base_rules(rule_array, collector, section);
+
+    {
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
+
+        auto root_map = static_cast<raw_configuration::map>(root);
+
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 1);
+        EXPECT_NE(failed.find("1"), failed.end());
+
+        // An unknown operator is reported as a warning rather than an error
+        auto errors = at<raw_configuration::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 0);
+
+        auto warnings = at<raw_configuration::map>(root_map, "warnings");
+        ASSERT_EQ(warnings.size(), 1);
+        EXPECT_NE(warnings.find("unknown operator: \'lower_equal\'"), warnings.end());
+    }
+
+    EXPECT_TRUE(cfg.base_rules.empty());
+}
+
 } // namespace
