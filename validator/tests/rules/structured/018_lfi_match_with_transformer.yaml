@@ -1,0 +1,28 @@
+{
+  name: "LFI match on a url-encoded parameter",
+  runs: [
+    {
+      input: {
+        server.io.fs.file: "documents/../../../../../../../../../etc/passwd",
+        server.request.cookies: [ "..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2Fetc%2Fpasswd" ]
+      },
+      rules: [
+        {
+          "rsp-931-001": [
+            {
+              resource: {
+                address: "server.io.fs.file",
+                value: "documents/../../../../../../../../../etc/passwd"
+              },
+              params: {
+                address: "server.request.cookies",
+                value: "../../../../../../../../../etc/passwd"
+              }
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}

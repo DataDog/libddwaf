@@ -407,4 +407,192 @@ TEST(TestSqliDetectorPgSql, Tautologies)
         EXPECT_STR(cache.match->highlights[0], input);
     }
 }
+
+// Generates the parameter definition of the sqli detector, applying the given
+// transformers to the params argument only
+std::vector<condition_parameter> gen_sqli_param_def_with_transformers(
+    std::vector<transformer_id> transformers)
+{
+    return {condition_parameter{{condition_target{
+                .name = "server.db.statement", .index = get_target_index("server.db.statement")}}},
+        condition_parameter{{condition_target{.name = "server.request.query",
+            .index = get_target_index("server.request.query"),
+            .key_path = {},
+            .transformers = std::move(transformers)}}},
+        condition_parameter{{condition_target{
+            .name = "server.db.system", .index = get_target_index("server.db.system")}}}};
+}
+
+constexpr std::string_view sqli_statement = R"(SELECT * FROM t WHERE id = '' OR '1'='1')";
+constexpr std::string_view sqli_obfuscated = R"(SELECT * FROM t WHERE id = ? OR ?=?)";
+constexpr std::string_view sqli_payload = R"(' OR '1'='1)";
+
+TEST(TestSqliDetectorTransformers, NoMatchWithoutTransformer)
+{
+    sqli_detector cond{
+        {gen_param_def("server.db.statement", "server.request.query", "server.db.system")}};
+
+    auto root = object_builder_da::map({{"server.db.statement", sqli_statement},
+        {"server.db.system", "mysql"}, {"server.request.query", "%27%20OR%20%271%27%3D%271"}});
+
+    object_store store;
+    store.insert_and_apply(std::move(root));
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    EXPECT_FALSE(cond.eval(cache, store, {}, {}, deadline));
+    EXPECT_FALSE(cache.match);
+}
+
+TEST(TestSqliDetectorTransformers, MatchWithTransformer)
+{
+    sqli_detector cond{gen_sqli_param_def_with_transformers({transformer_id::url_decode})};
+
+    auto root = object_builder_da::map({{"server.db.statement", sqli_statement},
+        {"server.db.system", "mysql"}, {"server.request.query", "%27%20OR%20%271%27%3D%271"}});
+
+    object_store store;
+    store.insert_and_apply(std::move(root));
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
+
+    ASSERT_TRUE(cache.match);
+    EXPECT_STRV(cache.match->args[0].address, "server.db.statement");
+    EXPECT_STR(cache.match->args[0].resolved, sqli_obfuscated);
+
+    EXPECT_STRV(cache.match->args[1].address, "server.request.query");
+    // The reported parameter is the transformed one
+    EXPECT_STR(cache.match->args[1].resolved, sqli_payload);
+    EXPECT_STR(cache.match->highlights[0], sqli_payload);
+}
+
+TEST(TestSqliDetectorTransformers, MatchWithMultipleTransformers)
+{
+    sqli_detector cond{gen_sqli_param_def_with_transformers(
+        {transformer_id::base64_decode, transformer_id::url_decode})};
+
+    // base64("%27%20OR%20%271%27%3D%271")
+    auto root = object_builder_da::map(
+        {{"server.db.statement", sqli_statement}, {"server.db.system", "mysql"},
+            {"server.request.query", "JTI3JTIwT1IlMjAlMjcxJTI3JTNEJTI3MQ=="}});
+
+    object_store store;
+    store.insert_and_apply(std::move(root));
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
+
+    ASSERT_TRUE(cache.match);
+    EXPECT_STR(cache.match->highlights[0], sqli_payload);
+}
+
+// When the transformers leave the parameter untouched, the original value must
+// still be evaluated
+TEST(TestSqliDetectorTransformers, MatchWithUnappliedTransformer)
+{
+    sqli_detector cond{gen_sqli_param_def_with_transformers({transformer_id::url_decode})};
+
+    auto root = object_builder_da::map({{"server.db.statement", sqli_statement},
+        {"server.db.system", "mysql"}, {"server.request.query", sqli_payload}});
+
+    object_store store;
+    store.insert_and_apply(std::move(root));
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
+
+    ASSERT_TRUE(cache.match);
+    EXPECT_STR(cache.match->highlights[0], sqli_payload);
+}
+
+// Every parameter within the container must be transformed independently
+TEST(TestSqliDetectorTransformers, MatchWithTransformerWithinContainer)
+{
+    sqli_detector cond{gen_sqli_param_def_with_transformers({transformer_id::url_decode})};
+
+    auto root = object_builder_da::map(
+        {{"server.db.statement", sqli_statement}, {"server.db.system", "mysql"},
+            {"server.request.query", object_builder_da::map({{"harmless", "not+an+injection"},
+                                         {"payload", "%27%20OR%20%271%27%3D%271"}})}});
+
+    object_store store;
+    store.insert_and_apply(std::move(root));
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
+
+    ASSERT_TRUE(cache.match);
+    EXPECT_STR(cache.match->highlights[0], sqli_payload);
+    ASSERT_EQ(cache.match->args[1].key_path.size(), 1);
+    EXPECT_STR(std::get<std::string_view>(cache.match->args[1].key_path[0]), "payload");
+}
+
+// Neither the statement nor the database type are transformed
+TEST(TestSqliDetectorTransformers, ResourceNotTransformed)
+{
+    sqli_detector cond{{condition_parameter{{condition_target{.name = "server.db.statement",
+                            .index = get_target_index("server.db.statement"),
+                            .key_path = {},
+                            .transformers = {transformer_id::url_decode}}}},
+        condition_parameter{{condition_target{
+            .name = "server.request.query", .index = get_target_index("server.request.query")}}},
+        condition_parameter{{condition_target{
+            .name = "server.db.system", .index = get_target_index("server.db.system")}}}}};
+
+    auto root = object_builder_da::map(
+        {{"server.db.statement", R"(SELECT%20*%20FROM%20t%20WHERE%20id%20=%20''%20OR%20'1'='1')"},
+            {"server.db.system", "mysql"}, {"server.request.query", sqli_payload}});
+
+    object_store store;
+    store.insert_and_apply(std::move(root));
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    EXPECT_FALSE(cond.eval(cache, store, {}, {}, deadline));
+    EXPECT_FALSE(cache.match);
+}
+
+// The transformed parameter replaces the original one, so a payload which is
+// present verbatim within the statement is no longer detected once the
+// transformers modify it
+TEST(TestSqliDetectorTransformers, NoMatchOnUntransformedParameter)
+{
+    sqli_detector cond{gen_sqli_param_def_with_transformers({transformer_id::lowercase})};
+
+    auto root = object_builder_da::map({{"server.db.statement", sqli_statement},
+        {"server.db.system", "mysql"}, {"server.request.query", sqli_payload}});
+
+    object_store store;
+    store.insert_and_apply(std::move(root));
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    EXPECT_FALSE(cond.eval(cache, store, {}, {}, deadline));
+    EXPECT_FALSE(cache.match);
+}
+
+// A parameter reduced to an empty string by the transformers must not be
+// considered an injection
+TEST(TestSqliDetectorTransformers, NoMatchOnEmptyTransformedParameter)
+{
+    sqli_detector cond{gen_sqli_param_def_with_transformers({transformer_id::remove_nulls})};
+
+    const std::string nulls("\0\0\0\0", 4);
+    auto root = object_builder_da::map({{"server.db.statement", sqli_statement},
+        {"server.db.system", "mysql"}, {"server.request.query", nulls}});
+
+    object_store store;
+    store.insert_and_apply(std::move(root));
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    EXPECT_FALSE(cond.eval(cache, store, {}, {}, deadline));
+    EXPECT_FALSE(cache.match);
+}
+
 } // namespace

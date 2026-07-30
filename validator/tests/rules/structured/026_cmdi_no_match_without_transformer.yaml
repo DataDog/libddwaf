@@ -1,0 +1,12 @@
+{
+  name: "CMDi no match, the encoded parameter is on an address without transformers",
+  runs: [
+    {
+      input: {
+        server.sys.exec.cmd: [ "/bin/sh", "-c", "ls -l" ],
+        server.request.headers.no_cookies: { cmd: "ls%20-l" }
+      },
+      code: ok
+    }
+  ]
+}

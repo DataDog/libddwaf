@@ -1,0 +1,29 @@
+{
+  name: "SSRF match on a url-encoded parameter",
+  runs: [
+    {
+      input: {
+        server.io.net.url: "https://internal-website.evil.com/path/to/stuffs?bla=42",
+        server.request.cookies: { path: ".evil.com%2Fpath%2Fto%2Fstuffs%3F" }
+      },
+      rules: [
+        {
+          "rsp-931-002": [
+            {
+              resource: {
+                address: "server.io.net.url",
+                value: "https://internal-website.evil.com/path/to/stuffs?bla=42"
+              },
+              params: {
+                address: "server.request.cookies",
+                key_path: [ "path" ],
+                value: ".evil.com/path/to/stuffs?"
+              }
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}

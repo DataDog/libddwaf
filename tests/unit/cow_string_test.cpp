@@ -116,6 +116,99 @@ TEST(TestCoWString, MoveUnmodified)
     EXPECT_EQ(str.data(), nullptr);
 }
 
+TEST(TestCoWString, MoveConstructUnmodified)
+{
+    cow_string str("value");
+
+    cow_string other{std::move(str)};
+    EXPECT_EQ(other.length(), 5);
+    EXPECT_FALSE(other.modified());
+    EXPECT_STRV(static_cast<std::string_view>(other), "value");
+}
+
+TEST(TestCoWString, MoveConstructModified)
+{
+    cow_string str("value");
+    str[3] = 'e';
+    EXPECT_TRUE(str.modified());
+
+    cow_string other{std::move(str)};
+    EXPECT_EQ(other.length(), 5);
+    EXPECT_TRUE(other.modified());
+    EXPECT_STRV(static_cast<std::string_view>(other), "valee");
+}
+
+TEST(TestCoWString, MoveAssignUnmodified)
+{
+    cow_string str("value");
+    cow_string other("other value");
+
+    other = std::move(str);
+    EXPECT_EQ(other.length(), 5);
+    EXPECT_FALSE(other.modified());
+    EXPECT_STRV(static_cast<std::string_view>(other), "value");
+}
+
+// The buffer owned by the assignee must be released on assignment
+TEST(TestCoWString, MoveAssignOverModified)
+{
+    cow_string str("value");
+
+    cow_string other("other value");
+    other[0] = 'O';
+    EXPECT_TRUE(other.modified());
+
+    other = std::move(str);
+    EXPECT_EQ(other.length(), 5);
+    EXPECT_FALSE(other.modified());
+    EXPECT_STRV(static_cast<std::string_view>(other), "value");
+}
+
+TEST(TestCoWString, MoveAssignModified)
+{
+    cow_string str("value");
+    str[3] = 'e';
+    EXPECT_TRUE(str.modified());
+
+    cow_string other("other value");
+    other[0] = 'O';
+    EXPECT_TRUE(other.modified());
+
+    other = std::move(str);
+    EXPECT_EQ(other.length(), 5);
+    EXPECT_TRUE(other.modified());
+    EXPECT_STRV(static_cast<std::string_view>(other), "valee");
+}
+
+// std::optional<cow_string> relies on both move construction and move
+// assignment, which is how transformed parameters are stored during evaluation
+TEST(TestCoWString, MoveAssignWithinOptional)
+{
+    std::optional<cow_string> str;
+
+    str = cow_string{"value"};
+    ASSERT_TRUE(str.has_value());
+    EXPECT_STRV(static_cast<std::string_view>(*str), "value");
+
+    (*str)[0] = 'V';
+    EXPECT_TRUE(str->modified());
+    EXPECT_STRV(static_cast<std::string_view>(*str), "Value");
+
+    str = cow_string{"another value"};
+    ASSERT_TRUE(str.has_value());
+    EXPECT_FALSE(str->modified());
+    EXPECT_STRV(static_cast<std::string_view>(*str), "another value");
+
+    str.reset();
+    EXPECT_FALSE(str.has_value());
+}
+
+TEST(TestCoWString, ConstStringView)
+{
+    const cow_string str("value");
+    EXPECT_STRV(static_cast<std::string_view>(str), "value");
+}
+
 TEST(TestCoWString, MoveAfterTruncate)
 {
     cow_string str("value");
@@ -131,6 +224,18 @@ TEST(TestCoWString, MoveAfterTruncate)
     EXPECT_EQ(str.length(), 0);
     EXPECT_FALSE(str.modified());
     EXPECT_EQ(str.data(), nullptr);
+}
+
+TEST(TestCoWString, Empty)
+{
+    cow_string str("value");
+    EXPECT_FALSE(str.empty());
+
+    str.truncate(0);
+    EXPECT_TRUE(str.empty());
+
+    cow_string empty_str("");
+    EXPECT_TRUE(empty_str.empty());
 }
 
 } // namespace

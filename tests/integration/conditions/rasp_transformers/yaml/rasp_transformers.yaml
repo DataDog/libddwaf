@@ -1,0 +1,89 @@
+version: '2.2'
+rules:
+  - id: rasp-lfi
+    name: LFI Exploit detection
+    tags:
+      type: lfi
+      category: exploit_detection
+      module: rasp
+    conditions:
+      - operator: lfi_detector@v2
+        parameters:
+          resource:
+            - address: server.io.fs.file
+          params:
+            - address: server.request.query
+              transformers:
+                - url_decode
+            - address: server.request.body
+
+  - id: rasp-ssrf
+    name: SSRF Exploit detection
+    tags:
+      type: ssrf
+      category: exploit_detection
+      module: rasp
+    conditions:
+      - operator: ssrf_detector@v1
+        parameters:
+          resource:
+            - address: server.io.net.url
+          params:
+            - address: server.request.query
+              transformers:
+                - url_decode
+            - address: server.request.body
+
+  - id: rasp-sqli
+    name: SQLi Exploit detection
+    tags:
+      type: sqli
+      category: exploit_detection
+      module: rasp
+    conditions:
+      - operator: sqli_detector@v2
+        parameters:
+          resource:
+            - address: server.db.statement
+          params:
+            - address: server.request.query
+              transformers:
+                - url_decode
+            - address: server.request.body
+          db_type:
+            - address: server.db.system
+
+  - id: rasp-shi
+    name: SHi Exploit detection
+    tags:
+      type: shi
+      category: exploit_detection
+      module: rasp
+    conditions:
+      - operator: shi_detector@v1
+        parameters:
+          resource:
+            - address: server.sys.shell.cmd
+          params:
+            - address: server.request.query
+              transformers:
+                - base64_decode
+                - url_decode
+            - address: server.request.body
+
+  - id: rasp-cmdi
+    name: CMDi Exploit detection
+    tags:
+      type: cmdi
+      category: exploit_detection
+      module: rasp
+    conditions:
+      - operator: cmdi_detector@v1
+        parameters:
+          resource:
+            - address: server.sys.exec.cmd
+          params:
+            - address: server.request.query
+              transformers:
+                - url_decode
+            - address: server.request.body

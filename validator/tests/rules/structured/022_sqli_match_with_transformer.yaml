@@ -1,0 +1,33 @@
+{
+  name: "SQLi match on a url-encoded parameter",
+  runs: [
+    {
+      input: {
+        server.db.statement: "SELECT * FROM users WHERE id ='' OR 1=1; -- ';",
+        server.request.cookies: [ "%27%20OR%201%3D1%3B%20--" ],
+        server.db.system: "mysql"
+      },
+      rules: [
+        {
+          "rsp-931-003": [
+            {
+              resource: {
+                address: "server.db.statement",
+                value: "SELECT * FROM users WHERE id =? OR ?=?; -- ';"
+              },
+              params: {
+                address: "server.request.cookies",
+                value: "' OR 1=1; --"
+              },
+              db_type: {
+                address: "server.db.system",
+                value: "mysql"
+              }
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}

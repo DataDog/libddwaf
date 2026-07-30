@@ -31,7 +31,9 @@
 #include "object_type.hpp"
 #include "platform.hpp"
 #include "tokenizer/shell.hpp"
+#include "transformer/base.hpp"
 #include "transformer/lowercase.hpp"
+#include "transformer/manager.hpp"
 #include "utils.hpp"
 
 using namespace std::literals;

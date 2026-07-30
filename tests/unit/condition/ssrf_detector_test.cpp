@@ -552,4 +552,145 @@ TEST(TestSSRFDetector, ForbidFullUrlInjection)
         false, ssrf_opts{.forbid_full_url_injection = false});
 }
 
+// Generates the parameter definition of the ssrf detector, applying the given
+// transformers to the params argument only
+std::vector<condition_parameter> gen_ssrf_param_def_with_transformers(
+    std::vector<transformer_id> transformers)
+{
+    return {condition_parameter{{condition_target{
+                .name = "server.io.net.url", .index = get_target_index("server.io.net.url")}}},
+        condition_parameter{{condition_target{.name = "server.request.query",
+            .index = get_target_index("server.request.query"),
+            .key_path = {},
+            .transformers = std::move(transformers)}}}};
+}
+
+constexpr std::string_view ssrf_url = "https://internal-website.evil.com/path/to/stuffs?bla=42";
+constexpr std::string_view ssrf_payload = ".evil.com/path/to/stuffs?";
+
+TEST(TestSSRFDetectorTransformers, NoMatchWithoutTransformer)
+{
+    ssrf_detector cond{{gen_param_def("server.io.net.url", "server.request.query")}};
+
+    auto root = object_builder_da::map({{"server.io.net.url", ssrf_url},
+        {"server.request.query", ".evil.com%2Fpath%2Fto%2Fstuffs%3F"}});
+
+    object_store store;
+    store.insert_and_apply(std::move(root));
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    EXPECT_FALSE(cond.eval(cache, store, {}, {}, deadline));
+    EXPECT_FALSE(cache.match);
+}
+
+TEST(TestSSRFDetectorTransformers, MatchWithTransformer)
+{
+    ssrf_detector cond{gen_ssrf_param_def_with_transformers({transformer_id::url_decode})};
+
+    auto root = object_builder_da::map({{"server.io.net.url", ssrf_url},
+        {"server.request.query", ".evil.com%2Fpath%2Fto%2Fstuffs%3F"}});
+
+    object_store store;
+    store.insert_and_apply(std::move(root));
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
+
+    ASSERT_TRUE(cache.match);
+    EXPECT_STRV(cache.match->args[0].address, "server.io.net.url");
+    EXPECT_STR(cache.match->args[0].resolved, ssrf_url);
+
+    EXPECT_STRV(cache.match->args[1].address, "server.request.query");
+    // The reported parameter is the transformed one
+    EXPECT_STR(cache.match->args[1].resolved, ssrf_payload);
+    EXPECT_STR(cache.match->highlights[0], ssrf_payload);
+}
+
+TEST(TestSSRFDetectorTransformers, MatchWithMultipleTransformers)
+{
+    ssrf_detector cond{gen_ssrf_param_def_with_transformers(
+        {transformer_id::base64_decode, transformer_id::url_decode})};
+
+    // base64(".evil.com%2Fpath%2Fto%2Fstuffs%3F")
+    auto root = object_builder_da::map({{"server.io.net.url", ssrf_url},
+        {"server.request.query", "LmV2aWwuY29tJTJGcGF0aCUyRnRvJTJGc3R1ZmZzJTNG"}});
+
+    object_store store;
+    store.insert_and_apply(std::move(root));
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
+
+    ASSERT_TRUE(cache.match);
+    EXPECT_STR(cache.match->highlights[0], ssrf_payload);
+}
+
+// When the transformers leave the parameter untouched, the original value must
+// still be evaluated
+TEST(TestSSRFDetectorTransformers, MatchWithUnappliedTransformer)
+{
+    ssrf_detector cond{gen_ssrf_param_def_with_transformers({transformer_id::url_decode})};
+
+    auto root = object_builder_da::map(
+        {{"server.io.net.url", ssrf_url}, {"server.request.query", ssrf_payload}});
+
+    object_store store;
+    store.insert_and_apply(std::move(root));
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
+
+    ASSERT_TRUE(cache.match);
+    EXPECT_STR(cache.match->highlights[0], ssrf_payload);
+}
+
+// Every parameter within the container must be transformed independently
+TEST(TestSSRFDetectorTransformers, MatchWithTransformerWithinContainer)
+{
+    ssrf_detector cond{gen_ssrf_param_def_with_transformers({transformer_id::url_decode})};
+
+    auto root = object_builder_da::map({{"server.io.net.url", ssrf_url},
+        {"server.request.query", object_builder_da::map({{"harmless", "nothing+to+see+here"},
+                                     {"path", ".evil.com%2Fpath%2Fto%2Fstuffs%3F"}})}});
+
+    object_store store;
+    store.insert_and_apply(std::move(root));
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
+
+    ASSERT_TRUE(cache.match);
+    EXPECT_STR(cache.match->highlights[0], ssrf_payload);
+    ASSERT_EQ(cache.match->args[1].key_path.size(), 1);
+    EXPECT_STR(std::get<std::string_view>(cache.match->args[1].key_path[0]), "path");
+}
+
+// The resource is never transformed, only the parameters
+TEST(TestSSRFDetectorTransformers, ResourceNotTransformed)
+{
+    ssrf_detector cond{{condition_parameter{{condition_target{.name = "server.io.net.url",
+                            .index = get_target_index("server.io.net.url"),
+                            .key_path = {},
+                            .transformers = {transformer_id::url_decode}}}},
+        condition_parameter{{condition_target{
+            .name = "server.request.query", .index = get_target_index("server.request.query")}}}}};
+
+    auto root = object_builder_da::map(
+        {{"server.io.net.url", "https://internal-website%2Eevil%2Ecom/path/to/stuffs?bla=42"},
+            {"server.request.query", ssrf_payload}});
+
+    object_store store;
+    store.insert_and_apply(std::move(root));
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    EXPECT_FALSE(cond.eval(cache, store, {}, {}, deadline));
+    EXPECT_FALSE(cache.match);
+}
+
 } // namespace

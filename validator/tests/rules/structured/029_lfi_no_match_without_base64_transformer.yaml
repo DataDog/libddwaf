@@ -1,0 +1,12 @@
+{
+  name: "LFI no match, the base64-encoded parameter is on an address without transformers",
+  runs: [
+    {
+      input: {
+        server.io.fs.file: "documents/../../../../../../../../../etc/passwd",
+        server.request.headers.no_cookies: { file: "Li4vLi4vLi4vLi4vLi4vLi4vLi4vLi4vLi4vZXRjL3Bhc3N3ZA==" }
+      },
+      code: ok
+    }
+  ]
+}
