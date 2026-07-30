@@ -20,7 +20,7 @@ namespace ddwaf::matcher {
 template <typename T = void> class greater_than : public base_impl<greater_than<T>> {
 public:
     static constexpr std::string_view matcher_name = "greater_than";
-    static constexpr std::string_view negated_matcher_name = "!greater_than";
+    static constexpr std::string_view negated_matcher_name = "lower_equal";
 
     explicit greater_than(T minimum)
         requires std::is_same_v<T, uint64_t> || std::is_same_v<T, int64_t> ||
@@ -60,7 +60,7 @@ protected:
 template <> class greater_than<void> : public base_impl<greater_than<void>> {
 public:
     static constexpr std::string_view matcher_name = "greater_than";
-    static constexpr std::string_view negated_matcher_name = "!greater_than";
+    static constexpr std::string_view negated_matcher_name = "lower_equal";
 
     ~greater_than() override = default;
 

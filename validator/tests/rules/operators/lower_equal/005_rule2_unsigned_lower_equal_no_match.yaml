@@ -1,0 +1,11 @@
+{
+  name: "Basic run with unsigned lower_equal operator, no match",
+  runs: [
+    {
+      input: {
+        rule2-input: 43
+      },
+      code: ok
+    }
+  ]
+}

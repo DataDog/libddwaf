@@ -6,8 +6,12 @@
 
 #include "condition/negated_scalar_condition.hpp"
 #include "exception.hpp"
+#include "matcher/greater_than.hpp"
+#include "matcher/lower_than.hpp"
 #include "matcher/regex_match.hpp"
 #include "utils.hpp"
+
+#include <cmath>
 
 #include "common/gtest_utils.hpp"
 
@@ -382,6 +386,178 @@ TEST(TestNegatedScalarCondition, SimplesubcontextMatch)
         ddwaf::timer deadline{2s};
         condition_cache cache;
         ASSERT_TRUE(cond.eval(cache, sctx_store, {}, {}, deadline));
+    }
+}
+
+// The negated form of greater_than, exposed as the "lower_equal" operator,
+// must match every value lower than or equal to the threshold
+TEST(TestNegatedScalarCondition, LowerEqual)
+{
+    negated_scalar_condition cond{std::make_unique<matcher::greater_than<int64_t>>(5), {},
+        {gen_variadic_param("server.request.query")}};
+
+    for (auto value : {-1L, 0L, 4L, 5L}) {
+        auto root = object_builder_da::map();
+        root.emplace("server.request.query", test::ddwaf_object_da::make_signed(value));
+
+        object_store store;
+        store.insert_and_apply(std::move(root));
+
+        ddwaf::timer deadline{2s};
+        condition_cache cache;
+        ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline)) << value;
+
+        ASSERT_TRUE(cache.match.has_value());
+        EXPECT_STRV(cache.match->operator_name, "lower_equal");
+        EXPECT_STR(cache.match->args[0].resolved, std::to_string(value));
+    }
+
+    for (auto value : {6L, 42L}) {
+        auto root = object_builder_da::map();
+        root.emplace("server.request.query", test::ddwaf_object_da::make_signed(value));
+
+        object_store store;
+        store.insert_and_apply(std::move(root));
+
+        ddwaf::timer deadline{2s};
+        condition_cache cache;
+        EXPECT_FALSE(cond.eval(cache, store, {}, {}, deadline)) << value;
+        EXPECT_FALSE(cache.match.has_value());
+    }
+}
+
+// The negated form of lower_than, exposed as the "greater_equal" operator, must
+// match every value greater than or equal to the threshold
+TEST(TestNegatedScalarCondition, GreaterEqual)
+{
+    negated_scalar_condition cond{std::make_unique<matcher::lower_than<int64_t>>(5), {},
+        {gen_variadic_param("server.request.query")}};
+
+    for (auto value : {5L, 6L, 42L}) {
+        auto root = object_builder_da::map();
+        root.emplace("server.request.query", test::ddwaf_object_da::make_signed(value));
+
+        object_store store;
+        store.insert_and_apply(std::move(root));
+
+        ddwaf::timer deadline{2s};
+        condition_cache cache;
+        ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline)) << value;
+
+        ASSERT_TRUE(cache.match.has_value());
+        EXPECT_STRV(cache.match->operator_name, "greater_equal");
+        EXPECT_STR(cache.match->args[0].resolved, std::to_string(value));
+    }
+
+    for (auto value : {-1L, 0L, 4L}) {
+        auto root = object_builder_da::map();
+        root.emplace("server.request.query", test::ddwaf_object_da::make_signed(value));
+
+        object_store store;
+        store.insert_and_apply(std::move(root));
+
+        ddwaf::timer deadline{2s};
+        condition_cache cache;
+        EXPECT_FALSE(cond.eval(cache, store, {}, {}, deadline)) << value;
+        EXPECT_FALSE(cache.match.has_value());
+    }
+}
+
+TEST(TestNegatedScalarCondition, LowerEqualUnsignedAndFloat)
+{
+    {
+        negated_scalar_condition cond{std::make_unique<matcher::greater_than<uint64_t>>(5), {},
+            {gen_variadic_param("server.request.query")}};
+
+        auto root = object_builder_da::map();
+        root.emplace("server.request.query", test::ddwaf_object_da::make_unsigned(5));
+
+        object_store store;
+        store.insert_and_apply(std::move(root));
+
+        ddwaf::timer deadline{2s};
+        condition_cache cache;
+        ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
+        EXPECT_STRV(cache.match->operator_name, "lower_equal");
+    }
+
+    {
+        negated_scalar_condition cond{std::make_unique<matcher::greater_than<double>>(5.0), {},
+            {gen_variadic_param("server.request.query")}};
+
+        auto root = object_builder_da::map();
+        root.emplace("server.request.query", test::ddwaf_object_da::make_float(5.0));
+
+        object_store store;
+        store.insert_and_apply(std::move(root));
+
+        ddwaf::timer deadline{2s};
+        condition_cache cache;
+        ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
+        EXPECT_STRV(cache.match->operator_name, "lower_equal");
+    }
+}
+
+// Types which the matcher can't evaluate must not be considered a negated match
+TEST(TestNegatedScalarCondition, LowerEqualUnsupportedTypes)
+{
+    negated_scalar_condition cond{std::make_unique<matcher::greater_than<int64_t>>(5), {},
+        {gen_variadic_param("server.request.query")}};
+
+    std::vector<owned_object> values;
+    values.emplace_back(test::ddwaf_object_da::make_string("string"));
+    values.emplace_back(test::ddwaf_object_da::make_boolean(true));
+    values.emplace_back(test::ddwaf_object_da::make_null());
+    values.emplace_back(object_builder_da::array());
+    values.emplace_back(object_builder_da::map());
+
+    for (auto &value : values) {
+        auto root = object_builder_da::map();
+        root.emplace("server.request.query", std::move(value));
+
+        object_store store;
+        store.insert_and_apply(std::move(root));
+
+        ddwaf::timer deadline{2s};
+        condition_cache cache;
+        EXPECT_FALSE(cond.eval(cache, store, {}, {}, deadline));
+        EXPECT_FALSE(cache.match.has_value());
+    }
+}
+
+// NaN is unordered, so it is neither greater nor lower than the threshold; as
+// the operators are implemented as the negation of greater_than / lower_than,
+// it currently matches both of them
+TEST(TestNegatedScalarCondition, NotANumber)
+{
+    {
+        negated_scalar_condition cond{std::make_unique<matcher::greater_than<double>>(5.0), {},
+            {gen_variadic_param("server.request.query")}};
+
+        auto root = object_builder_da::map();
+        root.emplace("server.request.query", test::ddwaf_object_da::make_float(std::nan("")));
+
+        object_store store;
+        store.insert_and_apply(std::move(root));
+
+        ddwaf::timer deadline{2s};
+        condition_cache cache;
+        EXPECT_TRUE(cond.eval(cache, store, {}, {}, deadline));
+    }
+
+    {
+        negated_scalar_condition cond{std::make_unique<matcher::lower_than<double>>(5.0), {},
+            {gen_variadic_param("server.request.query")}};
+
+        auto root = object_builder_da::map();
+        root.emplace("server.request.query", test::ddwaf_object_da::make_float(std::nan("")));
+
+        object_store store;
+        store.insert_and_apply(std::move(root));
+
+        ddwaf::timer deadline{2s};
+        condition_cache cache;
+        EXPECT_TRUE(cond.eval(cache, store, {}, {}, deadline));
     }
 }
 

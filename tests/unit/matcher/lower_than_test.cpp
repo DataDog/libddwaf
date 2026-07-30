@@ -97,4 +97,20 @@ TEST(TestlowerThanDouble, Basic)
     EXPECT_FALSE(matcher.match(test::ddwaf_object_da::make_float(6.0)).first);
 }
 
+// The negated form of lower_than is exposed as the "greater_equal" operator
+TEST(TestLowerThan, Name)
+{
+    const matcher::lower_than<int64_t> signed_matcher(5);
+    EXPECT_STRV(signed_matcher.name(), "lower_than");
+    EXPECT_STRV(signed_matcher.negated_name(), "greater_equal");
+
+    const matcher::lower_than<uint64_t> unsigned_matcher(5);
+    EXPECT_STRV(unsigned_matcher.name(), "lower_than");
+    EXPECT_STRV(unsigned_matcher.negated_name(), "greater_equal");
+
+    const matcher::lower_than<double> float_matcher(5.0);
+    EXPECT_STRV(float_matcher.name(), "lower_than");
+    EXPECT_STRV(float_matcher.negated_name(), "greater_equal");
+}
+
 } // namespace

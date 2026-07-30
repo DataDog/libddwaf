@@ -1,0 +1,21 @@
+{
+  name: "Run with lower_equal operator on the boundary value, which must match",
+  runs: [
+    {
+      input: {
+        rule1-input: -42
+      },
+      rules: [
+        {
+          1: [
+            {
+              address: rule1-input,
+              value: "-42"
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}

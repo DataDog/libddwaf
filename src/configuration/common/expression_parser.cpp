@@ -240,6 +240,14 @@ std::shared_ptr<expression> parse_expression(const raw_configuration::vector &co
                 parse_arguments<negated_exists_condition>(params, source, transformers);
             conditions.emplace_back(
                 std::make_unique<negated_exists_condition>(std::move(arguments)));
+        } else if (operator_name == "lower_equal") {
+            conditions.emplace_back(
+                build_condition<negated_scalar_condition, matcher::greater_than<>>(
+                    "greater_than", params, source, transformers));
+        } else if (operator_name == "greater_equal") {
+            conditions.emplace_back(
+                build_condition<negated_scalar_condition, matcher::lower_than<>>(
+                    "lower_than", params, source, transformers));
         } else if (operator_name.starts_with('!')) {
             conditions.emplace_back(
                 build_condition<negated_scalar_condition, matcher::ip_match, matcher::exact_match,
