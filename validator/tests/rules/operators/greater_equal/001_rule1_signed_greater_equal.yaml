@@ -1,0 +1,21 @@
+{
+  name: "Basic run with greater_equal operator",
+  runs: [
+    {
+      input: {
+        rule1-input: -41
+      },
+      rules: [
+        {
+          1: [
+            {
+              address: rule1-input,
+              value: "-41"
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}

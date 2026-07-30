@@ -1,0 +1,11 @@
+{
+  name: "A value which the operator can't evaluate must not be a negated match",
+  runs: [
+    {
+      input: {
+        rule1-input: "not a number"
+      },
+      code: ok
+    }
+  ]
+}

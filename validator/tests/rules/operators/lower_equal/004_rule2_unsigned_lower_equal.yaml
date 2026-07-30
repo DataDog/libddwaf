@@ -1,0 +1,21 @@
+{
+  name: "Basic run with unsigned lower_equal operator",
+  runs: [
+    {
+      input: {
+        rule2-input: 42
+      },
+      rules: [
+        {
+          2: [
+            {
+              address: rule2-input,
+              value: "42"
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}
