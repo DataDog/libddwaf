@@ -33,12 +33,32 @@ public:
     cow_string(const cow_string &) = delete;
     cow_string &operator=(const cow_string &) = delete;
     cow_string(cow_string &&other) noexcept
-        : buffer_(other.buffer_), length_(other.length_), capacity_(other.capacity_)
+        : alloc_(other.alloc_), buffer_(other.buffer_), length_(other.length_),
+          capacity_(other.capacity_)
     {
         other.buffer_ = nullptr;
         other.length_ = other.capacity_ = 0;
     }
-    cow_string &operator=(cow_string &&other) = delete;
+    cow_string &operator=(cow_string &&other) noexcept
+    {
+        if (&other == this) {
+            return *this;
+        }
+
+        if (capacity_ > 0 && buffer_ != nullptr) {
+            alloc_->deallocate(buffer_, capacity_, alignof(char));
+        }
+
+        buffer_ = other.buffer_;
+        length_ = other.length_;
+        capacity_ = other.capacity_;
+        alloc_ = other.alloc_;
+
+        other.buffer_ = nullptr;
+        other.length_ = other.capacity_ = 0;
+
+        return *this;
+    }
 
     ~cow_string()
     {
@@ -68,10 +88,11 @@ public:
         return false;
     }
 
-    constexpr explicit operator std::string_view() { return {buffer_, length_}; }
+    constexpr explicit operator std::string_view() const { return {buffer_, length_}; }
 
     [[nodiscard]] nonnull_ptr<memory::memory_resource> alloc() const noexcept { return alloc_; }
     [[nodiscard]] constexpr size_type length() const noexcept { return length_; }
+    [[nodiscard]] constexpr bool empty() const noexcept { return length_ == 0; }
     [[nodiscard]] constexpr const char *data() const noexcept { return buffer_; }
     [[nodiscard]] char *modifiable_data()
     {

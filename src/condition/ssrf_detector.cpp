@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <memory>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <unordered_set>
@@ -27,6 +28,7 @@
 #include "log.hpp"
 #include "matcher/ip_match.hpp"
 #include "object.hpp"
+#include "transformer/base.hpp"
 #include "uri_utils.hpp"
 #include "utils.hpp"
 
@@ -165,8 +167,8 @@ bool is_forbidden_uri(const uri_decomposed &uri, const matcher::ip_match &forbid
 }
 
 ssrf_result ssrf_impl(const uri_decomposed &uri, object_view params,
-    const object_set_ref &objects_excluded, const ssrf_opts &opts,
-    const matcher::ip_match &forbidden_ip_matcher,
+    std::span<const transformer_id> transformers, const object_set_ref &objects_excluded,
+    const ssrf_opts &opts, const matcher::ip_match &forbidden_ip_matcher,
     const std::unordered_set<std::string_view> &allowed_scheme_set,
     const std::vector<std::string> &forbidden_domains, ddwaf::timer &deadline)
 {
@@ -184,7 +186,7 @@ ssrf_result ssrf_impl(const uri_decomposed &uri, object_view params,
 
     std::optional<ssrf_result> parameter_injection;
 
-    match_iterator<min_str_len> it{uri.raw, params, objects_excluded};
+    match_iterator<min_str_len> it{uri.raw, params, transformers, objects_excluded};
     for (; it; ++it) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
@@ -321,7 +323,7 @@ bool ssrf_detector::eval_impl(const unary_argument<std::string_view> &uri,
     }
 
     for (const auto &param : params) {
-        auto res = ssrf_impl(*decomposed, param.value, objects_excluded, opts_,
+        auto res = ssrf_impl(*decomposed, param.value, param.transformers, objects_excluded, opts_,
             *forbidden_ip_matcher_, allowed_schemes_, forbidden_domains_, deadline);
         if (res.has_value()) {
             auto &[highlight, param_kp] = res.value();

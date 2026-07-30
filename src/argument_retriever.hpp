@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <concepts>
 #include <cstdint>
 #include <optional>
 #include <span>
@@ -19,8 +20,15 @@
 #include "object.hpp"
 #include "object_store.hpp"
 #include "traits.hpp"
+#include "transformer/base.hpp"
 
 namespace ddwaf {
+
+template <typename T>
+concept has_transformers = requires(const T &obj) {
+    requires std::same_as<std::remove_cvref_t<decltype(obj.transformers)>,
+        std::vector<transformer_id>>;
+};
 
 // A type of argument with a single address (target) mapping
 template <typename T> struct unary_argument {
@@ -29,6 +37,7 @@ template <typename T> struct unary_argument {
     std::string_view address{};
     std::span<const std::variant<std::string, int64_t>> key_path;
     T value;
+    std::span<const transformer_id> transformers;
 };
 
 template <typename T, typename = void> struct is_unary_argument : std::false_type {};
@@ -83,7 +92,13 @@ template <typename T> struct argument_retriever<unary_argument<T>> : default_arg
             return std::nullopt;
         }
 
-        return unary_argument<T>{target.name, target.key_path, std::move(converted.value())};
+        if constexpr (has_transformers<TargetType>) {
+            return unary_argument<T>{
+                target.name, target.key_path, std::move(converted.value()), target.transformers};
+        } else {
+            return unary_argument<T>{
+                target.name, target.key_path, std::move(converted.value()), {}};
+        }
     }
 };
 

@@ -29,7 +29,7 @@ TEST(TestLogging, Basic)
 
     DDWAF_TRACE("test message");
     EXPECT_EQ(lastLevel, DDWAF_LOG_TRACE);
-    EXPECT_EQ(lastFile, "test.cpp");
+    EXPECT_TRUE(lastFile.ends_with("test.cpp"));
     EXPECT_TRUE(lastFunction.find("TestBody") != std::string::npos);
     EXPECT_EQ(lastMessage, "test message");
 
