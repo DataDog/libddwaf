@@ -30,6 +30,7 @@
 #include "tokenizer/pgsql.hpp"
 #include "tokenizer/sql_base.hpp"
 #include "tokenizer/sqlite.hpp"
+#include "transformer/base.hpp"
 #include "utils.hpp"
 
 using namespace std::literals;
@@ -466,12 +467,12 @@ std::vector<sql_token> tokenize(std::string_view statement, sql_dialect dialect)
 }
 
 sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resource_tokens,
-    object_view params, sql_dialect dialect, const object_set_ref &objects_excluded,
-    ddwaf::timer &deadline)
+    object_view params, std::span<const transformer_id> transformers, sql_dialect dialect,
+    const object_set_ref &objects_excluded, ddwaf::timer &deadline)
 {
     static constexpr std::size_t min_str_len = 3;
 
-    match_iterator<min_str_len> it(resource, params, objects_excluded);
+    match_iterator<min_str_len> it(resource, params, transformers, objects_excluded);
     for (; it; ++it) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
@@ -529,8 +530,8 @@ sqli_detector::sqli_detector(std::vector<condition_parameter> args)
     std::vector<sql_token> resource_tokens;
 
     for (const auto &param : params) {
-        auto res = internal::sqli_impl(
-            sql.value, resource_tokens, param.value, dialect, objects_excluded, deadline);
+        auto res = internal::sqli_impl(sql.value, resource_tokens, param.value, param.transformers,
+            dialect, objects_excluded, deadline);
         if (std::holds_alternative<internal::matched_param>(res)) {
             auto stripped_stmt = internal::strip_literals(sql.value, resource_tokens);
 

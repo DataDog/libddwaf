@@ -94,3 +94,104 @@ rules:
             - address: graphql.server.all_resolvers
             - address: graphql.server.resolver
         operator: cmdi_detector@v1
+  # The rules below mirror the ones above, but apply transformers to one of the
+  # parameter addresses. They rely on parameter addresses which aren't used by
+  # any of the rules above so that both sets can be tested independently.
+  - id: rsp-931-001
+    name: LFI Exploit detection with transformers
+    tags:
+      type: lfi
+      category: exploit_detection
+      module: rasp
+    conditions:
+      - parameters:
+          resource:
+            - address: server.io.fs.file
+          params:
+            - address: server.request.cookies
+              transformers:
+                - url_decode
+            - address: server.request.trailers
+              transformers:
+                - base64_decode
+            - address: server.request.headers.no_cookies
+        operator: lfi_detector@v2
+  - id: rsp-931-002
+    name: SSRF Exploit detection with transformers
+    tags:
+      type: ssrf
+      category: exploit_detection
+      module: rasp
+    conditions:
+      - parameters:
+          resource:
+            - address: server.io.net.url
+          params:
+            - address: server.request.cookies
+              transformers:
+                - url_decode
+            - address: server.request.trailers
+              transformers:
+                - base64_decode
+            - address: server.request.headers.no_cookies
+        operator: ssrf_detector@v1
+  - id: rsp-931-003
+    name: SQLi Exploit detection with transformers
+    tags:
+      type: sqli
+      category: exploit_detection
+      module: rasp
+    conditions:
+      - parameters:
+          resource:
+            - address: server.db.statement
+          params:
+            - address: server.request.cookies
+              transformers:
+                - url_decode
+            - address: server.request.trailers
+              transformers:
+                - base64_decode
+            - address: server.request.headers.no_cookies
+          db_type:
+            - address: server.db.system
+        operator: sqli_detector@v2
+  - id: rsp-931-004
+    name: SHi Exploit detection with transformers
+    tags:
+      type: shi
+      category: exploit_detection
+      module: rasp
+    conditions:
+      - parameters:
+          resource:
+            - address: server.sys.shell.cmd
+          params:
+            - address: server.request.cookies
+              transformers:
+                - base64_decode
+                - url_decode
+            - address: server.request.trailers
+              transformers:
+                - base64_decode
+            - address: server.request.headers.no_cookies
+        operator: shi_detector@v1
+  - id: rsp-931-005
+    name: CMDi Exploit detection with transformers
+    tags:
+      type: cmdi
+      category: exploit_detection
+      module: rasp
+    conditions:
+      - parameters:
+          resource:
+            - address: server.sys.exec.cmd
+          params:
+            - address: server.request.cookies
+              transformers:
+                - url_decode
+            - address: server.request.trailers
+              transformers:
+                - base64_decode
+            - address: server.request.headers.no_cookies
+        operator: cmdi_detector@v1

@@ -1,0 +1,35 @@
+version: '2.2'
+rules:
+  - id: rasp-lfi-keys-only
+    name: LFI Exploit detection
+    tags:
+      type: lfi
+      category: exploit_detection
+      module: rasp
+    conditions:
+      - operator: lfi_detector@v2
+        parameters:
+          resource:
+            - address: server.io.fs.file
+          params:
+            - address: server.request.query
+              transformers:
+                - keys_only
+                - url_decode
+
+  - id: rasp-shi-values-only
+    name: SHi Exploit detection
+    tags:
+      type: shi
+      category: exploit_detection
+      module: rasp
+    conditions:
+      - operator: shi_detector@v1
+        parameters:
+          resource:
+            - address: server.sys.shell.cmd
+          params:
+            - address: server.request.query
+              transformers:
+                - values_only
+                - url_decode

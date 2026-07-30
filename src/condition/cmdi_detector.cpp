@@ -31,7 +31,9 @@
 #include "object_type.hpp"
 #include "platform.hpp"
 #include "tokenizer/shell.hpp"
+#include "transformer/base.hpp"
 #include "transformer/lowercase.hpp"
+#include "transformer/manager.hpp"
 #include "utils.hpp"
 
 using namespace std::literals;
@@ -357,7 +359,8 @@ std::string_view find_shell_command(std::string_view executable, object_view exe
 
 std::optional<shi_result> cmdi_impl(object_view exec_args,
     std::vector<shell_token> &resource_tokens, object_view params,
-    const object_set_ref &objects_excluded, ddwaf::timer &deadline)
+    std::span<const transformer_id> transformers, const object_set_ref &objects_excluded,
+    ddwaf::timer &deadline)
 {
     const std::string_view executable =
         trim_whitespaces(exec_args.at_value(0).as_or_default<std::string_view>({}));
@@ -390,8 +393,15 @@ std::optional<shi_result> cmdi_impl(object_view exec_args,
         }
 
         if (eval_executable) {
-            // First check if the entire executable was injected
             auto value = param.as<std::string_view>();
+
+            // TODO: transforms are done twice if there is a shell command
+            auto transformed = transformer::manager::transform(param, transformers);
+            if (transformed.has_value()) {
+                value = static_cast<std::string_view>(transformed.value());
+            }
+
+            // First check if the entire executable was injected
             value = trim_whitespaces(value);
             if (executable == value) {
                 // When the full binary has been injected, we consider it an exploit
@@ -403,7 +413,7 @@ std::optional<shi_result> cmdi_impl(object_view exec_args,
 
         if (!shell_command.empty()) {
             auto res = find_shi_from_params<std::string_view, scalar_iterator>(
-                shell_command, resource_tokens, param, objects_excluded, deadline);
+                shell_command, resource_tokens, param, transformers, objects_excluded, deadline);
             if (res.has_value()) {
                 res->key_path = it.get_current_path();
                 return res;
@@ -447,8 +457,8 @@ bool cmdi_detector::eval_impl(const unary_argument<object_view> &resource,
 
     std::vector<shell_token> resource_tokens;
     for (const auto &param : params) {
-        auto res =
-            cmdi_impl(resource.value, resource_tokens, param.value, objects_excluded, deadline);
+        auto res = cmdi_impl(resource.value, resource_tokens, param.value, param.transformers,
+            objects_excluded, deadline);
         if (res.has_value()) {
             auto &[highlight, param_kp] = res.value();
 

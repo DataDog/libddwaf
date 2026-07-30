@@ -298,4 +298,179 @@ TEST(TestShiDetectorString, MultipleArgumentsMatch)
     }
 }
 
+// Generates the parameter definition of a two-argument detector, applying the
+// given transformers to the second (params) argument only
+std::vector<condition_parameter> gen_param_def_with_transformers(
+    std::string_view resource, std::string_view params, std::vector<transformer_id> transformers)
+{
+    return {condition_parameter{{condition_target{
+                .name = std::string{resource}, .index = get_target_index(resource)}}},
+        condition_parameter{{condition_target{.name = std::string{params},
+            .index = get_target_index(params),
+            .key_path = {},
+            .transformers = std::move(transformers)}}}};
+}
+
+TEST(TestShiDetectorString, NoMatchWithoutTransformer)
+{
+    shi_detector cond{{gen_param_def("server.sys.shell.cmd", "server.request.query")}};
+
+    auto root = object_builder_da::map({
+        {"server.sys.shell.cmd", "ls -l; cat /etc/passwd"},
+        {"server.request.query", "%3B%20cat%20%2Fetc%2Fpasswd"},
+    });
+
+    object_store store;
+    store.insert_and_apply(std::move(root));
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    EXPECT_FALSE(cond.eval(cache, store, {}, {}, deadline));
+    EXPECT_FALSE(cache.match);
+}
+
+TEST(TestShiDetectorString, MatchWithTransformer)
+{
+    shi_detector cond{gen_param_def_with_transformers(
+        "server.sys.shell.cmd", "server.request.query", {transformer_id::url_decode})};
+
+    auto root = object_builder_da::map({
+        {"server.sys.shell.cmd", "ls -l; cat /etc/passwd"},
+        {"server.request.query", "%3B%20cat%20%2Fetc%2Fpasswd"},
+    });
+
+    object_store store;
+    store.insert_and_apply(std::move(root));
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
+
+    ASSERT_TRUE(cache.match);
+    EXPECT_STRV(cache.match->args[0].address, "server.sys.shell.cmd");
+    EXPECT_STR(cache.match->args[0].resolved, "ls -l; cat /etc/passwd");
+
+    EXPECT_STRV(cache.match->args[1].address, "server.request.query");
+    // The reported parameter is the transformed one
+    EXPECT_STR(cache.match->args[1].resolved, "; cat /etc/passwd");
+    EXPECT_STR(cache.match->highlights[0], "; cat /etc/passwd");
+}
+
+TEST(TestShiDetectorString, MatchWithMultipleTransformers)
+{
+    shi_detector cond{gen_param_def_with_transformers("server.sys.shell.cmd",
+        "server.request.query", {transformer_id::base64_decode, transformer_id::url_decode})};
+
+    // base64("%3B%20cat%20%2Fetc%2Fpasswd")
+    auto root = object_builder_da::map({
+        {"server.sys.shell.cmd", "ls -l; cat /etc/passwd"},
+        {"server.request.query", "JTNCJTIwY2F0JTIwJTJGZXRjJTJGcGFzc3dk"},
+    });
+
+    object_store store;
+    store.insert_and_apply(std::move(root));
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
+
+    ASSERT_TRUE(cache.match);
+    EXPECT_STR(cache.match->highlights[0], "; cat /etc/passwd");
+}
+
+// When the transformers leave the parameter untouched, the original value must
+// still be evaluated
+TEST(TestShiDetectorString, MatchWithUnappliedTransformer)
+{
+    shi_detector cond{gen_param_def_with_transformers(
+        "server.sys.shell.cmd", "server.request.query", {transformer_id::url_decode})};
+
+    auto root = object_builder_da::map({
+        {"server.sys.shell.cmd", "ls -l; cat /etc/passwd"},
+        {"server.request.query", "; cat /etc/passwd"},
+    });
+
+    object_store store;
+    store.insert_and_apply(std::move(root));
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
+
+    ASSERT_TRUE(cache.match);
+    EXPECT_STR(cache.match->highlights[0], "; cat /etc/passwd");
+}
+
+// Every parameter within the container must be transformed independently
+TEST(TestShiDetectorString, MatchWithTransformerWithinContainer)
+{
+    shi_detector cond{gen_param_def_with_transformers(
+        "server.sys.shell.cmd", "server.request.query", {transformer_id::url_decode})};
+
+    auto root = object_builder_da::map({
+        {"server.sys.shell.cmd", "ls -l; cat /etc/passwd"},
+        {"server.request.query", object_builder_da::map({{"harmless", "not an injection"},
+                                     {"payload", "%3B%20cat%20%2Fetc%2Fpasswd"}})},
+    });
+
+    object_store store;
+    store.insert_and_apply(std::move(root));
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
+
+    ASSERT_TRUE(cache.match);
+    EXPECT_STR(cache.match->highlights[0], "; cat /etc/passwd");
+    ASSERT_EQ(cache.match->args[1].key_path.size(), 1);
+    EXPECT_STR(std::get<std::string_view>(cache.match->args[1].key_path[0]), "payload");
+}
+
+// The resource is never transformed, only the parameters
+TEST(TestShiDetectorString, ResourceNotTransformed)
+{
+    shi_detector cond{{condition_parameter{{condition_target{.name = "server.sys.shell.cmd",
+                           .index = get_target_index("server.sys.shell.cmd"),
+                           .key_path = {},
+                           .transformers = {transformer_id::url_decode}}}},
+        condition_parameter{{condition_target{
+            .name = "server.request.query", .index = get_target_index("server.request.query")}}}}};
+
+    auto root = object_builder_da::map({
+        {"server.sys.shell.cmd", "ls%20-l%3B%20cat%20%2Fetc%2Fpasswd"},
+        {"server.request.query", "; cat /etc/passwd"},
+    });
+
+    object_store store;
+    store.insert_and_apply(std::move(root));
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    EXPECT_FALSE(cond.eval(cache, store, {}, {}, deadline));
+    EXPECT_FALSE(cache.match);
+}
+
+// A parameter which is reduced to an empty string by the transformers must not
+// be considered an injection, as an empty parameter would otherwise be found at
+// every position of the resource
+TEST(TestShiDetectorString, NoMatchOnEmptyTransformedParameter)
+{
+    shi_detector cond{gen_param_def_with_transformers(
+        "server.sys.shell.cmd", "server.request.query", {transformer_id::remove_nulls})};
+
+    const std::string nulls("\0\0\0", 3);
+    auto root = object_builder_da::map({
+        {"server.sys.shell.cmd", "ls"},
+        {"server.request.query", nulls},
+    });
+
+    object_store store;
+    store.insert_and_apply(std::move(root));
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    EXPECT_FALSE(cond.eval(cache, store, {}, {}, deadline));
+    EXPECT_FALSE(cache.match);
+}
+
 } // namespace

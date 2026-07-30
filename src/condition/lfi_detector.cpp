@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -22,6 +23,8 @@
 #include "log.hpp"
 #include "object.hpp"
 #include "platform.hpp"
+#include "transformer/base.hpp"
+#include "transformer/manager.hpp"
 #include "utils.hpp"
 
 using namespace std::literals;
@@ -96,7 +99,8 @@ bool lfi_impl_unix(std::string_view path, std::string_view param)
 }
 
 lfi_result lfi_impl(std::string_view path, object_view params,
-    const object_set_ref &objects_excluded, ddwaf::timer &deadline)
+    std::span<const transformer_id> transformers, const object_set_ref &objects_excluded,
+    ddwaf::timer &deadline)
 {
     auto *lfi_fn = &lfi_impl_unix;
     if (system_platform::current() == platform::windows) {
@@ -114,6 +118,17 @@ lfi_result lfi_impl(std::string_view path, object_view params,
             continue;
         }
 
+        auto transformed = transformer::manager::transform(param, transformers);
+        if (transformed.has_value()) {
+            auto value = static_cast<std::string_view>(transformed.value());
+            if (lfi_fn(path, value)) {
+                return {{std::string(value), it.get_current_path()}};
+            }
+
+            continue;
+        }
+        // Fallback to the original value if the transform fails
+
         const auto value = param.as<std::string_view>();
         if (lfi_fn(path, value)) {
             return {{std::string(value), it.get_current_path()}};
@@ -130,7 +145,8 @@ bool lfi_detector::eval_impl(const unary_argument<std::string_view> &path,
     const object_set_ref &objects_excluded, ddwaf::timer &deadline) const
 {
     for (const auto &param : params) {
-        auto res = lfi_impl(path.value, param.value, objects_excluded, deadline);
+        auto res =
+            lfi_impl(path.value, param.value, param.transformers, objects_excluded, deadline);
         if (res.has_value()) {
 
             auto &[highlight, param_kp] = res.value();

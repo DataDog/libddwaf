@@ -1,0 +1,29 @@
+{
+  name: "LFI match on a parameter which isn't valid base64, so it is left untouched",
+  runs: [
+    {
+      input: {
+        server.io.fs.file: "documents/../../../../../../../../../etc/passwd",
+        server.request.trailers: { file: "../../../../../../../../../etc/passwd" }
+      },
+      rules: [
+        {
+          "rsp-931-001": [
+            {
+              resource: {
+                address: "server.io.fs.file",
+                value: "documents/../../../../../../../../../etc/passwd"
+              },
+              params: {
+                address: "server.request.trailers",
+                key_path: [ "file" ],
+                value: "../../../../../../../../../etc/passwd"
+              }
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}

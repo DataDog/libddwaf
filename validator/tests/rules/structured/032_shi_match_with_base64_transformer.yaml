@@ -1,0 +1,29 @@
+{
+  name: "SHi match on a base64-encoded parameter",
+  runs: [
+    {
+      input: {
+        server.sys.shell.cmd: "ls -l; cat /etc/passwd",
+        server.request.trailers: { cmd: "OyBjYXQgL2V0Yy9wYXNzd2Q=" }
+      },
+      rules: [
+        {
+          "rsp-931-004": [
+            {
+              resource: {
+                address: "server.sys.shell.cmd",
+                value: "ls -l; cat /etc/passwd"
+              },
+              params: {
+                address: "server.request.trailers",
+                key_path: [ "cmd" ],
+                value: "; cat /etc/passwd"
+              }
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}

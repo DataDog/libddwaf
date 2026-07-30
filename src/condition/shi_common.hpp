@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -19,6 +20,7 @@
 #include "iterator.hpp"
 #include "object.hpp"
 #include "tokenizer/shell.hpp"
+#include "transformer/base.hpp"
 
 namespace ddwaf {
 
@@ -41,9 +43,11 @@ struct shell_argument_array {
 template <typename ResourceType, typename IteratorType = kv_iterator>
 std::optional<shi_result> find_shi_from_params(const ResourceType &resource,
     std::vector<shell_token> &resource_tokens, object_view params,
-    const object_set_ref &objects_excluded, ddwaf::timer &deadline)
+    std::span<const transformer_id> transformers, const object_set_ref &objects_excluded,
+    ddwaf::timer &deadline)
 {
-    match_iterator<2, IteratorType, ResourceType> it(resource, params, objects_excluded);
+    match_iterator<2, IteratorType, ResourceType> it(
+        resource, params, transformers, objects_excluded);
     for (; it; ++it) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();

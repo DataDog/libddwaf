@@ -248,4 +248,10 @@ TEST(TestTransformerManager, InvalidMultipleTransforms)
         transformer_id::compress_whitespace);
 }
 
+TEST(TestTransformerManager, NoTransformers)
+{
+    auto src = owned_object::make_string_literal(STRL("  LoWeRCase  "));
+    EXPECT_FALSE(transformer::manager::transform(src, {}));
+}
+
 } // namespace

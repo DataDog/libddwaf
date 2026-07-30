@@ -1,0 +1,29 @@
+{
+  name: "SHi match on a base64 and url-encoded parameter",
+  runs: [
+    {
+      input: {
+        server.sys.shell.cmd: "ls -l; cat /etc/passwd",
+        server.request.cookies: { cmd: "JTNCJTIwY2F0JTIwJTJGZXRjJTJGcGFzc3dk" }
+      },
+      rules: [
+        {
+          "rsp-931-004": [
+            {
+              resource: {
+                address: "server.sys.shell.cmd",
+                value: "ls -l; cat /etc/passwd"
+              },
+              params: {
+                address: "server.request.cookies",
+                key_path: [ "cmd" ],
+                value: "; cat /etc/passwd"
+              }
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}

@@ -749,4 +749,248 @@ TEST(TestCmdiDetector, ShellInjectionMultipleArguments)
     EXPECT_STR(cache.match->highlights[0], "; $(cat /etc/passwd)");
 }
 
+// Generates the parameter definition of a two-argument detector, applying the
+// given transformers to the second (params) argument only
+std::vector<condition_parameter> gen_param_def_with_transformers(
+    std::string_view resource, std::string_view params, std::vector<transformer_id> transformers)
+{
+    return {condition_parameter{{condition_target{
+                .name = std::string{resource}, .index = get_target_index(resource)}}},
+        condition_parameter{{condition_target{.name = std::string{params},
+            .index = get_target_index(params),
+            .key_path = {},
+            .transformers = std::move(transformers)}}}};
+}
+
+owned_object gen_exec_root(const std::vector<std::string> &resource, std::string_view param)
+{
+    auto root = object_builder_da::map({{"server.request.query", param}});
+    auto array = root.emplace("server.sys.exec.cmd", object_builder_da::array());
+    for (const auto &arg : resource) { array.emplace_back(arg); }
+    return root;
+}
+
+TEST(TestCmdiDetector, NoMatchWithoutTransformer)
+{
+    system_platform_override spo{platform::linux};
+
+    cmdi_detector cond{{gen_param_def("server.sys.exec.cmd", "server.request.query")}};
+
+    {
+        auto root = gen_exec_root({"/usr/bin/curl", "http://malicious"}, "%2Fusr%2Fbin%2Fcurl");
+
+        object_store store;
+        store.insert_and_apply(std::move(root));
+
+        ddwaf::timer deadline{2s};
+        condition_cache cache;
+        EXPECT_FALSE(cond.eval(cache, store, {}, {}, deadline));
+        EXPECT_FALSE(cache.match);
+    }
+
+    {
+        auto root = gen_exec_root({"/bin/sh", "-c", "ls -l"}, "ls%20-l");
+
+        object_store store;
+        store.insert_and_apply(std::move(root));
+
+        ddwaf::timer deadline{2s};
+        condition_cache cache;
+        EXPECT_FALSE(cond.eval(cache, store, {}, {}, deadline));
+        EXPECT_FALSE(cache.match);
+    }
+}
+
+TEST(TestCmdiDetector, MatchExecutableWithTransformer)
+{
+    system_platform_override spo{platform::linux};
+
+    cmdi_detector cond{gen_param_def_with_transformers(
+        "server.sys.exec.cmd", "server.request.query", {transformer_id::url_decode})};
+
+    auto root = gen_exec_root({"/usr/bin/curl", "http://malicious"}, "%2Fusr%2Fbin%2Fcurl");
+
+    object_store store;
+    store.insert_and_apply(std::move(root));
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
+
+    ASSERT_TRUE(cache.match);
+    EXPECT_STRV(cache.match->args[0].address, "server.sys.exec.cmd");
+    EXPECT_STR(cache.match->args[0].resolved, R"(/usr/bin/curl "http://malicious")");
+
+    EXPECT_STRV(cache.match->args[1].address, "server.request.query");
+    // The reported parameter is the transformed one
+    EXPECT_STR(cache.match->args[1].resolved, "/usr/bin/curl");
+    EXPECT_STR(cache.match->highlights[0], "/usr/bin/curl");
+}
+
+TEST(TestCmdiDetector, MatchShellCommandWithTransformer)
+{
+    system_platform_override spo{platform::linux};
+
+    cmdi_detector cond{gen_param_def_with_transformers(
+        "server.sys.exec.cmd", "server.request.query", {transformer_id::url_decode})};
+
+    auto root = gen_exec_root({"/bin/sh", "-c", "ls -l"}, "ls%20-l");
+
+    object_store store;
+    store.insert_and_apply(std::move(root));
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
+
+    ASSERT_TRUE(cache.match);
+    EXPECT_STRV(cache.match->args[0].address, "server.sys.exec.cmd");
+    EXPECT_STR(cache.match->args[0].resolved, R"(/bin/sh "-c" "ls -l")");
+
+    EXPECT_STRV(cache.match->args[1].address, "server.request.query");
+    EXPECT_STR(cache.match->args[1].resolved, "ls -l");
+    EXPECT_STR(cache.match->highlights[0], "ls -l");
+}
+
+TEST(TestCmdiDetector, MatchWithMultipleTransformers)
+{
+    system_platform_override spo{platform::linux};
+
+    cmdi_detector cond{gen_param_def_with_transformers("server.sys.exec.cmd",
+        "server.request.query", {transformer_id::base64_decode, transformer_id::url_decode})};
+
+    {
+        // base64("%2Fusr%2Fbin%2Fcurl")
+        auto root =
+            gen_exec_root({"/usr/bin/curl", "http://malicious"}, "JTJGdXNyJTJGYmluJTJGY3VybA==");
+
+        object_store store;
+        store.insert_and_apply(std::move(root));
+
+        ddwaf::timer deadline{2s};
+        condition_cache cache;
+        ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
+        EXPECT_STR(cache.match->highlights[0], "/usr/bin/curl");
+    }
+
+    {
+        // base64("ls%20-l")
+        auto root = gen_exec_root({"/bin/sh", "-c", "ls -l"}, "bHMlMjAtbA==");
+
+        object_store store;
+        store.insert_and_apply(std::move(root));
+
+        ddwaf::timer deadline{2s};
+        condition_cache cache;
+        ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
+        EXPECT_STR(cache.match->highlights[0], "ls -l");
+    }
+}
+
+// When the transformers leave the parameter untouched, the original value must
+// still be evaluated
+TEST(TestCmdiDetector, MatchWithUnappliedTransformer)
+{
+    system_platform_override spo{platform::linux};
+
+    cmdi_detector cond{gen_param_def_with_transformers(
+        "server.sys.exec.cmd", "server.request.query", {transformer_id::url_decode})};
+
+    {
+        auto root = gen_exec_root({"/usr/bin/curl", "http://malicious"}, "/usr/bin/curl");
+
+        object_store store;
+        store.insert_and_apply(std::move(root));
+
+        ddwaf::timer deadline{2s};
+        condition_cache cache;
+        ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
+        EXPECT_STR(cache.match->highlights[0], "/usr/bin/curl");
+    }
+
+    {
+        auto root = gen_exec_root({"/bin/sh", "-c", "ls -l"}, "ls -l");
+
+        object_store store;
+        store.insert_and_apply(std::move(root));
+
+        ddwaf::timer deadline{2s};
+        condition_cache cache;
+        ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
+        EXPECT_STR(cache.match->highlights[0], "ls -l");
+    }
+}
+
+// Every parameter within the container must be transformed independently
+TEST(TestCmdiDetector, MatchWithTransformerWithinContainer)
+{
+    system_platform_override spo{platform::linux};
+
+    cmdi_detector cond{gen_param_def_with_transformers(
+        "server.sys.exec.cmd", "server.request.query", {transformer_id::url_decode})};
+
+    auto root = object_builder_da::map({{"server.request.query",
+        object_builder_da::map({{"harmless", "not+an+injection"}, {"cmd", "ls%20-l"}})}});
+    auto array = root.emplace("server.sys.exec.cmd", object_builder_da::array());
+    array.emplace_back("/bin/sh");
+    array.emplace_back("-c");
+    array.emplace_back("ls -l");
+
+    object_store store;
+    store.insert_and_apply(std::move(root));
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
+
+    ASSERT_TRUE(cache.match);
+    EXPECT_STR(cache.match->highlights[0], "ls -l");
+    ASSERT_EQ(cache.match->args[1].key_path.size(), 1);
+    EXPECT_STR(std::get<std::string_view>(cache.match->args[1].key_path[0]), "cmd");
+}
+
+// The resource is never transformed, only the parameters
+TEST(TestCmdiDetector, ResourceNotTransformed)
+{
+    system_platform_override spo{platform::linux};
+
+    cmdi_detector cond{{condition_parameter{{condition_target{.name = "server.sys.exec.cmd",
+                            .index = get_target_index("server.sys.exec.cmd"),
+                            .key_path = {},
+                            .transformers = {transformer_id::url_decode}}}},
+        condition_parameter{{condition_target{
+            .name = "server.request.query", .index = get_target_index("server.request.query")}}}}};
+
+    auto root = gen_exec_root({"%2Fbin%2Fsh", "-c", "ls%20-l"}, "ls -l");
+
+    object_store store;
+    store.insert_and_apply(std::move(root));
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    EXPECT_FALSE(cond.eval(cache, store, {}, {}, deadline));
+    EXPECT_FALSE(cache.match);
+}
+
+// A parameter reduced to an empty string by the transformers must not be
+// considered an injection
+TEST(TestCmdiDetector, NoMatchOnEmptyTransformedParameter)
+{
+    system_platform_override spo{platform::linux};
+
+    cmdi_detector cond{gen_param_def_with_transformers(
+        "server.sys.exec.cmd", "server.request.query", {transformer_id::remove_nulls})};
+
+    const std::string nulls("\0\0\0\0", 4);
+    auto root = gen_exec_root({"/bin/sh", "-c", "ls"}, nulls);
+
+    object_store store;
+    store.insert_and_apply(std::move(root));
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    EXPECT_FALSE(cond.eval(cache, store, {}, {}, deadline));
+    EXPECT_FALSE(cache.match);
+}
+
 } // namespace

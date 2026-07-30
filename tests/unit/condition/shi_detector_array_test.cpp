@@ -358,4 +358,130 @@ TEST(TestShiDetectorArray, OffByOnePayloadsMatch)
     }
 }
 
+// Generates the parameter definition of a two-argument detector, applying the
+// given transformers to the second (params) argument only
+std::vector<condition_parameter> gen_param_def_with_transformers(
+    std::string_view resource, std::string_view params, std::vector<transformer_id> transformers)
+{
+    return {condition_parameter{{condition_target{
+                .name = std::string{resource}, .index = get_target_index(resource)}}},
+        condition_parameter{{condition_target{.name = std::string{params},
+            .index = get_target_index(params),
+            .key_path = {},
+            .transformers = std::move(transformers)}}}};
+}
+
+owned_object gen_shell_array_root(const std::vector<std::string> &resource, owned_object params)
+{
+    auto root = object_builder_da::map();
+    root.emplace("server.request.query", std::move(params));
+    auto array = root.emplace("server.sys.shell.cmd", object_builder_da::array());
+    for (const auto &arg : resource) { array.emplace_back(arg); }
+    return root;
+}
+
+TEST(TestShiDetectorArray, NoMatchWithoutTransformer)
+{
+    shi_detector cond{{gen_param_def("server.sys.shell.cmd", "server.request.query")}};
+
+    auto root = gen_shell_array_root(
+        {"ls", ";echo hello"}, object_builder_da::map({{"query", "%3Becho%20hello"}}));
+
+    object_store store;
+    store.insert_and_apply(std::move(root));
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    EXPECT_FALSE(cond.eval(cache, store, {}, {}, deadline));
+    EXPECT_FALSE(cache.match);
+}
+
+TEST(TestShiDetectorArray, MatchWithTransformer)
+{
+    shi_detector cond{gen_param_def_with_transformers(
+        "server.sys.shell.cmd", "server.request.query", {transformer_id::url_decode})};
+
+    auto root = gen_shell_array_root(
+        {"ls", ";echo hello"}, object_builder_da::map({{"query", "%3Becho%20hello"}}));
+
+    object_store store;
+    store.insert_and_apply(std::move(root));
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
+
+    ASSERT_TRUE(cache.match);
+    EXPECT_STRV(cache.match->args[0].address, "server.sys.shell.cmd");
+    EXPECT_STR(cache.match->args[0].resolved, "ls ;echo hello");
+
+    EXPECT_STRV(cache.match->args[1].address, "server.request.query");
+    // The reported parameter is the transformed one
+    EXPECT_STR(cache.match->args[1].resolved, ";echo hello");
+    EXPECT_STR(cache.match->highlights[0], ";echo hello");
+}
+
+TEST(TestShiDetectorArray, MatchWithMultipleTransformers)
+{
+    shi_detector cond{gen_param_def_with_transformers("server.sys.shell.cmd",
+        "server.request.query", {transformer_id::base64_decode, transformer_id::url_decode})};
+
+    // base64("%3Becho%20hello")
+    auto root = gen_shell_array_root(
+        {"ls", ";echo hello"}, object_builder_da::map({{"query", "JTNCZWNobyUyMGhlbGxv"}}));
+
+    object_store store;
+    store.insert_and_apply(std::move(root));
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
+
+    ASSERT_TRUE(cache.match);
+    EXPECT_STR(cache.match->highlights[0], ";echo hello");
+}
+
+// When the transformers leave the parameter untouched, the original value must
+// still be evaluated
+TEST(TestShiDetectorArray, MatchWithUnappliedTransformer)
+{
+    shi_detector cond{gen_param_def_with_transformers(
+        "server.sys.shell.cmd", "server.request.query", {transformer_id::url_decode})};
+
+    auto root = gen_shell_array_root(
+        {"ls", ";echo hello"}, object_builder_da::map({{"query", ";echo hello"}}));
+
+    object_store store;
+    store.insert_and_apply(std::move(root));
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    ASSERT_TRUE(cond.eval(cache, store, {}, {}, deadline));
+
+    ASSERT_TRUE(cache.match);
+    EXPECT_STR(cache.match->highlights[0], ";echo hello");
+}
+
+// The resource is never transformed, only the parameters
+TEST(TestShiDetectorArray, ResourceNotTransformed)
+{
+    shi_detector cond{{condition_parameter{{condition_target{.name = "server.sys.shell.cmd",
+                           .index = get_target_index("server.sys.shell.cmd"),
+                           .key_path = {},
+                           .transformers = {transformer_id::url_decode}}}},
+        condition_parameter{{condition_target{
+            .name = "server.request.query", .index = get_target_index("server.request.query")}}}}};
+
+    auto root = gen_shell_array_root(
+        {"ls", "%3Becho%20hello"}, object_builder_da::map({{"query", ";echo hello"}}));
+
+    object_store store;
+    store.insert_and_apply(std::move(root));
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    EXPECT_FALSE(cond.eval(cache, store, {}, {}, deadline));
+    EXPECT_FALSE(cache.match);
+}
+
 } // namespace

@@ -1,0 +1,29 @@
+{
+  name: "LFI match on a base64-encoded parameter",
+  runs: [
+    {
+      input: {
+        server.io.fs.file: "documents/../../../../../../../../../etc/passwd",
+        server.request.trailers: { file: "Li4vLi4vLi4vLi4vLi4vLi4vLi4vLi4vLi4vZXRjL3Bhc3N3ZA==" }
+      },
+      rules: [
+        {
+          "rsp-931-001": [
+            {
+              resource: {
+                address: "server.io.fs.file",
+                value: "documents/../../../../../../../../../etc/passwd"
+              },
+              params: {
+                address: "server.request.trailers",
+                key_path: [ "file" ],
+                value: "../../../../../../../../../etc/passwd"
+              }
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}

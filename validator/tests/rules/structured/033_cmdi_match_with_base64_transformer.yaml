@@ -1,0 +1,29 @@
+{
+  name: "CMDi match on a base64-encoded parameter",
+  runs: [
+    {
+      input: {
+        server.sys.exec.cmd: [ "/bin/sh", "-c", "ls -l" ],
+        server.request.trailers: { cmd: "bHMgLWw=" }
+      },
+      rules: [
+        {
+          "rsp-931-005": [
+            {
+              resource: {
+                address: "server.sys.exec.cmd",
+                value: "/bin/sh \"-c\" \"ls -l\""
+              },
+              params: {
+                address: "server.request.trailers",
+                key_path: [ "cmd" ],
+                value: "ls -l"
+              }
+            }
+          ]
+        }
+      ],
+      code: match
+    }
+  ]
+}
