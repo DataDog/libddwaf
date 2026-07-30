@@ -472,7 +472,7 @@ sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resourc
 {
     static constexpr std::size_t min_str_len = 3;
 
-    match_iterator<min_str_len> it(resource, params, transformers, objects_excluded);
+    match_iterator<min_str_len> it(resource, params, transformers, objects_excluded, deadline);
     for (; it; ++it) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();

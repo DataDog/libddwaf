@@ -47,7 +47,7 @@ std::optional<shi_result> find_shi_from_params(const ResourceType &resource,
     ddwaf::timer &deadline)
 {
     match_iterator<2, IteratorType, ResourceType> it(
-        resource, params, transformers, objects_excluded);
+        resource, params, transformers, objects_excluded, deadline);
     for (; it; ++it) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();

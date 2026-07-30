@@ -569,4 +569,43 @@ TEST(TestLFIDetector, NoMatchOnEmptyTransformedParameter)
     EXPECT_FALSE(cache.match);
 }
 
+// Parameters which can't be transformed are skipped within the iterator, so the
+// deadline must be honoured even when the container holds no strings at all
+TEST(TestLFIDetector, TimeoutWithNonStringParams)
+{
+    lfi_detector cond{gen_param_def_with_transformers(
+        "server.io.fs.file", "server.request.query", {transformer_id::url_decode})};
+
+    auto root = object_builder_da::map();
+    root.emplace("server.io.fs.file", "/var/www/html/../../../etc/passwd");
+    auto array = root.emplace("server.request.query", object_builder_da::array());
+    for (unsigned i = 0; i < 1024; ++i) { array.emplace_back(owned_object::make_signed(i)); }
+
+    object_store store;
+    store.insert_and_apply(std::move(root));
+
+    ddwaf::timer deadline{0s};
+    condition_cache cache;
+    EXPECT_THROW(cond.eval(cache, store, {}, {}, deadline), ddwaf::timeout_exception);
+}
+
+// A parameter reduced to an empty string by the transformers must not abort the
+// evaluation; remove_comments leaves a cow_string with no underlying buffer
+TEST(TestLFIDetector, CommentOnlyTransformedParameter)
+{
+    lfi_detector cond{gen_param_def_with_transformers(
+        "server.io.fs.file", "server.request.query", {transformer_id::remove_comments})};
+
+    auto root = object_builder_da::map({{"server.io.fs.file", "/var/www/html/../../../etc/passwd"},
+        {"server.request.query", "#"}});
+
+    object_store store;
+    store.insert_and_apply(std::move(root));
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    EXPECT_NO_THROW(EXPECT_FALSE(cond.eval(cache, store, {}, {}, deadline)));
+    EXPECT_FALSE(cache.match);
+}
+
 } // namespace

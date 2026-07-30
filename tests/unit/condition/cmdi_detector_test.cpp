@@ -993,4 +993,50 @@ TEST(TestCmdiDetector, NoMatchOnEmptyTransformedParameter)
     EXPECT_FALSE(cache.match);
 }
 
+// A parameter reduced to an empty string by the transformers leaves a
+// cow_string with no underlying buffer; feeding it to the shell command lookup
+// must not abort the evaluation
+TEST(TestCmdiDetector, CommentOnlyTransformedParameter)
+{
+    system_platform_override spo{platform::linux};
+
+    cmdi_detector cond{gen_param_def_with_transformers(
+        "server.sys.exec.cmd", "server.request.query", {transformer_id::remove_comments})};
+
+    auto root = gen_exec_root({"/bin/sh", "-c", "ls -l"}, "#");
+
+    object_store store;
+    store.insert_and_apply(std::move(root));
+
+    ddwaf::timer deadline{2s};
+    condition_cache cache;
+    EXPECT_NO_THROW(EXPECT_FALSE(cond.eval(cache, store, {}, {}, deadline)));
+    EXPECT_FALSE(cache.match);
+}
+
+// Parameters which can't be transformed are skipped within the iterator, so the
+// deadline must be honoured even when the container holds no strings at all
+TEST(TestCmdiDetector, TimeoutWithNonStringParams)
+{
+    system_platform_override spo{platform::linux};
+
+    cmdi_detector cond{gen_param_def_with_transformers(
+        "server.sys.exec.cmd", "server.request.query", {transformer_id::url_decode})};
+
+    auto root = object_builder_da::map();
+    auto params = root.emplace("server.request.query", object_builder_da::array());
+    for (unsigned i = 0; i < 1024; ++i) { params.emplace_back(owned_object::make_signed(i)); }
+    auto array = root.emplace("server.sys.exec.cmd", object_builder_da::array());
+    array.emplace_back("/bin/sh");
+    array.emplace_back("-c");
+    array.emplace_back("ls -l");
+
+    object_store store;
+    store.insert_and_apply(std::move(root));
+
+    ddwaf::timer deadline{0s};
+    condition_cache cache;
+    EXPECT_THROW(cond.eval(cache, store, {}, {}, deadline), ddwaf::timeout_exception);
+}
+
 } // namespace
