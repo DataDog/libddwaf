@@ -186,7 +186,7 @@ ssrf_result ssrf_impl(const uri_decomposed &uri, object_view params,
 
     std::optional<ssrf_result> parameter_injection;
 
-    match_iterator<min_str_len> it{uri.raw, params, transformers, objects_excluded};
+    match_iterator<min_str_len> it{uri.raw, params, transformers, objects_excluded, deadline};
     for (; it; ++it) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();

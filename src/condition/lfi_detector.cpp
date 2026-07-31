@@ -17,6 +17,7 @@
 #include "clock.hpp"
 #include "condition/base.hpp"
 #include "condition/lfi_detector.hpp"
+#include "condition/transforming_iterator.hpp"
 #include "exception.hpp"
 #include "exclusion/common.hpp"
 #include "iterator.hpp"
@@ -24,7 +25,6 @@
 #include "object.hpp"
 #include "platform.hpp"
 #include "transformer/base.hpp"
-#include "transformer/manager.hpp"
 #include "utils.hpp"
 
 using namespace std::literals;
@@ -107,29 +107,13 @@ lfi_result lfi_impl(std::string_view path, object_view params,
         lfi_fn = &lfi_impl_windows;
     }
 
-    kv_iterator it(params, {}, objects_excluded);
+    transforming_iterator<kv_iterator> it(params, transformers, objects_excluded, deadline);
     for (; it; ++it) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
         }
 
-        const auto param = *it;
-        if (!param.is_string()) {
-            continue;
-        }
-
-        auto transformed = transformer::manager::transform(param, transformers);
-        if (transformed.has_value()) {
-            auto value = static_cast<std::string_view>(transformed.value());
-            if (lfi_fn(path, value)) {
-                return {{std::string(value), it.get_current_path()}};
-            }
-
-            continue;
-        }
-        // Fallback to the original value if the transform fails
-
-        const auto value = param.as<std::string_view>();
+        const auto value = it.current_value();
         if (lfi_fn(path, value)) {
             return {{std::string(value), it.get_current_path()}};
         }
