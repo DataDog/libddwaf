@@ -693,4 +693,25 @@ TEST(TestSSRFDetectorTransformers, ResourceNotTransformed)
     EXPECT_FALSE(cache.match);
 }
 
+// Parameters which don't match are skipped within the match iterator, so the
+// deadline must be honoured even when nothing matches
+TEST(TestSSRFDetectorTransformers, TimeoutWithNonMatchingParams)
+{
+    ssrf_detector cond{{gen_param_def("server.io.net.url", "server.request.query")}};
+
+    auto root = object_builder_da::map();
+    root.emplace("server.io.net.url", ssrf_url);
+    auto array = root.emplace("server.request.query", object_builder_da::array());
+    for (unsigned i = 0; i < 1024; ++i) {
+        array.emplace_back("no-injection-here-" + std::to_string(i));
+    }
+
+    object_store store;
+    store.insert_and_apply(std::move(root));
+
+    ddwaf::timer deadline{0s};
+    condition_cache cache;
+    EXPECT_THROW(cond.eval(cache, store, {}, {}, deadline), ddwaf::timeout_exception);
+}
+
 } // namespace

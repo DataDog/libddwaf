@@ -11,6 +11,7 @@
 
 using namespace ddwaf;
 using namespace ddwaf::test;
+using namespace std::literals;
 
 namespace {
 
@@ -20,7 +21,8 @@ TEST(TestMatchIterator, InvalidIterator)
 
     std::string resource = "this is the resource";
     object_set_ref exclude;
-    ddwaf::match_iterator it(resource, object, {}, exclude);
+    ddwaf::timer deadline{2s};
+    ddwaf::match_iterator it(resource, object, {}, exclude, deadline);
     EXPECT_FALSE((bool)it);
 
     auto path = it.get_current_path();
@@ -35,7 +37,8 @@ TEST(TestMatchIterator, NoMatch)
 
     std::string resource = "this is the resource";
     object_set_ref exclude;
-    ddwaf::match_iterator it(resource, object, {}, exclude);
+    ddwaf::timer deadline{2s};
+    ddwaf::match_iterator it(resource, object, {}, exclude, deadline);
     EXPECT_FALSE((bool)it);
 
     auto path = it.get_current_path();
@@ -50,7 +53,8 @@ TEST(TestMatchIterator, SingleMatch)
 
     std::string resource = "this is the resource";
     object_set_ref exclude;
-    ddwaf::match_iterator it(resource, object, {}, exclude);
+    ddwaf::timer deadline{2s};
+    ddwaf::match_iterator it(resource, object, {}, exclude, deadline);
     EXPECT_TRUE((bool)it);
 
     auto [param, index] = *it;
@@ -69,7 +73,8 @@ TEST(TestMatchIterator, MultipleMatches)
 
     std::string resource = "resource resource resource resource";
     object_set_ref exclude;
-    ddwaf::match_iterator it(resource, object, {}, exclude);
+    ddwaf::timer deadline{2s};
+    ddwaf::match_iterator it(resource, object, {}, exclude, deadline);
 
     for (std::size_t i = 0; i < 4; ++i) {
         EXPECT_TRUE((bool)it);
@@ -92,7 +97,8 @@ TEST(TestMatchIterator, OverlappingMatches)
 
     std::string resource = "eeeeeeeeee";
     object_set_ref exclude;
-    ddwaf::match_iterator it(resource, object, {}, exclude);
+    ddwaf::timer deadline{2s};
+    ddwaf::match_iterator it(resource, object, {}, exclude, deadline);
     EXPECT_TRUE((bool)it);
 
     for (std::size_t i = 0; i < 9; ++i) {
@@ -115,7 +121,8 @@ TEST(TestMatchIterator, NoMatchWithoutTransformer)
 
     std::string resource = "this is the resource";
     object_set_ref exclude;
-    ddwaf::match_iterator it(resource, object, {}, exclude);
+    ddwaf::timer deadline{2s};
+    ddwaf::match_iterator it(resource, object, {}, exclude, deadline);
     EXPECT_FALSE((bool)it);
 
     EXPECT_FALSE(++it);
@@ -129,7 +136,8 @@ TEST(TestMatchIterator, SingleMatchWithTransformer)
 
     std::string resource = "this is the resource";
     object_set_ref exclude;
-    ddwaf::match_iterator it(resource, object, transformers, exclude);
+    ddwaf::timer deadline{2s};
+    ddwaf::match_iterator it(resource, object, transformers, exclude, deadline);
     EXPECT_TRUE((bool)it);
 
     auto [param, index] = *it;
@@ -151,7 +159,8 @@ TEST(TestMatchIterator, MultipleTransformers)
 
     std::string resource = "this is the resource";
     object_set_ref exclude;
-    ddwaf::match_iterator it(resource, object, transformers, exclude);
+    ddwaf::timer deadline{2s};
+    ddwaf::match_iterator it(resource, object, transformers, exclude, deadline);
     EXPECT_TRUE((bool)it);
 
     auto [param, index] = *it;
@@ -171,7 +180,8 @@ TEST(TestMatchIterator, UnmodifiedByTransformer)
 
     std::string resource = "this is the resource";
     object_set_ref exclude;
-    ddwaf::match_iterator it(resource, object, transformers, exclude);
+    ddwaf::timer deadline{2s};
+    ddwaf::match_iterator it(resource, object, transformers, exclude, deadline);
     EXPECT_TRUE((bool)it);
 
     auto [param, index] = *it;
@@ -189,7 +199,8 @@ TEST(TestMatchIterator, MultipleMatchesWithTransformer)
 
     std::string resource = "resource resource resource resource";
     object_set_ref exclude;
-    ddwaf::match_iterator it(resource, object, transformers, exclude);
+    ddwaf::timer deadline{2s};
+    ddwaf::match_iterator it(resource, object, transformers, exclude, deadline);
 
     for (std::size_t i = 0; i < 4; ++i) {
         EXPECT_TRUE((bool)it);
@@ -214,7 +225,8 @@ TEST(TestMatchIterator, MultipleParametersWithTransformer)
 
     std::string resource = "this is the resource";
     object_set_ref exclude;
-    ddwaf::match_iterator it(resource, object, transformers, exclude);
+    ddwaf::timer deadline{2s};
+    ddwaf::match_iterator it(resource, object, transformers, exclude, deadline);
 
     for (std::size_t i = 0; i < 2; ++i) {
         EXPECT_TRUE((bool)it);
@@ -241,7 +253,8 @@ TEST(TestMatchIterator, TransformedKey)
 
     std::string resource = "this is the resource";
     object_set_ref exclude;
-    ddwaf::match_iterator it(resource, object, transformers, exclude);
+    ddwaf::timer deadline{2s};
+    ddwaf::match_iterator it(resource, object, transformers, exclude, deadline);
     EXPECT_TRUE((bool)it);
 
     auto [param, index] = *it;
@@ -264,7 +277,8 @@ TEST(TestMatchIterator, MinLengthAppliedToMatchedValue)
 
         std::string resource = "this is the resource";
         object_set_ref exclude;
-        ddwaf::match_iterator<5> it(resource, object, transformers, exclude);
+        ddwaf::timer deadline{2s};
+        ddwaf::match_iterator<5> it(resource, object, transformers, exclude, deadline);
         EXPECT_FALSE((bool)it);
     }
 
@@ -275,7 +289,8 @@ TEST(TestMatchIterator, MinLengthAppliedToMatchedValue)
 
         std::string resource = "this is the %72%65%73ource";
         object_set_ref exclude;
-        ddwaf::match_iterator<5> it(resource, object, transformers, exclude);
+        ddwaf::timer deadline{2s};
+        ddwaf::match_iterator<5> it(resource, object, transformers, exclude, deadline);
         EXPECT_FALSE((bool)it);
 
         EXPECT_FALSE(++it);
@@ -287,7 +302,8 @@ TEST(TestMatchIterator, MinLengthAppliedToMatchedValue)
 
         std::string resource = "this is the resource";
         object_set_ref exclude;
-        ddwaf::match_iterator<5> it(resource, object, transformers, exclude);
+        ddwaf::timer deadline{2s};
+        ddwaf::match_iterator<5> it(resource, object, transformers, exclude, deadline);
         EXPECT_TRUE((bool)it);
 
         auto [param, index] = *it;
@@ -307,7 +323,8 @@ TEST(TestMatchIterator, MinLengthReachedAfterTransform)
     // base64("ab")
     std::string resource = "this is the YWI= resource";
     object_set_ref exclude;
-    ddwaf::match_iterator<4> it(resource, object, transformers, exclude);
+    ddwaf::timer deadline{2s};
+    ddwaf::match_iterator<4> it(resource, object, transformers, exclude, deadline);
     EXPECT_TRUE((bool)it);
 
     auto [param, index] = *it;
@@ -326,7 +343,8 @@ TEST(TestMatchIterator, OnlyTransformedParameterEvaluated)
 
     std::string resource = "this is the RESOURCE";
     object_set_ref exclude;
-    ddwaf::match_iterator it(resource, object, transformers, exclude);
+    ddwaf::timer deadline{2s};
+    ddwaf::match_iterator it(resource, object, transformers, exclude, deadline);
     EXPECT_FALSE((bool)it);
 
     EXPECT_FALSE(++it);
@@ -344,7 +362,8 @@ TEST(TestMatchIterator, EmptyTransformedParameter)
 
     std::string resource = "this is the resource";
     object_set_ref exclude;
-    ddwaf::match_iterator it(resource, object, transformers, exclude);
+    ddwaf::timer deadline{2s};
+    ddwaf::match_iterator it(resource, object, transformers, exclude, deadline);
     EXPECT_FALSE((bool)it);
 
     EXPECT_FALSE(++it);

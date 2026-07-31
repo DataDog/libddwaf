@@ -22,6 +22,7 @@
 #include "condition/cmdi_detector.hpp"
 #include "condition/shi_common.hpp"
 #include "condition/structured_condition.hpp"
+#include "condition/transforming_iterator.hpp"
 #include "cow_string.hpp"
 #include "exception.hpp"
 #include "exclusion/common.hpp"
@@ -33,7 +34,6 @@
 #include "tokenizer/shell.hpp"
 #include "transformer/base.hpp"
 #include "transformer/lowercase.hpp"
-#include "transformer/manager.hpp"
 #include "utils.hpp"
 
 using namespace std::literals;
@@ -381,28 +381,15 @@ std::optional<shi_result> cmdi_impl(object_view exec_args,
         return std::nullopt;
     }
 
-    kv_iterator it(params, {}, objects_excluded);
+    transforming_iterator<kv_iterator> it(params, transformers, objects_excluded, deadline);
     for (; it; ++it) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
         }
 
-        const object_view param = *it;
-        if (!param.is_string()) {
-            continue;
-        }
-
         if (eval_executable) {
-            auto value = param.as<std::string_view>();
-
-            // TODO: transforms are done twice if there is a shell command
-            auto transformed = transformer::manager::transform(param, transformers);
-            if (transformed.has_value()) {
-                value = static_cast<std::string_view>(transformed.value());
-            }
-
             // First check if the entire executable was injected
-            value = trim_whitespaces(value);
+            auto value = trim_whitespaces(it.current_value());
             if (executable == value) {
                 // When the full binary has been injected, we consider it an exploit
                 // although bear in mind that this can also be a vulnerable-by-design
@@ -413,7 +400,7 @@ std::optional<shi_result> cmdi_impl(object_view exec_args,
 
         if (!shell_command.empty()) {
             auto res = find_shi_from_params<std::string_view, scalar_iterator>(
-                shell_command, resource_tokens, param, transformers, objects_excluded, deadline);
+                shell_command, resource_tokens, *it, {}, objects_excluded, deadline);
             if (res.has_value()) {
                 res->key_path = it.get_current_path();
                 return res;

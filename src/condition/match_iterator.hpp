@@ -6,16 +6,15 @@
 
 #pragma once
 
-#include "cow_string.hpp"
+#include "clock.hpp"
+#include "condition/transforming_iterator.hpp"
 #include "exclusion/common.hpp"
 #include "iterator.hpp"
 #include "object.hpp"
 #include "transformer/base.hpp"
-#include "transformer/manager.hpp"
 
 #include <cstddef>
 #include <cstdint>
-#include <optional>
 #include <span>
 #include <string_view>
 #include <utility>
@@ -31,14 +30,11 @@ public:
     static constexpr std::size_t npos = std::string_view::npos;
 
     explicit match_iterator(ResourceType resource, object_view obj,
-        std::span<const transformer_id> transformers, const object_set_ref &exclude)
-        : resource_(std::move(resource)), it_(obj, {}, exclude), transformers_(transformers)
+        std::span<const transformer_id> transformers, const object_set_ref &exclude,
+        ddwaf::timer &deadline)
+        : resource_(std::move(resource)), it_(obj, transformers, exclude, deadline)
     {
-        for (; it_; ++it_) {
-            if (try_match_object(*it_)) {
-                break;
-            }
-        }
+        find_next_match();
     }
 
     ~match_iterator() = default;
@@ -51,25 +47,21 @@ public:
 
     [[nodiscard]] std::pair<std::string_view, std::size_t> operator*()
     {
-        return {get_current_param_str(), current_index_};
+        return {it_.current_value(), current_index_};
     }
 
     bool operator++()
     {
+        // Look for further occurrences of the current value within the resource
         if (current_index_ != npos) {
-            current_index_ = resource_.find(get_current_param_str(), current_index_ + 1);
+            current_index_ = resource_.find(it_.current_value(), current_index_ + 1);
             if (current_index_ != npos) {
                 return true;
             }
         }
 
-        while (++it_) {
-            if (try_match_object(*it_)) {
-                return true;
-            }
-        }
-
-        return false;
+        ++it_;
+        return find_next_match();
     }
 
     [[nodiscard]] explicit operator bool() const { return static_cast<bool>(it_); }
@@ -80,38 +72,30 @@ public:
     }
 
 protected:
-    [[nodiscard]] std::string_view get_current_param_str() const
+    // Advances the underlying iterator until its current value is found within
+    // the resource. Returns false if the iterator was exhausted before finding
+    // one. Note that values which don't match are skipped by advancing the
+    // underlying iterator, which is also responsible for evaluating the deadline.
+    bool find_next_match()
     {
-        if (current_param_.has_value()) {
-            return static_cast<std::string_view>(current_param_.value());
-        }
-        return {};
-    }
+        for (; it_; ++it_) {
+            auto value = it_.current_value();
+            if (value.size() < MinLength) {
+                continue;
+            }
 
-    bool try_match_object(object_view current_obj)
-    {
-        if (!current_obj.is_string()) {
-            return false;
-        }
-
-        current_param_ = transformer::manager::transform(current_obj, transformers_);
-        if (!current_param_.has_value()) {
-            current_param_ = cow_string{current_obj.template as<std::string_view>()};
+            current_index_ = resource_.find(value, 0);
+            if (current_index_ != npos) {
+                return true;
+            }
         }
 
-        auto value = static_cast<std::string_view>(current_param_.value());
-        if (value.size() < MinLength) {
-            return false;
-        }
-        current_index_ = resource_.find(value, 0);
-        return current_index_ != npos;
+        return false;
     }
 
     ResourceType resource_;
-    std::optional<cow_string> current_param_;
     std::size_t current_index_{npos};
-    IteratorType it_;
-    std::span<const transformer_id> transformers_;
+    transforming_iterator<IteratorType> it_;
 };
 
 } // namespace ddwaf
