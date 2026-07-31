@@ -34,11 +34,7 @@ public:
         ddwaf::timer &deadline)
         : resource_(std::move(resource)), it_(obj, transformers, exclude, deadline)
     {
-        for (; it_; ++it_) {
-            if (try_match_current()) {
-                break;
-            }
-        }
+        find_next_match();
     }
 
     ~match_iterator() = default;
@@ -56,6 +52,7 @@ public:
 
     bool operator++()
     {
+        // Look for further occurrences of the current value within the resource
         if (current_index_ != npos) {
             current_index_ = resource_.find(it_.current_value(), current_index_ + 1);
             if (current_index_ != npos) {
@@ -63,15 +60,8 @@ public:
             }
         }
 
-        // Values which don't match are skipped by advancing the underlying
-        // iterator, which is also responsible for evaluating the deadline
-        while (++it_) {
-            if (try_match_current()) {
-                return true;
-            }
-        }
-
-        return false;
+        ++it_;
+        return find_next_match();
     }
 
     [[nodiscard]] explicit operator bool() const { return static_cast<bool>(it_); }
@@ -82,17 +72,25 @@ public:
     }
 
 protected:
-    // Looks up the value the underlying iterator is currently positioned on
-    // within the resource
-    bool try_match_current()
+    // Advances the underlying iterator until its current value is found within
+    // the resource. Returns false if the iterator was exhausted before finding
+    // one. Note that values which don't match are skipped by advancing the
+    // underlying iterator, which is also responsible for evaluating the deadline.
+    bool find_next_match()
     {
-        auto value = it_.current_value();
-        if (value.size() < MinLength) {
-            return false;
+        for (; it_; ++it_) {
+            auto value = it_.current_value();
+            if (value.size() < MinLength) {
+                continue;
+            }
+
+            current_index_ = resource_.find(value, 0);
+            if (current_index_ != npos) {
+                return true;
+            }
         }
 
-        current_index_ = resource_.find(value, 0);
-        return current_index_ != npos;
+        return false;
     }
 
     ResourceType resource_;

@@ -30,18 +30,7 @@ public:
         const object_set_ref &exclude, ddwaf::timer &deadline)
         : it_(obj, {}, exclude), transformers_(transformers), deadline_(deadline)
     {
-        for (; it_; ++it_) {
-            // Objects which can't be transformed are skipped within this
-            // iterator, so the deadline must be evaluated here rather than
-            // relying on the caller doing so once per yielded value
-            if (deadline_.expired()) {
-                throw ddwaf::timeout_exception();
-            }
-
-            if (transform_current_object(*it_)) {
-                break;
-            }
-        }
+        advance_to_transformable_object();
     }
 
     ~transforming_iterator() = default;
@@ -79,16 +68,8 @@ public:
 
     bool operator++()
     {
-        while (++it_) {
-            if (deadline_.expired()) {
-                throw ddwaf::timeout_exception();
-            }
-
-            if (transform_current_object(*it_)) {
-                return true;
-            }
-        }
-        return false;
+        ++it_;
+        return advance_to_transformable_object();
     }
 
     [[nodiscard]] explicit operator bool() const { return static_cast<bool>(it_); }
@@ -99,18 +80,33 @@ public:
     }
 
 protected:
-    bool transform_current_object(object_view current_obj)
+    // Advances the underlying iterator until it lands on a string, which is
+    // then transformed and made the current value. Returns false if the
+    // iterator was exhausted before finding one.
+    bool advance_to_transformable_object()
     {
-        if (!current_obj.is_string()) {
-            return false;
+        for (; it_; ++it_) {
+            // Objects which can't be transformed are skipped within this
+            // iterator, so the deadline must be evaluated here rather than
+            // relying on the caller doing so once per yielded value
+            if (deadline_.expired()) {
+                throw ddwaf::timeout_exception();
+            }
+
+            const object_view current_obj = *it_;
+            if (!current_obj.is_string()) {
+                continue;
+            }
+
+            current_param_ = transformer::manager::transform(current_obj, transformers_);
+            if (!current_param_.has_value()) {
+                current_param_ = cow_string{current_obj.template as<std::string_view>()};
+            }
+
+            return true;
         }
 
-        current_param_ = transformer::manager::transform(current_obj, transformers_);
-        if (!current_param_.has_value()) {
-            current_param_ = cow_string{current_obj.template as<std::string_view>()};
-        }
-
-        return true;
+        return false;
     }
 
     std::optional<cow_string> current_param_;
