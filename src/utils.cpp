@@ -100,6 +100,23 @@ template <typename T> std::pair<bool, T> from_string(std::string_view str)
     return {false, {}};
 }
 
+template <> std::pair<bool, bool> from_string<bool>(std::string_view str)
+{
+    if (str.size() == (sizeof("true") - 1) && (str[0] == 'T' || str[0] == 't') &&
+        (str[1] == 'R' || str[1] == 'r') && (str[2] == 'U' || str[2] == 'u') &&
+        (str[3] == 'E' || str[3] == 'e')) {
+        return {true, true};
+    }
+
+    if (str.size() == (sizeof("false") - 1) && (str[0] == 'F' || str[0] == 'f') &&
+        (str[1] == 'A' || str[1] == 'a') && (str[2] == 'L' || str[2] == 'l') &&
+        (str[3] == 'S' || str[3] == 's') && (str[4] == 'E' || str[4] == 'e')) {
+        return {true, false};
+    }
+
+    return {false, false};
+}
+
 template std::string to_string<bool>(bool value);
 template std::string to_string<int64_t>(int64_t value);
 template std::string to_string<uint64_t>(uint64_t value);

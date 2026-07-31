@@ -29,7 +29,7 @@ TEST(TestRegexMatch, TestBasicCaseInsensitive)
     owned_object param = test::ddwaf_object_da::make_string("regex");
 
     auto [res, highlight] = matcher.match(param);
-    EXPECT_TRUE(res);
+    EXPECT_EQ(res, ddwaf::matcher::match_result::match);
     EXPECT_STR(highlight, "regex");
 }
 
@@ -39,12 +39,12 @@ TEST(TestRegexMatch, TestBasicCaseSensitive)
 
     owned_object param = test::ddwaf_object_da::make_string("regex");
 
-    EXPECT_FALSE(matcher.match(param).first);
+    EXPECT_NE(matcher.match(param).first, ddwaf::matcher::match_result::match);
 
     owned_object param2 = test::ddwaf_object_da::make_string("rEgEx");
 
     auto [res, highlight] = matcher.match(param2);
-    EXPECT_TRUE(res);
+    EXPECT_EQ(res, ddwaf::matcher::match_result::match);
     EXPECT_STR(highlight, "rEgEx");
 }
 
@@ -55,10 +55,10 @@ TEST(TestRegexMatch, TestMinLength)
     owned_object param = test::ddwaf_object_da::make_string("rEgEx");
     owned_object param2 = test::ddwaf_object_da::make_string("rEgExe");
 
-    EXPECT_FALSE(matcher.match(param).first);
+    EXPECT_NE(matcher.match(param).first, ddwaf::matcher::match_result::match);
 
     auto [res, highlight] = matcher.match(param2);
-    EXPECT_TRUE(res);
+    EXPECT_EQ(res, ddwaf::matcher::match_result::match);
     EXPECT_STR(highlight, "rEgExe");
 }
 
@@ -66,9 +66,10 @@ TEST(TestRegexMatch, TestInvalidInput)
 {
     regex_match matcher("^rEgEx.*$", 6, true);
 
-    EXPECT_FALSE(matcher.match(std::string_view{nullptr, 0}).first);
+    EXPECT_NE(
+        matcher.match(std::string_view{nullptr, 0}).first, ddwaf::matcher::match_result::match);
     // NOLINTNEXTLINE(bugprone-string-constructor)
-    EXPECT_FALSE(matcher.match(std::string_view{"*", 0}).first);
+    EXPECT_NE(matcher.match(std::string_view{"*", 0}).first, ddwaf::matcher::match_result::match);
 }
 
 } // namespace

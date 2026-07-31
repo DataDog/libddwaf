@@ -1,0 +1,4 @@
+{
+  name: "lower_equal does not match a convertible string above the threshold",
+  runs: [ { input: { rule4-input: "150" }, code: ok } ]
+}

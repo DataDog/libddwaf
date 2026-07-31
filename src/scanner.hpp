@@ -53,7 +53,7 @@ protected:
         if (!data.has_value() || data.type() == object_type::invalid) {
             return false;
         }
-        return matcher->match(data).first;
+        return matcher->match(data).first == matcher::match_result::match;
     }
 
     static bool eval_matcher(const std::shared_ptr<matcher::base> &matcher, std::string_view data)
@@ -64,7 +64,7 @@ protected:
         if (data.empty()) {
             return false;
         }
-        return matcher->match(data).first;
+        return matcher->match(data).first == matcher::match_result::match;
     }
 
     std::string id_;
