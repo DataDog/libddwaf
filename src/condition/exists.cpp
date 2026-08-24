@@ -33,13 +33,9 @@ object_view get_key(object_view root, const std::variant<std::string, int64_t> &
     }
 
     if (root.is_array() && std::holds_alternative<int64_t>(key)) {
-        auto index = std::get<int64_t>(key);
-        if (index >= 0 && root.size<int64_t>() > index) {
-            return root.at_value(index);
-        }
-
-        if (index < 0 && root.size<int64_t>() + index >= 0) {
-            return root.at_value(root.size<int64_t>() + index);
+        const auto index = detail::normalize_index(root.size(), std::get<int64_t>(key));
+        if (index) {
+            return root.at_value(*index);
         }
     }
 
@@ -55,11 +51,11 @@ search_outcome exists(object_view root,
     }
 
     auto it = key_path.begin();
-    if (std::holds_alternative<std::string>(*it) && root.type() != object_type::map) {
+    if (std::holds_alternative<std::string>(*it) && !root.is_map()) {
         return search_outcome::not_found;
     }
 
-    if (std::holds_alternative<int64_t>(*it) && root.type() != object_type::array) {
+    if (std::holds_alternative<int64_t>(*it) && !root.is_array()) {
         return search_outcome::not_found;
     }
 
@@ -74,11 +70,11 @@ search_outcome exists(object_view root,
             return search_outcome::found;
         }
 
-        if (std::holds_alternative<std::string>(*it) && root.type() != object_type::map) {
+        if (std::holds_alternative<std::string>(*it) && !root.is_map()) {
             return search_outcome::not_found;
         }
 
-        if (std::holds_alternative<int64_t>(*it) && root.type() != object_type::array) {
+        if (std::holds_alternative<int64_t>(*it) && !root.is_array()) {
             return search_outcome::not_found;
         }
     }

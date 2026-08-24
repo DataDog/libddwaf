@@ -32,7 +32,7 @@ void set_string_map(ddwaf_object *map,
     const std::vector<std::pair<std::string_view, std::string_view>> &entries,
     ddwaf_allocator alloc)
 {
-    ddwaf_object_set_map(map, static_cast<uint16_t>(entries.size()), alloc);
+    ddwaf_object_set_map(map, entries.size(), alloc);
     for (const auto &[key, value] : entries) {
         ddwaf_object_set_string(ddwaf_object_insert_key(map, key.data(), key.size(), alloc),
             value.data(), value.size(), alloc);

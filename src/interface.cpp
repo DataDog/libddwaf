@@ -50,6 +50,8 @@ static_assert(static_cast<uint8_t>(object_type::small_string) == DDWAF_OBJ_SMALL
 static_assert(static_cast<uint8_t>(object_type::literal_string) == DDWAF_OBJ_LITERAL_STRING);
 static_assert(static_cast<uint8_t>(object_type::array) == DDWAF_OBJ_ARRAY);
 static_assert(static_cast<uint8_t>(object_type::map) == DDWAF_OBJ_MAP);
+static_assert(static_cast<uint8_t>(object_type::large_array) == DDWAF_OBJ_LARGE_ARRAY);
+static_assert(static_cast<uint8_t>(object_type::large_map) == DDWAF_OBJ_LARGE_MAP);
 
 // Object compatibility
 
@@ -114,6 +116,26 @@ static_assert(offsetof(detail::object_map, type) == offsetof(_ddwaf_object_map, 
 static_assert(offsetof(detail::object_map, size) == offsetof(_ddwaf_object_map, size));
 static_assert(offsetof(detail::object_map, capacity) == offsetof(_ddwaf_object_map, capacity));
 static_assert(offsetof(detail::object_map, ptr) == offsetof(_ddwaf_object_map, ptr));
+
+// detail::object_large_array == _ddwaf_object_large_array
+static_assert(sizeof(detail::object_large_array) == sizeof(_ddwaf_object_large_array));
+static_assert(
+    offsetof(detail::object_large_array, type) == offsetof(_ddwaf_object_large_array, type));
+static_assert(offsetof(detail::object_large_array, reserved) ==
+              offsetof(_ddwaf_object_large_array, reserved));
+static_assert(
+    offsetof(detail::object_large_array, ptr) == offsetof(_ddwaf_object_large_array, ptr));
+static_assert(std::is_same_v<decltype(detail::object_large_array::ptr), detail::object *>);
+static_assert(std::is_same_v<decltype(_ddwaf_object_large_array::ptr), ddwaf_object *>);
+
+// detail::object_large_map == _ddwaf_object_large_map
+static_assert(sizeof(detail::object_large_map) == sizeof(_ddwaf_object_large_map));
+static_assert(offsetof(detail::object_large_map, type) == offsetof(_ddwaf_object_large_map, type));
+static_assert(
+    offsetof(detail::object_large_map, reserved) == offsetof(_ddwaf_object_large_map, reserved));
+static_assert(offsetof(detail::object_large_map, ptr) == offsetof(_ddwaf_object_large_map, ptr));
+static_assert(std::is_same_v<decltype(detail::object_large_map::ptr), detail::object_kv *>);
+static_assert(std::is_same_v<decltype(_ddwaf_object_large_map::ptr), ddwaf_object_kv *>);
 
 // Allocator callback compatibility
 static_assert(std::is_same_v<ddwaf_alloc_fn_type, memory::user_resource::alloc_fn_type>);
@@ -812,29 +834,34 @@ ddwaf_object *ddwaf_object_float(ddwaf_object *object, double value)
     return ddwaf_object_set_float(object, value);
 }
 
-ddwaf_object *ddwaf_object_set_array(ddwaf_object *object, uint16_t capacity, ddwaf_allocator alloc)
+ddwaf_object *ddwaf_object_set_array(ddwaf_object *object, size_t capacity, ddwaf_allocator alloc)
 {
     if (object == nullptr || alloc == nullptr) {
         return nullptr;
     }
-    // object may be uninitialized
-    auto *alloc_ptr = to_alloc_ptr(alloc);
-    auto new_array = owned_object::make_array(capacity, alloc_ptr);
-    to_ref(object) = new_array.move();
-    return object;
+
+    try {
+        // object may be uninitialized
+        auto new_array = owned_object::make_array(capacity, to_alloc_ptr(alloc));
+        to_ref(object) = new_array.move();
+        return object;
+    } catch (...) {} // NOLINT(bugprone-empty-catch)
+    return nullptr;
 }
 
-ddwaf_object *ddwaf_object_set_map(ddwaf_object *object, uint16_t capacity, ddwaf_allocator alloc)
+ddwaf_object *ddwaf_object_set_map(ddwaf_object *object, size_t capacity, ddwaf_allocator alloc)
 {
     if (object == nullptr || alloc == nullptr) {
         return nullptr;
     }
 
-    // object may be uninitialized
-    auto *alloc_ptr = to_alloc_ptr(alloc);
-    auto new_map = owned_object::make_map(capacity, alloc_ptr);
-    to_ref(object) = new_map.move();
-    return object;
+    try {
+        // object may be uninitialized
+        auto new_map = owned_object::make_map(capacity, to_alloc_ptr(alloc));
+        to_ref(object) = new_map.move();
+        return object;
+    } catch (...) {} // NOLINT(bugprone-empty-catch)
+    return nullptr;
 }
 
 bool ddwaf_object_from_json(
@@ -857,7 +884,8 @@ bool ddwaf_object_from_json(
 
 ddwaf_object *ddwaf_object_insert(ddwaf_object *array, ddwaf_allocator alloc)
 {
-    if (array == nullptr || array->type != DDWAF_OBJ_ARRAY || alloc == nullptr) {
+    if (array == nullptr || !ddwaf::is_array(static_cast<object_type>(array->type)) ||
+        alloc == nullptr) {
         return nullptr;
     }
 
@@ -875,7 +903,7 @@ ddwaf_object *ddwaf_object_insert(ddwaf_object *array, ddwaf_allocator alloc)
 ddwaf_object *ddwaf_object_insert_key(
     ddwaf_object *map, const char *key, uint32_t length, ddwaf_allocator alloc)
 {
-    if (map == nullptr || map->type != DDWAF_OBJ_MAP || alloc == nullptr) {
+    if (map == nullptr || !ddwaf::is_map(static_cast<object_type>(map->type)) || alloc == nullptr) {
         return nullptr;
     }
 
@@ -895,7 +923,7 @@ ddwaf_object *ddwaf_object_insert_key(
 ddwaf_object *ddwaf_object_insert_key_nocopy(
     ddwaf_object *map, const char *key, uint32_t length, ddwaf_allocator alloc)
 {
-    if (map == nullptr || map->type != DDWAF_OBJ_MAP || alloc == nullptr) {
+    if (map == nullptr || !ddwaf::is_map(static_cast<object_type>(map->type)) || alloc == nullptr) {
         return nullptr;
     }
 
@@ -918,7 +946,7 @@ ddwaf_object *ddwaf_object_insert_key_nocopy(
 ddwaf_object *ddwaf_object_insert_literal_key(
     ddwaf_object *map, const char *key, uint32_t length, ddwaf_allocator alloc)
 {
-    if (map == nullptr || map->type != DDWAF_OBJ_MAP || alloc == nullptr) {
+    if (map == nullptr || !ddwaf::is_map(static_cast<object_type>(map->type)) || alloc == nullptr) {
         return nullptr;
     }
 
@@ -1062,15 +1090,18 @@ ddwaf_object *ddwaf_object_clone(
     const ddwaf_object *source, ddwaf_object *destination, ddwaf_allocator alloc)
 {
     const object_view view{to_ptr(source)};
-    if (!view.has_value()) {
+    if (!view.has_value() || destination == nullptr || alloc == nullptr) {
         return nullptr;
     }
 
-    auto *alloc_ptr = to_alloc_ptr(alloc);
-    // destination may be uninitialized; don't use borrowed_object
-    auto output = view.clone(alloc_ptr);
-    to_ref(destination) = output.move();
-    return destination;
+    try {
+        auto *alloc_ptr = to_alloc_ptr(alloc);
+        // destination may be uninitialized; don't use borrowed_object
+        auto output = view.clone(alloc_ptr);
+        to_ref(destination) = output.move();
+        return destination;
+    } catch (...) {} // NOLINT(bugprone-empty-catch)
+    return nullptr;
 }
 
 bool ddwaf_object_is_invalid(const ddwaf_object *object)

@@ -63,6 +63,10 @@ typedef enum
     DDWAF_OBJ_ARRAY    = 0x20,
     /** Array of ddwaf_object_kv, up to max(uint16) capacity **/
     DDWAF_OBJ_MAP      = 0x40,
+    /** Array of ddwaf_object with size_t capacity **/
+    DDWAF_OBJ_LARGE_ARRAY = 0xA0,
+    /** Array of ddwaf_object_kv with size_t capacity **/
+    DDWAF_OBJ_LARGE_MAP = 0xC0,
 } DDWAF_OBJ_TYPE;
 
 /**
@@ -167,6 +171,29 @@ struct _ddwaf_object_map {
     struct _ddwaf_object_kv *ptr;
 };
 
+// Large-container ptr fields point directly to the contiguous elements. Their
+// size and capacity are stored in a private allocation header immediately
+// before the referenced elements and must be queried through the public
+// accessors. Any insertion that grows the container invalidates ptr and
+// pointers to its elements.
+struct _ddwaf_object_large_array {
+    uint8_t type;
+    uint8_t reserved[7];
+    union {
+        uint64_t _padding;
+        union _ddwaf_object *ptr;
+    };
+};
+
+struct _ddwaf_object_large_map {
+    uint8_t type;
+    uint8_t reserved[7];
+    union {
+        uint64_t _padding;
+        struct _ddwaf_object_kv *ptr;
+    };
+};
+
 /**
  * @struct ddwaf_object
  *
@@ -187,6 +214,8 @@ union __attribute__((may_alias)) _ddwaf_object {
         struct _ddwaf_object_small_string sstr;
         struct _ddwaf_object_array array;
         struct _ddwaf_object_map map;
+        struct _ddwaf_object_large_array large_array;
+        struct _ddwaf_object_large_map large_map;
     } via;
 };
 
@@ -202,6 +231,8 @@ struct _ddwaf_object_kv {
 
 static_assert(sizeof(union _ddwaf_object) == 16);
 static_assert(sizeof(struct _ddwaf_object_kv) == 32);
+static_assert(offsetof(struct _ddwaf_object_large_array, ptr) == 8);
+static_assert(offsetof(struct _ddwaf_object_large_map, ptr) == 8);
 #endif
 
 /**
@@ -919,7 +950,9 @@ ddwaf_object* ddwaf_object_set_bool(ddwaf_object *object, bool value);
 ddwaf_object* ddwaf_object_set_float(ddwaf_object *object, double value);
 
 /**
- * Creates an array object, for sequential storage.
+ * Creates an array object for sequential storage. Capacities up to 65,535 use
+ * DDWAF_OBJ_ARRAY; larger capacities use DDWAF_OBJ_LARGE_ARRAY. A compact array
+ * is promoted automatically when insertion grows it beyond 65,535 elements.
  *
  * @param object Object to perform the operation on. (nonnull)
  * @param capacity Initial capacity of the array.
@@ -927,10 +960,12 @@ ddwaf_object* ddwaf_object_set_float(ddwaf_object *object, double value);
  *
  * @return A pointer to the passed object or NULL if the operation failed.
  **/
-ddwaf_object* ddwaf_object_set_array(ddwaf_object *object, uint16_t capacity, ddwaf_allocator alloc);
+ddwaf_object* ddwaf_object_set_array(ddwaf_object *object, size_t capacity, ddwaf_allocator alloc);
 
 /**
- * Creates a map object, for key-value storage.
+ * Creates a map object for key-value storage. Capacities up to 65,535 use
+ * DDWAF_OBJ_MAP; larger capacities use DDWAF_OBJ_LARGE_MAP. A compact map is
+ * promoted automatically when insertion grows it beyond 65,535 entries.
  *
  * @param object Object to perform the operation on. (nonnull)
  * @param capacity Initial capacity of the map.
@@ -938,7 +973,7 @@ ddwaf_object* ddwaf_object_set_array(ddwaf_object *object, uint16_t capacity, dd
  *
  * @return A pointer to the passed object or NULL if the operation failed.
  **/
-ddwaf_object* ddwaf_object_set_map(ddwaf_object *object, uint16_t capacity, ddwaf_allocator alloc);
+ddwaf_object* ddwaf_object_set_map(ddwaf_object *object, size_t capacity, ddwaf_allocator alloc);
 
 /**
  * Inserts a new object into an array object.
@@ -947,6 +982,9 @@ ddwaf_object* ddwaf_object_set_map(ddwaf_object *object, uint16_t capacity, ddwa
  * @param alloc Allocator to use for memory allocation. (nonnull)
  *
  * @return A pointer to the newly inserted object or NULL if the operation failed.
+ *
+ * @note An insertion that grows or promotes the array invalidates pointers to
+ * existing elements.
  **/
 
 ddwaf_object *ddwaf_object_insert(ddwaf_object *array, ddwaf_allocator alloc);
@@ -960,6 +998,9 @@ ddwaf_object *ddwaf_object_insert(ddwaf_object *array, ddwaf_allocator alloc);
  * @param alloc Allocator to use for memory allocation. (nonnull)
  *
  * @return A pointer to the newly inserted object or NULL if the operation failed.
+ *
+ * @note An insertion that grows or promotes the map invalidates pointers to
+ * existing keys and values.
  **/
 ddwaf_object *ddwaf_object_insert_key(ddwaf_object *map, const char *key, uint32_t length, ddwaf_allocator alloc);
 
@@ -972,6 +1013,9 @@ ddwaf_object *ddwaf_object_insert_key(ddwaf_object *map, const char *key, uint32
  * @param alloc Allocator to use for memory allocation. (nonnull)
  *
  * @return A pointer to the newly inserted object or NULL if the operation failed.
+ *
+ * @note An insertion that grows or promotes the map invalidates pointers to
+ * existing keys and values.
  **/
 ddwaf_object *ddwaf_object_insert_literal_key(ddwaf_object *map, const char *key, uint32_t length, ddwaf_allocator alloc);
 
@@ -989,6 +1033,8 @@ ddwaf_object *ddwaf_object_insert_literal_key(ddwaf_object *map, const char *key
  *
  * @note The provided string must have been allocated with the same allocator used
  * with ddwaf_object_destroy.
+ * @note An insertion that grows or promotes the map invalidates pointers to
+ * existing keys and values.
  **/
 ddwaf_object *ddwaf_object_insert_key_nocopy(ddwaf_object *map, const char *key, uint32_t length, ddwaf_allocator alloc);
 

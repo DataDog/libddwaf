@@ -438,7 +438,7 @@ bool cmdi_detector::eval_impl(const unary_argument<object_view> &resource,
     const variadic_argument<object_view> &params, condition_cache &cache,
     const object_set_ref &objects_excluded, ddwaf::timer &deadline) const
 {
-    if (resource.value.type() != object_type::array || resource.value.empty()) {
+    if (!resource.value.is_array() || resource.value.empty()) {
         return {};
     }
 

@@ -118,7 +118,7 @@ bool shi_detector::eval_impl(const unary_argument<object_view> &resource,
         return eval_string(resource, params, cache, objects_excluded, deadline);
     }
 
-    if (resource.value.type() == object_type::array) {
+    if (resource.value.is_array()) {
         return eval_array(resource, params, cache, objects_excluded, deadline);
     }
 

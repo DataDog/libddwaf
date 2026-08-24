@@ -54,7 +54,7 @@ std::vector<std::variant<std::string_view, int64_t>> iterator_base<T>::get_curre
     auto [parent, parent_index] = stack_.front();
     for (unsigned i = 1; i < stack_.size(); i++) {
         auto [key, child] = parent.at(parent_index - 1);
-        if (parent.type() == object_type::map) {
+        if (parent.is_map()) {
             keys.emplace_back(key.template as<std::string_view>());
         } else {
             keys.emplace_back(static_cast<int64_t>(parent_index - 1));
@@ -63,7 +63,7 @@ std::vector<std::variant<std::string_view, int64_t>> iterator_base<T>::get_curre
         parent_index = stack_[i].second;
     }
 
-    if (parent.type() == object_type::map) {
+    if (parent.is_map()) {
         keys.emplace_back(current_.first.as<std::string_view>());
     } else {
         keys.emplace_back(static_cast<int64_t>(parent_index - 1));
@@ -141,12 +141,9 @@ void value_iterator::initialise_cursor_with_path(
             }
         } else if (parent.is_array() && std::holds_alternative<int64_t>(key)) {
             const auto expected_index = std::get<int64_t>(key);
-            if (expected_index >= 0 && parent.size<int64_t>() > expected_index) {
-                child = parent.at(expected_index);
-                index = expected_index;
-            } else if (expected_index < 0 && (parent.size<int64_t>() + expected_index) >= 0) {
-                index = parent.size<int64_t>() + expected_index;
-                child = parent.at(index);
+            if (const auto normalized = detail::normalize_index(parent.size(), expected_index)) {
+                index = *normalized;
+                child = parent.at(*normalized);
             }
         }
 
@@ -285,10 +282,8 @@ void key_iterator::initialise_cursor_with_path(
             }
         } else if (parent.is_array() && std::holds_alternative<int64_t>(key)) {
             const auto expected_index = std::get<int64_t>(key);
-            if (expected_index >= 0 && parent.size<int64_t>() > expected_index) {
-                child = parent.at(expected_index);
-            } else if (expected_index < 0 && (parent.size<int64_t>() + expected_index) >= 0) {
-                child = parent.at(parent.size<int64_t>() + expected_index);
+            if (const auto normalized = detail::normalize_index(parent.size(), expected_index)) {
+                child = parent.at(*normalized);
             }
         }
 
@@ -430,10 +425,8 @@ void kv_iterator::initialise_cursor_with_path(
             }
         } else if (parent.is_array() && std::holds_alternative<int64_t>(key)) {
             const auto expected_index = std::get<int64_t>(key);
-            if (expected_index >= 0 && parent.size<int64_t>() > expected_index) {
-                child = parent.at(expected_index);
-            } else if (expected_index < 0 && (parent.size<int64_t>() + expected_index) >= 0) {
-                child = parent.at(parent.size<int64_t>() + expected_index);
+            if (const auto normalized = detail::normalize_index(parent.size(), expected_index)) {
+                child = parent.at(*normalized);
             }
         }
 

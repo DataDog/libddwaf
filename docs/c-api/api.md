@@ -42,6 +42,8 @@ Specifies the type of a ddwaf::object.
 | `DDWAF_OBJ_SMALL_STRING` | `= 0x14` | UTF-8 string of up to 14 bytes in length |
 | `DDWAF_OBJ_ARRAY` | `= 0x20` | Array of ddwaf_object, up to max(uint16) capacity |
 | `DDWAF_OBJ_MAP` | `= 0x40` | Array of ddwaf_object_kv, up to max(uint16) capacity |
+| `DDWAF_OBJ_LARGE_ARRAY` | `= 0xA0` | Array of ddwaf_object with size_t capacity |
+| `DDWAF_OBJ_LARGE_MAP` | `= 0xC0` | Array of ddwaf_object_kv with size_t capacity |
 
 ### DDWAF_RET_CODE
 
@@ -653,10 +655,12 @@ Creates an object using a double, the resulting object will contain a double as 
 #### ddwaf_object_set_array
 
 ```c
-ddwaf_object * ddwaf_object_set_array(ddwaf_object * object, uint16_t capacity, ddwaf_allocator alloc)
+ddwaf_object * ddwaf_object_set_array(ddwaf_object * object, size_t capacity, ddwaf_allocator alloc)
 ```
 
-Creates an array object, for sequential storage.
+Creates an array object for sequential storage. Capacities up to 65,535 use
+`DDWAF_OBJ_ARRAY`; larger capacities use `DDWAF_OBJ_LARGE_ARRAY`. A compact
+array is automatically promoted when insertion grows it beyond 65,535 elements.
 
 **Parameters:**
 
@@ -669,10 +673,12 @@ Creates an array object, for sequential storage.
 #### ddwaf_object_set_map
 
 ```c
-ddwaf_object * ddwaf_object_set_map(ddwaf_object * object, uint16_t capacity, ddwaf_allocator alloc)
+ddwaf_object * ddwaf_object_set_map(ddwaf_object * object, size_t capacity, ddwaf_allocator alloc)
 ```
 
-Creates a map object, for key-value storage.
+Creates a map object for key-value storage. Capacities up to 65,535 use
+`DDWAF_OBJ_MAP`; larger capacities use `DDWAF_OBJ_LARGE_MAP`. A compact map is
+automatically promoted when insertion grows it beyond 65,535 entries.
 
 **Parameters:**
 
@@ -837,6 +843,9 @@ Inserts a new object into an array object.
 
 **Returns:** A pointer to the newly inserted object or NULL if the operation failed.
 
+> **Note:** An insertion that grows or promotes the array invalidates pointers to
+> its existing elements.
+
 #### ddwaf_object_insert_key
 
 ```c
@@ -854,6 +863,9 @@ Inserts a new object into a map object, using a key.
 
 **Returns:** A pointer to the newly inserted object or NULL if the operation failed.
 
+> **Note:** An insertion that grows or promotes the map invalidates pointers to
+> its existing keys and values.
+
 #### ddwaf_object_insert_literal_key
 
 ```c
@@ -870,6 +882,9 @@ Inserts a new object into a map object, using a literal key.
 - `alloc`: Allocator to use for memory allocation. (nonnull)
 
 **Returns:** A pointer to the newly inserted object or NULL if the operation failed.
+
+> **Note:** An insertion that grows or promotes the map invalidates pointers to
+> its existing keys and values.
 
 #### ddwaf_object_insert_key_nocopy
 
@@ -889,6 +904,9 @@ Inserts a new object into a map object, using a key and its length, but without 
 **Returns:** A pointer to the newly inserted object or NULL if the operation failed.
 
 > **Note:** The provided string must have been allocated with the same allocator used with ddwaf_object_destroy.
+
+> **Note:** An insertion that grows or promotes the map invalidates pointers to
+> its existing keys and values.
 
 #### ddwaf_object_at_key
 

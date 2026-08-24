@@ -113,6 +113,7 @@ YAML::Emitter &operator<<(YAML::Emitter &out, const ddwaf_object &o)
         out << std::string{ddwaf_object_get_string(&o, nullptr), ddwaf_object_get_length(&o)};
         break;
     case DDWAF_OBJ_ARRAY:
+    case DDWAF_OBJ_LARGE_ARRAY:
         out << YAML::BeginSeq;
         for (std::size_t i = 0; i < ddwaf_object_get_size(&o); i++) {
             out << *ddwaf_object_at_value(&o, i);
@@ -120,6 +121,7 @@ YAML::Emitter &operator<<(YAML::Emitter &out, const ddwaf_object &o)
         out << YAML::EndSeq;
         break;
     case DDWAF_OBJ_MAP:
+    case DDWAF_OBJ_LARGE_MAP:
         out << YAML::BeginMap;
         for (std::size_t i = 0; i < ddwaf_object_get_size(&o); i++) {
             out << YAML::Key << *ddwaf_object_at_key(&o, i);
