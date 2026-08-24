@@ -29,7 +29,6 @@
 #include "iterator.hpp"
 #include "log.hpp"
 #include "object.hpp"
-#include "object_type.hpp"
 #include "platform.hpp"
 #include "tokenizer/shell.hpp"
 #include "transformer/base.hpp"

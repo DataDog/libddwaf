@@ -50,8 +50,6 @@ namespace detail {
 
 union object;
 struct object_kv;
-struct object_large_array_storage;
-struct object_large_map_storage;
 
 constexpr std::size_t small_string_size = 14;
 
@@ -87,8 +85,14 @@ struct object_map {
 };
 
 struct object_large_array {
-    object_type type;
-    uint8_t reserved[7];
+    union {
+        object_type type;
+        struct {
+            uint64_t _type : 8;
+            uint64_t size : 28;
+            uint64_t capacity : 28;
+        } metadata;
+    };
     union {
         uint64_t _padding;
         object *ptr;
@@ -96,8 +100,17 @@ struct object_large_array {
 };
 
 struct object_large_map {
-    object_type type;
-    uint8_t reserved[7];
+    // we don't do a plain
+    // object_type type : 8; here because of msvc
+    // (see also -mms-bitfields and the ms_struct type allocation on gcc)
+    union {
+        object_type type;
+        struct {
+            uint64_t _type : 8;
+            uint64_t size : 28;
+            uint64_t capacity : 28;
+        } metadata;
+    };
     union {
         uint64_t _padding;
         object_kv *ptr;
@@ -125,22 +138,10 @@ struct object_kv {
     object val;
 };
 
-struct alignas(object) object_large_array_storage {
-    std::size_t size;
-    std::size_t capacity;
-    object ptr[];
-};
-
-struct alignas(object_kv) object_large_map_storage {
-    std::size_t size;
-    std::size_t capacity;
-    object_kv ptr[];
-};
-
 static_assert(sizeof(object) == 16);
 static_assert(sizeof(object_kv) == 32);
-static_assert(sizeof(object_large_array) == sizeof(object));
-static_assert(sizeof(object_large_map) == sizeof(object));
+static_assert(sizeof(object_large_array) == 16);
+static_assert(sizeof(object_large_map) == 16);
 
 static_assert(std::is_standard_layout_v<object>);
 static_assert(std::is_trivially_copyable_v<object>);
@@ -161,23 +162,26 @@ static_assert(offsetof(object, type) == offsetof(object_small_string, type));
 static_assert(offsetof(object, type) == offsetof(object_array, type));
 static_assert(offsetof(object, type) == offsetof(object_map, type));
 static_assert(offsetof(object, type) == offsetof(object_large_array, type));
+#if defined(__GNUC__) && !defined(__clang__)
+static_assert(std::bit_cast<std::array<char, 8>>(decltype(object_large_array::metadata){
+                  ._type = 0xFF}) == std::array<char, 8>{'\xFF'});
+#endif
 static_assert(offsetof(object, type) == offsetof(object_large_map, type));
 
+#if defined(__GNUC__) && !defined(__clang__)
+static_assert(std::bit_cast<std::array<char, 8>>(decltype(object_large_map::metadata){
+                  ._type = 0xFF}) == std::array<char, 8>{'\xFF'});
+#endif
 static_assert(offsetof(object_map, size) == offsetof(object_array, size));
 static_assert(offsetof(object_map, capacity) == offsetof(object_array, capacity));
 static_assert(offsetof(object_map, ptr) == offsetof(object_array, ptr));
 
 static_assert(offsetof(object_array, ptr) == offsetof(object_large_array, ptr));
 static_assert(offsetof(object_map, ptr) == offsetof(object_large_map, ptr));
-static_assert(offsetof(object_large_array_storage, ptr) == sizeof(object_large_array_storage));
-static_assert(offsetof(object_large_map_storage, ptr) == sizeof(object_large_map_storage));
-static_assert(alignof(object_large_array_storage) >= alignof(object));
-static_assert(alignof(object_large_map_storage) >= alignof(object_kv));
+static_assert(offsetof(object_large_array, ptr) == 8);
+static_assert(offsetof(object_large_map, ptr) == 8);
 
 template <typename T> constexpr std::size_t maxof_v = std::numeric_limits<T>::max();
-
-#define DDWAF_CONTAINER_OF(pointer, type, member)                                                  \
-    reinterpret_cast<type *>(reinterpret_cast<std::byte *>(pointer) - offsetof(type, member))
 
 /*
  * Converts a signed index to an absolute container offset. Nonnegative indices
@@ -202,46 +206,85 @@ inline std::optional<std::size_t> normalize_index(std::size_t size, int64_t inde
     return size - static_cast<std::size_t>(distance);
 }
 
-template <typename Storage, typename Element>
-inline Storage *large_storage_from_data(Element *data) noexcept
+constexpr std::size_t large_container_metadata_capacity_limit = (uint32_t{1} << 28) - 1;
+constexpr std::size_t max_large_array_capacity =
+    std::min(large_container_metadata_capacity_limit, maxof_v<std::size_t> / sizeof(object));
+constexpr std::size_t max_large_map_capacity =
+    std::min(large_container_metadata_capacity_limit, maxof_v<std::size_t> / sizeof(object_kv));
+
+static_assert(max_large_array_capacity == large_container_metadata_capacity_limit);
+static_assert(max_large_map_capacity == (sizeof(std::size_t) == 4 ? 134'217'727 : 268'435'455));
+
+inline std::size_t large_container_size(const object &obj) noexcept
 {
-    if (data == nullptr) {
-        return nullptr;
+    // in optimized code, the type is not checked at all
+    assert(obj.type == object_type::large_array || obj.type == object_type::large_map);
+    if (obj.type == object_type::large_array) {
+        return obj.via.large_array.metadata.size;
     }
-    return DDWAF_CONTAINER_OF(data, Storage, ptr);
+    return obj.via.large_map.metadata.size;
 }
 
-#undef DDWAF_CONTAINER_OF
-
-inline object_large_array_storage *large_array_storage(object &obj) noexcept
+inline std::size_t large_container_capacity(const object &obj) noexcept
 {
-    return large_storage_from_data<object_large_array_storage>(obj.via.large_array.ptr);
+    assert(obj.type == object_type::large_array || obj.type == object_type::large_map);
+    if (obj.type == object_type::large_array) {
+        return obj.via.large_array.metadata.capacity;
+    }
+    return obj.via.large_map.metadata.capacity;
 }
 
-inline const object_large_array_storage *large_array_storage(const object &obj) noexcept
+inline void set_large_container_size(object &obj, std::size_t size) noexcept
 {
-    return large_storage_from_data<object_large_array_storage>(obj.via.large_array.ptr);
+    assert(obj.type == object_type::large_array || obj.type == object_type::large_map);
+    assert(size <= (obj.type == object_type::large_array ? max_large_array_capacity
+                                                         : max_large_map_capacity));
+    if (obj.type == object_type::large_array) {
+        obj.via.large_array.metadata.size = static_cast<uint64_t>(size);
+    } else {
+        obj.via.large_map.metadata.size = static_cast<uint64_t>(size);
+    }
 }
 
-inline object_large_map_storage *large_map_storage(object &obj) noexcept
+inline void set_large_container_capacity(object &obj, std::size_t capacity) noexcept
 {
-    return large_storage_from_data<object_large_map_storage>(obj.via.large_map.ptr);
+    assert(obj.type == object_type::large_array || obj.type == object_type::large_map);
+    assert(capacity <= (obj.type == object_type::large_array ? max_large_array_capacity
+                                                             : max_large_map_capacity));
+    if (obj.type == object_type::large_array) {
+        obj.via.large_array.metadata.capacity = static_cast<uint64_t>(capacity);
+    } else {
+        obj.via.large_map.metadata.capacity = static_cast<uint64_t>(capacity);
+    }
 }
 
-inline const object_large_map_storage *large_map_storage(const object &obj) noexcept
+inline object make_large_array_object(object *ptr, std::size_t size, std::size_t capacity) noexcept
 {
-    return large_storage_from_data<object_large_map_storage>(obj.via.large_map.ptr);
+    assert(size <= capacity);
+    assert(capacity <= max_large_array_capacity);
+    return {.via{.large_array{.metadata{._type = static_cast<uint8_t>(object_type::large_array),
+                                  .size = static_cast<uint64_t>(size),
+                                  .capacity = static_cast<uint64_t>(capacity)},
+        .ptr = ptr}}};
+}
+
+inline object make_large_map_object(object_kv *ptr, std::size_t size, std::size_t capacity) noexcept
+{
+    assert(size <= capacity);
+    assert(capacity <= max_large_map_capacity);
+    return {.via{.large_map{.metadata{._type = static_cast<uint8_t>(object_type::large_map),
+                                .size = static_cast<uint64_t>(size),
+                                .capacity = static_cast<uint64_t>(capacity)},
+        .ptr = ptr}}};
 }
 
 inline std::size_t container_size(const object &obj)
 {
     if (obj.type == object_type::large_array) [[unlikely]] {
-        const auto *storage = large_array_storage(obj);
-        return storage == nullptr ? 0 : storage->size;
+        return large_container_size(obj);
     }
     if (obj.type == object_type::large_map) [[unlikely]] {
-        const auto *storage = large_map_storage(obj);
-        return storage == nullptr ? 0 : storage->size;
+        return large_container_size(obj);
     }
     return obj.via.array.size;
 }
@@ -253,16 +296,18 @@ inline std::size_t container_size(const object &obj)
 template <typename Element> inline Element *container_data(object &obj) noexcept
 {
     Element *data;
+    // NOLINTNEXTLINE
     memcpy(&data, reinterpret_cast<const std::byte *>(&obj) + offsetof(object_array, ptr),
-        sizeof(data));
+        sizeof(data)); // NOLINT(bugprone-sizeof-expression)
     return data;
 }
 
 template <typename Element> inline const Element *container_data(const object &obj) noexcept
 {
     Element *data;
+    // NOLINTNEXTLINE
     memcpy(&data, reinterpret_cast<const std::byte *>(&obj) + offsetof(object_array, ptr),
-        sizeof(data));
+        sizeof(data)); // NOLINT(bugprone-sizeof-expression)
     return data;
 }
 
@@ -323,41 +368,44 @@ inline std::pair<T *, SizeType> realloc_helper(
     return {new_data, new_size};
 }
 
-template <typename Storage, typename Element>
-constexpr std::size_t max_large_storage_capacity =
-    (maxof_v<std::size_t> - sizeof(Storage)) / sizeof(Element);
+template <typename Element> struct large_container_traits;
 
-template <typename Storage, typename Element>
-inline std::size_t large_storage_bytes(std::size_t capacity)
+template <> struct large_container_traits<object> {
+    static constexpr std::size_t capacity_limit = max_large_array_capacity;
+};
+
+template <> struct large_container_traits<object_kv> {
+    static constexpr std::size_t capacity_limit = max_large_map_capacity;
+};
+
+template <typename Element> inline std::size_t large_container_bytes(std::size_t capacity)
 {
-    if (capacity > max_large_storage_capacity<Storage, Element>) [[unlikely]] {
+    if (capacity > large_container_traits<Element>::capacity_limit) [[unlikely]] {
         throw std::length_error("container capacity exceeds allocation limit");
     }
-    return sizeof(Storage) + capacity * sizeof(Element);
+    return capacity * sizeof(Element);
 }
 
-template <typename Storage, typename Element>
-inline Storage *alloc_large_storage(std::size_t capacity, memory::memory_resource &alloc)
+template <typename Element>
+inline Element *alloc_large_container(std::size_t capacity, memory::memory_resource &alloc)
 {
     if (capacity == 0) {
         return nullptr;
     }
 
-    const auto bytes = large_storage_bytes<Storage, Element>(capacity);
-    auto *storage = static_cast<Storage *>(alloc.allocate(bytes, alignof(Storage)));
-    if (storage == nullptr) [[unlikely]] {
+    const auto bytes = large_container_bytes<Element>(capacity);
+    auto *data = static_cast<Element *>(alloc.allocate(bytes, alignof(Element)));
+    if (data == nullptr) [[unlikely]] {
         throw std::bad_alloc();
     }
-    storage->size = 0;
-    storage->capacity = capacity;
-    return storage;
+    return data;
 }
 
-template <typename Storage, typename Element>
-inline void dealloc_large_storage(Storage *storage, memory::memory_resource &alloc)
+template <typename Element>
+inline void dealloc_large_container(
+    Element *data, std::size_t capacity, memory::memory_resource &alloc)
 {
-    const auto bytes = large_storage_bytes<Storage, Element>(storage->capacity);
-    alloc.deallocate(storage, bytes, alignof(Storage));
+    alloc.deallocate(data, large_container_bytes<Element>(capacity), alignof(Element));
 }
 
 inline std::size_t next_large_capacity(std::size_t capacity, std::size_t maximum)
@@ -373,59 +421,56 @@ inline std::size_t next_large_capacity(std::size_t capacity, std::size_t maximum
 
 inline void grow_large_array(object &obj, memory::memory_resource &alloc)
 {
-    auto *old_storage = large_array_storage(obj);
-    const auto old_capacity = old_storage == nullptr ? 0 : old_storage->capacity;
-    const auto old_size = old_storage == nullptr ? 0 : old_storage->size;
-    static constexpr auto maximum = max_large_storage_capacity<object_large_array_storage, object>;
-    const auto new_capacity = next_large_capacity(old_capacity, maximum);
-    auto *new_storage =
-        alloc_large_storage<object_large_array_storage, object>(new_capacity, alloc);
-    new_storage->size = old_size;
-    if (old_storage != nullptr) {
-        memcpy(new_storage->ptr, old_storage->ptr, old_size * sizeof(object));
-        dealloc_large_storage<object_large_array_storage, object>(old_storage, alloc);
+    auto *old_data = obj.via.large_array.ptr;
+    const auto old_capacity = large_container_capacity(obj);
+    const auto old_size = large_container_size(obj);
+    const auto new_capacity = next_large_capacity(old_capacity, max_large_array_capacity);
+    auto *new_data = alloc_large_container<object>(new_capacity, alloc);
+    if (old_size != 0) {
+        memcpy(new_data, old_data, old_size * sizeof(object));
     }
-    obj.via.large_array.ptr = new_storage->ptr;
+    if (old_data != nullptr) {
+        dealloc_large_container(old_data, old_capacity, alloc);
+    }
+    obj.via.large_array.ptr = new_data;
+    set_large_container_capacity(obj, new_capacity);
 }
 
 inline void grow_large_map(object &obj, memory::memory_resource &alloc)
 {
-    auto *old_storage = large_map_storage(obj);
-    const auto old_capacity = old_storage == nullptr ? 0 : old_storage->capacity;
-    const auto old_size = old_storage == nullptr ? 0 : old_storage->size;
-    static constexpr auto maximum = max_large_storage_capacity<object_large_map_storage, object_kv>;
-    const auto new_capacity = next_large_capacity(old_capacity, maximum);
-    auto *new_storage =
-        alloc_large_storage<object_large_map_storage, object_kv>(new_capacity, alloc);
-    new_storage->size = old_size;
-    if (old_storage != nullptr) {
-        memcpy(new_storage->ptr, old_storage->ptr, old_size * sizeof(object_kv));
-        dealloc_large_storage<object_large_map_storage, object_kv>(old_storage, alloc);
+    auto *old_data = obj.via.large_map.ptr;
+    const auto old_capacity = large_container_capacity(obj);
+    const auto old_size = large_container_size(obj);
+    const auto new_capacity = next_large_capacity(old_capacity, max_large_map_capacity);
+    auto *new_data = alloc_large_container<object_kv>(new_capacity, alloc);
+    if (old_size != 0) {
+        memcpy(new_data, old_data, old_size * sizeof(object_kv));
     }
-    obj.via.large_map.ptr = new_storage->ptr;
+    if (old_data != nullptr) {
+        dealloc_large_container(old_data, old_capacity, alloc);
+    }
+    obj.via.large_map.ptr = new_data;
+    set_large_container_capacity(obj, new_capacity);
 }
 
 inline void promote_array(object &obj, memory::memory_resource &alloc)
 {
     constexpr std::size_t promoted_capacity = maxof_v<uint16_t> * std::size_t{2};
-    auto *storage =
-        alloc_large_storage<object_large_array_storage, object>(promoted_capacity, alloc);
-    storage->size = obj.via.array.size;
-    memcpy(storage->ptr, obj.via.array.ptr, storage->size * sizeof(object));
+    const auto size = obj.via.array.size;
+    auto *data = alloc_large_container<object>(promoted_capacity, alloc);
+    memcpy(data, obj.via.array.ptr, size * sizeof(object));
     dealloc_helper(obj.via.array.ptr, obj.via.array.capacity, alloc);
-    obj = {
-        .via{.large_array{.type = object_type::large_array, .reserved = {}, .ptr = storage->ptr}}};
+    obj = make_large_array_object(data, size, promoted_capacity);
 }
 
 inline void promote_map(object &obj, memory::memory_resource &alloc)
 {
     constexpr std::size_t promoted_capacity = maxof_v<uint16_t> * std::size_t{2};
-    auto *storage =
-        alloc_large_storage<object_large_map_storage, object_kv>(promoted_capacity, alloc);
-    storage->size = obj.via.map.size;
-    memcpy(storage->ptr, obj.via.map.ptr, storage->size * sizeof(object_kv));
+    const auto size = obj.via.map.size;
+    auto *data = alloc_large_container<object_kv>(promoted_capacity, alloc);
+    memcpy(data, obj.via.map.ptr, size * sizeof(object_kv));
     dealloc_helper(obj.via.map.ptr, obj.via.map.capacity, alloc);
-    obj = {.via{.large_map{.type = object_type::large_map, .reserved = {}, .ptr = storage->ptr}}};
+    obj = make_large_map_object(data, size, promoted_capacity);
 }
 
 template <typename SizeType>
@@ -449,8 +494,7 @@ inline void object_destroy(object &obj, nonnull_ptr<memory::memory_resource> all
         for (std::size_t i = 0; i < size; ++i) { object_destroy(data[i], alloc); }
         if (obj.type == object_type::large_array && obj.via.large_array.ptr != nullptr)
             [[unlikely]] {
-            dealloc_large_storage<object_large_array_storage, object>(
-                large_array_storage(obj), *alloc);
+            dealloc_large_container(obj.via.large_array.ptr, large_container_capacity(obj), *alloc);
         } else if (obj.type == object_type::array && obj.via.array.ptr != nullptr) {
             dealloc_helper(obj.via.array.ptr, obj.via.array.capacity, *alloc);
         }
@@ -462,8 +506,7 @@ inline void object_destroy(object &obj, nonnull_ptr<memory::memory_resource> all
             object_destroy(data[i].val, alloc);
         }
         if (obj.type == object_type::large_map && obj.via.large_map.ptr != nullptr) [[unlikely]] {
-            dealloc_large_storage<object_large_map_storage, object_kv>(
-                large_map_storage(obj), *alloc);
+            dealloc_large_container(obj.via.large_map.ptr, large_container_capacity(obj), *alloc);
         } else if (obj.type == object_type::map && obj.via.map.ptr != nullptr) {
             dealloc_helper(obj.via.map.ptr, obj.via.map.capacity, *alloc);
         }
@@ -1249,13 +1292,8 @@ public:
     static owned_object make_large_array(
         std::size_t capacity, nonnull_ptr<memory::memory_resource> alloc)
     {
-        auto *storage =
-            detail::alloc_large_storage<detail::object_large_array_storage, detail::object>(
-                capacity, *alloc);
-        return owned_object{{.via{.large_array{.type = object_type::large_array,
-                                .reserved = {},
-                                .ptr = storage == nullptr ? nullptr : storage->ptr}}},
-            alloc};
+        auto *data = detail::alloc_large_container<detail::object>(capacity, *alloc);
+        return owned_object{detail::make_large_array_object(data, 0, capacity), alloc};
     }
 
     static owned_object make_map(std::size_t capacity, nonnull_ptr<memory::memory_resource> alloc)
@@ -1287,13 +1325,8 @@ public:
     static owned_object make_large_map(
         std::size_t capacity, nonnull_ptr<memory::memory_resource> alloc)
     {
-        auto *storage =
-            detail::alloc_large_storage<detail::object_large_map_storage, detail::object_kv>(
-                capacity, *alloc);
-        return owned_object{{.via{.large_map{.type = object_type::large_map,
-                                .reserved = {},
-                                .ptr = storage == nullptr ? nullptr : storage->ptr}}},
-            alloc};
+        auto *data = detail::alloc_large_container<detail::object_kv>(capacity, *alloc);
+        return owned_object{detail::make_large_map_object(data, 0, capacity), alloc};
     }
 
     detail::object move()
@@ -1465,13 +1498,14 @@ borrowed_object writable_object<Derived>::emplace_back(owned_object &&value)
     }
 
     if (container.type == object_type::large_array) [[unlikely]] {
-        auto *storage = detail::large_array_storage(container);
-        if (storage == nullptr || storage->size == storage->capacity) {
+        if (detail::large_container_size(container) ==
+            detail::large_container_capacity(container)) {
             detail::grow_large_array(container, alloc());
-            storage = detail::large_array_storage(container);
         }
 
-        borrowed_object slot{&storage->ptr[storage->size++], alloc()};
+        const auto size = detail::large_container_size(container);
+        borrowed_object slot{&container.via.large_array.ptr[size], alloc()};
+        detail::set_large_container_size(container, size + 1);
         *slot.ptr() = value.move();
         return slot;
     }
@@ -1483,8 +1517,9 @@ borrowed_object writable_object<Derived>::emplace_back(owned_object &&value)
     } else if (container.via.array.capacity == container.via.array.size) {
         if (container.via.array.capacity == detail::maxof_v<uint16_t>) [[unlikely]] {
             detail::promote_array(container, alloc());
-            auto *storage = detail::large_array_storage(container);
-            borrowed_object slot{&storage->ptr[storage->size++], alloc()};
+            const auto size = detail::large_container_size(container);
+            borrowed_object slot{&container.via.large_array.ptr[size], alloc()};
+            detail::set_large_container_size(container, size + 1);
             *slot.ptr() = value.move();
             return slot;
         }
@@ -1524,15 +1559,15 @@ borrowed_object writable_object<Derived>::emplace(owned_object &&key, owned_obje
     }
 
     if (container.type == object_type::large_map) {
-        auto *storage = detail::large_map_storage(container);
-        if (storage == nullptr || storage->size == storage->capacity) {
+        if (detail::large_container_size(container) ==
+            detail::large_container_capacity(container)) {
             detail::grow_large_map(container, alloc());
-            storage = detail::large_map_storage(container);
         }
 
-        borrowed_object key_slot{storage->ptr[storage->size].key, alloc()};
-        borrowed_object val_slot{storage->ptr[storage->size].val, alloc()};
-        ++storage->size;
+        const auto size = detail::large_container_size(container);
+        borrowed_object key_slot{container.via.large_map.ptr[size].key, alloc()};
+        borrowed_object val_slot{container.via.large_map.ptr[size].val, alloc()};
+        detail::set_large_container_size(container, size + 1);
         *key_slot.ptr() = key.move();
         *val_slot.ptr() = value.move();
         return val_slot;
@@ -1545,10 +1580,10 @@ borrowed_object writable_object<Derived>::emplace(owned_object &&key, owned_obje
     } else if (container.via.map.capacity == container.via.map.size) {
         if (container.via.map.capacity == detail::maxof_v<uint16_t>) {
             detail::promote_map(container, alloc());
-            auto *storage = detail::large_map_storage(container);
-            borrowed_object key_slot{storage->ptr[storage->size].key, alloc()};
-            borrowed_object val_slot{storage->ptr[storage->size].val, alloc()};
-            ++storage->size;
+            const auto size = detail::large_container_size(container);
+            borrowed_object key_slot{container.via.large_map.ptr[size].key, alloc()};
+            borrowed_object val_slot{container.via.large_map.ptr[size].val, alloc()};
+            detail::set_large_container_size(container, size + 1);
             *key_slot.ptr() = key.move();
             *val_slot.ptr() = value.move();
             return val_slot;

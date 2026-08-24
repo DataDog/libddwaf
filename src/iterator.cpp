@@ -16,7 +16,6 @@
 #include "exclusion/common.hpp"
 #include "iterator.hpp"
 #include "object.hpp"
-#include "object_type.hpp"
 
 namespace ddwaf {
 

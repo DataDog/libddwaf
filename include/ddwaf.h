@@ -63,9 +63,9 @@ typedef enum
     DDWAF_OBJ_ARRAY    = 0x20,
     /** Array of ddwaf_object_kv, up to max(uint16) capacity **/
     DDWAF_OBJ_MAP      = 0x40,
-    /** Array of ddwaf_object with size_t capacity **/
+    /** Array of ddwaf_object with up to 28-bit capacity **/
     DDWAF_OBJ_LARGE_ARRAY = 0xA0,
-    /** Array of ddwaf_object_kv with size_t capacity **/
+    /** Array of ddwaf_object_kv with up to 28-bit capacity **/
     DDWAF_OBJ_LARGE_MAP = 0xC0,
 } DDWAF_OBJ_TYPE;
 
@@ -171,14 +171,20 @@ struct _ddwaf_object_map {
     struct _ddwaf_object_kv *ptr;
 };
 
-// Large-container ptr fields point directly to the contiguous elements. Their
-// size and capacity are stored in a private allocation header immediately
-// before the referenced elements and must be queried through the public
-// accessors. Any insertion that grows the container invalidates ptr and
-// pointers to its elements.
+// Large-container metadata uses 28-bit fields for size and capacity, for a
+// maximum of 268,435,455 elements (potentially lower on 32-bit platforms due
+// to allocation-size limits). metadata._type overlays the direct uint8_t type
+// view, and ptr points directly to the contiguous elements. Any insertion that
+// grows the container invalidates ptr and pointers to its elements.
 struct _ddwaf_object_large_array {
-    uint8_t type;
-    uint8_t reserved[7];
+    union {
+        uint8_t type;
+        struct {
+            uint64_t _type : 8;
+            uint64_t size : 28;
+            uint64_t capacity : 28;
+        } metadata;
+    };
     union {
         uint64_t _padding;
         union _ddwaf_object *ptr;
@@ -186,8 +192,14 @@ struct _ddwaf_object_large_array {
 };
 
 struct _ddwaf_object_large_map {
-    uint8_t type;
-    uint8_t reserved[7];
+    union {
+        uint8_t type;
+        struct {
+            uint64_t _type : 8;
+            uint64_t size : 28;
+            uint64_t capacity : 28;
+        } metadata;
+    };
     union {
         uint64_t _padding;
         struct _ddwaf_object_kv *ptr;
@@ -223,17 +235,6 @@ struct _ddwaf_object_kv {
     union _ddwaf_object key;
     union _ddwaf_object val;
 };
-
-#if defined(_Static_assert) || defined(static_assert)
-#ifndef static_assert
-#define static_assert _Static_assert
-#endif
-
-static_assert(sizeof(union _ddwaf_object) == 16);
-static_assert(sizeof(struct _ddwaf_object_kv) == 32);
-static_assert(offsetof(struct _ddwaf_object_large_array, ptr) == 8);
-static_assert(offsetof(struct _ddwaf_object_large_map, ptr) == 8);
-#endif
 
 /**
  * @typedef ddwaf_log_cb
@@ -953,6 +954,8 @@ ddwaf_object* ddwaf_object_set_float(ddwaf_object *object, double value);
  * Creates an array object for sequential storage. Capacities up to 65,535 use
  * DDWAF_OBJ_ARRAY; larger capacities use DDWAF_OBJ_LARGE_ARRAY. A compact array
  * is promoted automatically when insertion grows it beyond 65,535 elements.
+ * Large arrays are limited to the smaller of 268,435,455 elements and
+ * SIZE_MAX / sizeof(ddwaf_object).
  *
  * @param object Object to perform the operation on. (nonnull)
  * @param capacity Initial capacity of the array.
@@ -965,7 +968,9 @@ ddwaf_object* ddwaf_object_set_array(ddwaf_object *object, size_t capacity, ddwa
 /**
  * Creates a map object for key-value storage. Capacities up to 65,535 use
  * DDWAF_OBJ_MAP; larger capacities use DDWAF_OBJ_LARGE_MAP. A compact map is
- * promoted automatically when insertion grows it beyond 65,535 entries.
+ * promoted automatically when insertion grows it beyond 65,535 entries. Large
+ * maps are limited to the smaller of 268,435,455 entries and
+ * SIZE_MAX / sizeof(ddwaf_object_kv).
  *
  * @param object Object to perform the operation on. (nonnull)
  * @param capacity Initial capacity of the map.

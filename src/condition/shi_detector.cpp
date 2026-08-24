@@ -18,7 +18,6 @@
 #include "exclusion/common.hpp"
 #include "log.hpp"
 #include "object.hpp"
-#include "object_type.hpp"
 #include "tokenizer/shell.hpp"
 #include "utils.hpp"
 

@@ -225,7 +225,10 @@ TEST(TestObjectIntegration, TestContainerRepresentationSelection)
     EXPECT_FALSE(ddwaf_object_is_map(&array));
     EXPECT_EQ(ddwaf_object_get_size(&array), 0);
     EXPECT_NE(array.via.large_array.ptr, nullptr);
-    for (const auto byte : array.via.large_array.reserved) { EXPECT_EQ(byte, 0); }
+    EXPECT_EQ(array.via.large_array.type, DDWAF_OBJ_LARGE_ARRAY);
+    EXPECT_EQ(array.via.large_array.metadata._type, DDWAF_OBJ_LARGE_ARRAY);
+    EXPECT_EQ(array.via.large_array.metadata.size, 0);
+    EXPECT_EQ(array.via.large_array.metadata.capacity, large_capacity);
     ddwaf_object_destroy(&array, alloc);
 
     ASSERT_EQ(ddwaf_object_set_map(&map, compact_capacity, alloc), &map);
@@ -238,7 +241,10 @@ TEST(TestObjectIntegration, TestContainerRepresentationSelection)
     EXPECT_FALSE(ddwaf_object_is_array(&map));
     EXPECT_EQ(ddwaf_object_get_size(&map), 0);
     EXPECT_NE(map.via.large_map.ptr, nullptr);
-    for (const auto byte : map.via.large_map.reserved) { EXPECT_EQ(byte, 0); }
+    EXPECT_EQ(map.via.large_map.type, DDWAF_OBJ_LARGE_MAP);
+    EXPECT_EQ(map.via.large_map.metadata._type, DDWAF_OBJ_LARGE_MAP);
+    EXPECT_EQ(map.via.large_map.metadata.size, 0);
+    EXPECT_EQ(map.via.large_map.metadata.capacity, large_capacity);
     ddwaf_object_destroy(&map, alloc);
 }
 
@@ -256,6 +262,8 @@ TEST(TestObjectIntegration, TestLargeArrayOperations)
     ddwaf_object_set_signed(ddwaf_object_insert(&array, alloc), -1);
     ddwaf_object_set_unsigned(ddwaf_object_insert(&array, alloc), 2);
     EXPECT_EQ(array.via.large_array.ptr, initial_data);
+    EXPECT_EQ(array.via.large_array.metadata.size, 2);
+    EXPECT_EQ(array.via.large_array.metadata.capacity, large_capacity);
     EXPECT_EQ(ddwaf_object_at_value(&array, 0), &array.via.large_array.ptr[0]);
     EXPECT_EQ(ddwaf_object_at_value(&array, 1), &array.via.large_array.ptr[1]);
 
@@ -292,6 +300,8 @@ TEST(TestObjectIntegration, TestLargeMapOperations)
     auto *nested = ddwaf_object_insert_literal_key(&map, STRL("nested"), alloc);
     ddwaf_object_set_array(nested, 1, alloc);
     EXPECT_EQ(map.via.large_map.ptr, initial_data);
+    EXPECT_EQ(map.via.large_map.metadata.size, 2);
+    EXPECT_EQ(map.via.large_map.metadata.capacity, large_capacity);
 
     ASSERT_NE(nested, nullptr);
     ddwaf_object_set_string(
@@ -320,8 +330,17 @@ TEST(TestObjectIntegration, TestLargeMapOperations)
 TEST(TestObjectIntegration, TestLargeContainerCapacityOverflow)
 {
     auto *alloc = ddwaf_get_default_allocator();
+    constexpr auto unrepresentable_capacity = std::size_t{1} << 28;
     ddwaf_object object;
     ddwaf_object_set_signed(&object, 42);
+
+    EXPECT_EQ(ddwaf_object_set_array(&object, unrepresentable_capacity, alloc), nullptr);
+    EXPECT_EQ(ddwaf_object_get_type(&object), DDWAF_OBJ_SIGNED);
+    EXPECT_EQ(ddwaf_object_get_signed(&object), 42);
+
+    EXPECT_EQ(ddwaf_object_set_map(&object, unrepresentable_capacity, alloc), nullptr);
+    EXPECT_EQ(ddwaf_object_get_type(&object), DDWAF_OBJ_SIGNED);
+    EXPECT_EQ(ddwaf_object_get_signed(&object), 42);
 
     EXPECT_EQ(
         ddwaf_object_set_array(&object, std::numeric_limits<std::size_t>::max(), alloc), nullptr);
@@ -361,6 +380,9 @@ TEST(TestObjectIntegration, TestCompactArrayPromotion)
     EXPECT_EQ(ddwaf_object_get_type(&array), DDWAF_OBJ_LARGE_ARRAY);
     EXPECT_TRUE(ddwaf_object_is_array(&array));
     EXPECT_EQ(ddwaf_object_get_size(&array), compact_limit + std::size_t{1});
+    EXPECT_EQ(array.via.large_array.metadata._type, DDWAF_OBJ_LARGE_ARRAY);
+    EXPECT_EQ(array.via.large_array.metadata.size, compact_limit + std::size_t{1});
+    EXPECT_EQ(array.via.large_array.metadata.capacity, static_cast<std::size_t>(compact_limit) * 2);
     EXPECT_EQ(ddwaf_object_get_unsigned(ddwaf_object_at_value(&array, compact_limit - 1)),
         compact_limit - 1);
     EXPECT_EQ(
@@ -396,6 +418,9 @@ TEST(TestObjectIntegration, TestCompactMapPromotion)
     EXPECT_EQ(ddwaf_object_get_type(&map), DDWAF_OBJ_LARGE_MAP);
     EXPECT_TRUE(ddwaf_object_is_map(&map));
     EXPECT_EQ(ddwaf_object_get_size(&map), compact_limit + std::size_t{1});
+    EXPECT_EQ(map.via.large_map.metadata._type, DDWAF_OBJ_LARGE_MAP);
+    EXPECT_EQ(map.via.large_map.metadata.size, compact_limit + std::size_t{1});
+    EXPECT_EQ(map.via.large_map.metadata.capacity, static_cast<std::size_t>(compact_limit) * 2);
     EXPECT_EQ(ddwaf_object_get_unsigned(ddwaf_object_find(&map, STRL("last"))), compact_limit);
     EXPECT_STRV(object_to_view(*ddwaf_object_at_key(&map, compact_limit)), "last");
 

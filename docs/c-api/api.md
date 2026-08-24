@@ -42,8 +42,8 @@ Specifies the type of a ddwaf::object.
 | `DDWAF_OBJ_SMALL_STRING` | `= 0x14` | UTF-8 string of up to 14 bytes in length |
 | `DDWAF_OBJ_ARRAY` | `= 0x20` | Array of ddwaf_object, up to max(uint16) capacity |
 | `DDWAF_OBJ_MAP` | `= 0x40` | Array of ddwaf_object_kv, up to max(uint16) capacity |
-| `DDWAF_OBJ_LARGE_ARRAY` | `= 0xA0` | Array of ddwaf_object with size_t capacity |
-| `DDWAF_OBJ_LARGE_MAP` | `= 0xC0` | Array of ddwaf_object_kv with size_t capacity |
+| `DDWAF_OBJ_LARGE_ARRAY` | `= 0xA0` | Array of ddwaf_object with up to 28-bit capacity |
+| `DDWAF_OBJ_LARGE_MAP` | `= 0xC0` | Array of ddwaf_object_kv with up to 28-bit capacity |
 
 ### DDWAF_RET_CODE
 
@@ -661,8 +661,10 @@ ddwaf_object * ddwaf_object_set_array(ddwaf_object * object, size_t capacity, dd
 Creates an array object for sequential storage. Capacities up to 65,535 use
 `DDWAF_OBJ_ARRAY`; larger capacities use `DDWAF_OBJ_LARGE_ARRAY`. A compact
 array is automatically promoted when insertion grows it beyond 65,535 elements.
-
-**Parameters:**
+Large arrays use 28-bit metadata fields for size and capacity. Their capacity
+is limited to the smaller of 268,435,455 elements and
+`SIZE_MAX / sizeof(ddwaf_object)`. An insertion that grows or promotes the array
+invalidates its element pointer and pointers to existing elements.
 
 - `object`: Object to perform the operation on. (nonnull)
 - `capacity`: Initial capacity of the array.
@@ -678,7 +680,11 @@ ddwaf_object * ddwaf_object_set_map(ddwaf_object * object, size_t capacity, ddwa
 
 Creates a map object for key-value storage. Capacities up to 65,535 use
 `DDWAF_OBJ_MAP`; larger capacities use `DDWAF_OBJ_LARGE_MAP`. A compact map is
-automatically promoted when insertion grows it beyond 65,535 entries.
+automatically promoted when insertion grows it beyond 65,535 entries. Large
+maps use 28-bit metadata fields for size and capacity. Their capacity is
+limited to the smaller of 268,435,455 entries and
+`SIZE_MAX / sizeof(ddwaf_object_kv)`. An insertion that grows or promotes the
+map invalidates its element pointer and pointers to existing keys and values.
 
 **Parameters:**
 

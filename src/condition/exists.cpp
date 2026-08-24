@@ -17,7 +17,6 @@
 #include "exception.hpp"
 #include "exclusion/common.hpp"
 #include "object.hpp"
-#include "object_type.hpp"
 #include "utils.hpp"
 
 namespace ddwaf {
