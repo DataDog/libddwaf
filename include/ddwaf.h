@@ -173,37 +173,22 @@ struct _ddwaf_object_map {
 
 // Large-container metadata uses 28-bit fields for size and capacity, for a
 // maximum of 268,435,455 elements (potentially lower on 32-bit platforms due
-// to allocation-size limits). metadata._type overlays the direct uint8_t type
-// view, and ptr points directly to the contiguous elements. Any insertion that
-// grows the container invalidates ptr and pointers to its elements.
+// to allocation-size limits). _type overlays the direct uint8_t type view of
+// ddwaf_object, and ptr points directly to the contiguous elements. Any
+// insertion that grows the container invalidates ptr and pointers to its
+// elements.
 struct _ddwaf_object_large_array {
-    union {
-        uint8_t type;
-        struct {
-            uint64_t _type : 8;
-            uint64_t size : 28;
-            uint64_t capacity : 28;
-        } metadata;
-    };
-    union {
-        uint64_t _padding;
-        union _ddwaf_object *ptr;
-    };
+    uint64_t _type : 8;
+    uint64_t size : 28;
+    uint64_t capacity : 28;
+    union _ddwaf_object *ptr;
 };
 
 struct _ddwaf_object_large_map {
-    union {
-        uint8_t type;
-        struct {
-            uint64_t _type : 8;
-            uint64_t size : 28;
-            uint64_t capacity : 28;
-        } metadata;
-    };
-    union {
-        uint64_t _padding;
-        struct _ddwaf_object_kv *ptr;
-    };
+    uint64_t _type : 8;
+    uint64_t size : 28;
+    uint64_t capacity : 28;
+    struct _ddwaf_object_kv *ptr;
 };
 
 /**

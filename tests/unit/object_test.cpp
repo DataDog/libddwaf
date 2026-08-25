@@ -382,24 +382,23 @@ TEST(TestObject, LargeArrayAllocationGrowthAndFailure)
         auto root = owned_object::make_large_array(initial_capacity, &alloc);
         EXPECT_EQ(root.type(), object_type::large_array);
         EXPECT_TRUE(root.is_array());
-        EXPECT_EQ(root.ref().via.large_array.metadata._type,
-            static_cast<uint8_t>(object_type::large_array));
-        EXPECT_EQ(root.ref().via.large_array.metadata.size, 0);
-        EXPECT_EQ(root.ref().via.large_array.metadata.capacity, initial_capacity);
+        EXPECT_EQ(root.ref().via.large_array._type, static_cast<uint8_t>(object_type::large_array));
+        EXPECT_EQ(root.ref().via.large_array.size, 0);
+        EXPECT_EQ(root.ref().via.large_array.capacity, initial_capacity);
         EXPECT_EQ(alloc.last_allocation_bytes(), initial_capacity * sizeof(detail::object));
         EXPECT_EQ(alloc.last_allocation_alignment(), alignof(detail::object));
 
         root.emplace_back(1U);
         root.emplace_back(2U);
         const auto *initial_data = root.ref().via.large_array.ptr;
-        EXPECT_EQ(root.ref().via.large_array.metadata.size, initial_capacity);
+        EXPECT_EQ(root.ref().via.large_array.size, initial_capacity);
 
         alloc.fail_allocations(true);
         EXPECT_THROW(root.emplace_back(3U), std::bad_alloc);
         EXPECT_EQ(alloc.failed_allocations(), 1);
         EXPECT_EQ(root.ref().via.large_array.ptr, initial_data);
-        EXPECT_EQ(root.ref().via.large_array.metadata.size, initial_capacity);
-        EXPECT_EQ(root.ref().via.large_array.metadata.capacity, initial_capacity);
+        EXPECT_EQ(root.ref().via.large_array.size, initial_capacity);
+        EXPECT_EQ(root.ref().via.large_array.capacity, initial_capacity);
         EXPECT_EQ(root.size(), initial_capacity);
         EXPECT_EQ(root.at(0).as<std::uint64_t>(), 1);
         EXPECT_EQ(root.at(1).as<std::uint64_t>(), 2);
@@ -408,8 +407,8 @@ TEST(TestObject, LargeArrayAllocationGrowthAndFailure)
         root.emplace_back(3U);
         EXPECT_NE(root.ref().via.large_array.ptr, initial_data);
         EXPECT_EQ(root.size(), 3);
-        EXPECT_EQ(root.ref().via.large_array.metadata.size, 3);
-        EXPECT_EQ(root.ref().via.large_array.metadata.capacity, grown_capacity);
+        EXPECT_EQ(root.ref().via.large_array.size, 3);
+        EXPECT_EQ(root.ref().via.large_array.capacity, grown_capacity);
         EXPECT_EQ(alloc.last_allocation_bytes(), grown_capacity * sizeof(detail::object));
         EXPECT_EQ(alloc.last_deallocation_bytes(), initial_capacity * sizeof(detail::object));
         EXPECT_EQ(alloc.last_deallocation_alignment(), alignof(detail::object));
@@ -431,23 +430,22 @@ TEST(TestObject, LargeMapAllocationGrowthAndFailure)
         auto root = owned_object::make_large_map(initial_capacity, &alloc);
         EXPECT_EQ(root.type(), object_type::large_map);
         EXPECT_TRUE(root.is_map());
-        EXPECT_EQ(
-            root.ref().via.large_map.metadata._type, static_cast<uint8_t>(object_type::large_map));
-        EXPECT_EQ(root.ref().via.large_map.metadata.size, 0);
-        EXPECT_EQ(root.ref().via.large_map.metadata.capacity, initial_capacity);
+        EXPECT_EQ(root.ref().via.large_map._type, static_cast<uint8_t>(object_type::large_map));
+        EXPECT_EQ(root.ref().via.large_map.size, 0);
+        EXPECT_EQ(root.ref().via.large_map.capacity, initial_capacity);
         EXPECT_EQ(alloc.last_allocation_bytes(), initial_capacity * sizeof(detail::object_kv));
         EXPECT_EQ(alloc.last_allocation_alignment(), alignof(detail::object_kv));
 
         root.emplace("one", 1U);
         const auto *initial_data = root.ref().via.large_map.ptr;
-        EXPECT_EQ(root.ref().via.large_map.metadata.size, initial_capacity);
+        EXPECT_EQ(root.ref().via.large_map.size, initial_capacity);
 
         alloc.fail_allocations(true);
         EXPECT_THROW(root.emplace("two", 2U), std::bad_alloc);
         EXPECT_EQ(alloc.failed_allocations(), 1);
         EXPECT_EQ(root.ref().via.large_map.ptr, initial_data);
-        EXPECT_EQ(root.ref().via.large_map.metadata.size, initial_capacity);
-        EXPECT_EQ(root.ref().via.large_map.metadata.capacity, initial_capacity);
+        EXPECT_EQ(root.ref().via.large_map.size, initial_capacity);
+        EXPECT_EQ(root.ref().via.large_map.capacity, initial_capacity);
         EXPECT_EQ(root.size(), initial_capacity);
         EXPECT_EQ(root.at(0).as<std::uint64_t>(), 1);
 
@@ -455,8 +453,8 @@ TEST(TestObject, LargeMapAllocationGrowthAndFailure)
         root.emplace("two", 2U);
         EXPECT_NE(root.ref().via.large_map.ptr, initial_data);
         EXPECT_EQ(root.size(), 2);
-        EXPECT_EQ(root.ref().via.large_map.metadata.size, 2);
-        EXPECT_EQ(root.ref().via.large_map.metadata.capacity, grown_capacity);
+        EXPECT_EQ(root.ref().via.large_map.size, 2);
+        EXPECT_EQ(root.ref().via.large_map.capacity, grown_capacity);
         EXPECT_EQ(alloc.last_allocation_bytes(), grown_capacity * sizeof(detail::object_kv));
         EXPECT_EQ(alloc.last_deallocation_bytes(), initial_capacity * sizeof(detail::object_kv));
         EXPECT_EQ(alloc.last_deallocation_alignment(), alignof(detail::object_kv));
@@ -530,10 +528,9 @@ TEST(TestObject, CompactContainerPromotionAllocation)
         root.emplace_back(42U);
         EXPECT_EQ(root.type(), object_type::large_array);
         EXPECT_EQ(root.size(), compact_capacity + std::size_t{1});
-        EXPECT_EQ(root.ref().via.large_array.metadata._type,
-            static_cast<uint8_t>(object_type::large_array));
-        EXPECT_EQ(root.ref().via.large_array.metadata.size, compact_capacity + std::size_t{1});
-        EXPECT_EQ(root.ref().via.large_array.metadata.capacity, promoted_capacity);
+        EXPECT_EQ(root.ref().via.large_array._type, static_cast<uint8_t>(object_type::large_array));
+        EXPECT_EQ(root.ref().via.large_array.size, compact_capacity + std::size_t{1});
+        EXPECT_EQ(root.ref().via.large_array.capacity, promoted_capacity);
         EXPECT_EQ(root.at(compact_capacity).as<std::uint64_t>(), 42);
         EXPECT_EQ(alloc.last_allocation_bytes(), promoted_capacity * sizeof(detail::object));
         EXPECT_EQ(alloc.last_allocation_alignment(), alignof(detail::object));
@@ -550,10 +547,9 @@ TEST(TestObject, CompactContainerPromotionAllocation)
         root.emplace("last", 42U);
         EXPECT_EQ(root.type(), object_type::large_map);
         EXPECT_EQ(root.size(), compact_capacity + std::size_t{1});
-        EXPECT_EQ(
-            root.ref().via.large_map.metadata._type, static_cast<uint8_t>(object_type::large_map));
-        EXPECT_EQ(root.ref().via.large_map.metadata.size, compact_capacity + std::size_t{1});
-        EXPECT_EQ(root.ref().via.large_map.metadata.capacity, promoted_capacity);
+        EXPECT_EQ(root.ref().via.large_map._type, static_cast<uint8_t>(object_type::large_map));
+        EXPECT_EQ(root.ref().via.large_map.size, compact_capacity + std::size_t{1});
+        EXPECT_EQ(root.ref().via.large_map.capacity, promoted_capacity);
         EXPECT_EQ(root.at(compact_capacity).as<std::uint64_t>(), 42);
         EXPECT_EQ(alloc.last_allocation_bytes(), promoted_capacity * sizeof(detail::object_kv));
         EXPECT_EQ(alloc.last_allocation_alignment(), alignof(detail::object_kv));

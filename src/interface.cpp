@@ -120,30 +120,23 @@ static_assert(offsetof(detail::object_map, ptr) == offsetof(_ddwaf_object_map, p
 // detail::object_large_array == _ddwaf_object_large_array
 static_assert(sizeof(detail::object_large_array) == sizeof(_ddwaf_object_large_array));
 static_assert(
-    offsetof(detail::object_large_array, type) == offsetof(_ddwaf_object_large_array, type));
-static_assert(offsetof(detail::object_large_array, metadata) ==
-              offsetof(_ddwaf_object_large_array, metadata));
-static_assert(sizeof(decltype(detail::object_large_array::metadata)) ==
-              sizeof(decltype(_ddwaf_object_large_array::metadata)));
-static_assert(
     offsetof(detail::object_large_array, ptr) == offsetof(_ddwaf_object_large_array, ptr));
-static_assert(std::is_same_v<decltype(detail::object_large_array::type), object_type>);
-static_assert(std::is_same_v<decltype(_ddwaf_object_large_array::type), uint8_t>);
 static_assert(std::is_same_v<decltype(detail::object_large_array::ptr), detail::object *>);
 static_assert(std::is_same_v<decltype(_ddwaf_object_large_array::ptr), ddwaf_object *>);
+#if defined(__GNUC__) && !defined(__clang__)
+constexpr _ddwaf_object_large_array ddwaf_object_large_array_type_byte_probe{._type = 0xFF};
+static_assert(__builtin_memcmp(&ddwaf_object_large_array_type_byte_probe, "\xFF", 1) == 0);
+#endif
 
 // detail::object_large_map == _ddwaf_object_large_map
 static_assert(sizeof(detail::object_large_map) == sizeof(_ddwaf_object_large_map));
-static_assert(offsetof(detail::object_large_map, type) == offsetof(_ddwaf_object_large_map, type));
-static_assert(
-    offsetof(detail::object_large_map, metadata) == offsetof(_ddwaf_object_large_map, metadata));
-static_assert(sizeof(decltype(detail::object_large_map::metadata)) ==
-              sizeof(decltype(_ddwaf_object_large_map::metadata)));
 static_assert(offsetof(detail::object_large_map, ptr) == offsetof(_ddwaf_object_large_map, ptr));
-static_assert(std::is_same_v<decltype(detail::object_large_map::type), object_type>);
-static_assert(std::is_same_v<decltype(_ddwaf_object_large_map::type), uint8_t>);
 static_assert(std::is_same_v<decltype(detail::object_large_map::ptr), detail::object_kv *>);
 static_assert(std::is_same_v<decltype(_ddwaf_object_large_map::ptr), ddwaf_object_kv *>);
+#if defined(__GNUC__) && !defined(__clang__)
+constexpr _ddwaf_object_large_map ddwaf_object_large_map_type_byte_probe{._type = 0xFF};
+static_assert(__builtin_memcmp(&ddwaf_object_large_map_type_byte_probe, "\xFF", 1) == 0);
+#endif
 
 // Allocator callback compatibility
 static_assert(std::is_same_v<ddwaf_alloc_fn_type, memory::user_resource::alloc_fn_type>);

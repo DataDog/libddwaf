@@ -85,37 +85,25 @@ struct object_map {
 };
 
 struct object_large_array {
-    union {
-        object_type type;
-        struct {
-            uint64_t _type : 8;
-            uint64_t size : 28;
-            uint64_t capacity : 28;
-        } metadata;
-    };
-    union {
-        uint64_t _padding;
-        object *ptr;
-    };
+    uint64_t _type : 8;
+    uint64_t size : 28;
+    uint64_t capacity : 28;
+    object *ptr;
 };
 
 struct object_large_map {
-    // we don't do a plain
-    // object_type type : 8; here because of msvc
-    // (see also -mms-bitfields and the ms_struct type allocation on gcc)
-    union {
-        object_type type;
-        struct {
-            uint64_t _type : 8;
-            uint64_t size : 28;
-            uint64_t capacity : 28;
-        } metadata;
-    };
-    union {
-        uint64_t _padding;
-        object_kv *ptr;
-    };
+    uint64_t _type : 8;
+    uint64_t size : 28;
+    uint64_t capacity : 28;
+    object_kv *ptr;
 };
+
+#if defined(__GNUC__) && !defined(__clang__)
+constexpr object_large_array object_large_array_type_byte_probe{._type = 0xFF};
+static_assert(__builtin_memcmp(&object_large_array_type_byte_probe, "\xFF", 1) == 0);
+constexpr object_large_map object_large_map_type_byte_probe{._type = 0xFF};
+static_assert(__builtin_memcmp(&object_large_map_type_byte_probe, "\xFF", 1) == 0);
+#endif
 
 union [[gnu::may_alias]] object {
     object_type type;
@@ -140,8 +128,6 @@ struct object_kv {
 
 static_assert(sizeof(object) == 16);
 static_assert(sizeof(object_kv) == 32);
-static_assert(sizeof(object_large_array) == 16);
-static_assert(sizeof(object_large_map) == 16);
 
 static_assert(std::is_standard_layout_v<object>);
 static_assert(std::is_trivially_copyable_v<object>);
@@ -161,17 +147,6 @@ static_assert(offsetof(object, type) == offsetof(object_small_string, type));
 
 static_assert(offsetof(object, type) == offsetof(object_array, type));
 static_assert(offsetof(object, type) == offsetof(object_map, type));
-static_assert(offsetof(object, type) == offsetof(object_large_array, type));
-#if defined(__GNUC__) && !defined(__clang__)
-static_assert(std::bit_cast<std::array<char, 8>>(decltype(object_large_array::metadata){
-                  ._type = 0xFF}) == std::array<char, 8>{'\xFF'});
-#endif
-static_assert(offsetof(object, type) == offsetof(object_large_map, type));
-
-#if defined(__GNUC__) && !defined(__clang__)
-static_assert(std::bit_cast<std::array<char, 8>>(decltype(object_large_map::metadata){
-                  ._type = 0xFF}) == std::array<char, 8>{'\xFF'});
-#endif
 static_assert(offsetof(object_map, size) == offsetof(object_array, size));
 static_assert(offsetof(object_map, capacity) == offsetof(object_array, capacity));
 static_assert(offsetof(object_map, ptr) == offsetof(object_array, ptr));
@@ -220,18 +195,18 @@ inline std::size_t large_container_size(const object &obj) noexcept
     // in optimized code, the type is not checked at all
     assert(obj.type == object_type::large_array || obj.type == object_type::large_map);
     if (obj.type == object_type::large_array) {
-        return obj.via.large_array.metadata.size;
+        return obj.via.large_array.size;
     }
-    return obj.via.large_map.metadata.size;
+    return obj.via.large_map.size;
 }
 
 inline std::size_t large_container_capacity(const object &obj) noexcept
 {
     assert(obj.type == object_type::large_array || obj.type == object_type::large_map);
     if (obj.type == object_type::large_array) {
-        return obj.via.large_array.metadata.capacity;
+        return obj.via.large_array.capacity;
     }
-    return obj.via.large_map.metadata.capacity;
+    return obj.via.large_map.capacity;
 }
 
 inline void set_large_container_size(object &obj, std::size_t size) noexcept
@@ -240,9 +215,9 @@ inline void set_large_container_size(object &obj, std::size_t size) noexcept
     assert(size <= (obj.type == object_type::large_array ? max_large_array_capacity
                                                          : max_large_map_capacity));
     if (obj.type == object_type::large_array) {
-        obj.via.large_array.metadata.size = static_cast<uint64_t>(size);
+        obj.via.large_array.size = static_cast<uint64_t>(size);
     } else {
-        obj.via.large_map.metadata.size = static_cast<uint64_t>(size);
+        obj.via.large_map.size = static_cast<uint64_t>(size);
     }
 }
 
@@ -252,9 +227,9 @@ inline void set_large_container_capacity(object &obj, std::size_t capacity) noex
     assert(capacity <= (obj.type == object_type::large_array ? max_large_array_capacity
                                                              : max_large_map_capacity));
     if (obj.type == object_type::large_array) {
-        obj.via.large_array.metadata.capacity = static_cast<uint64_t>(capacity);
+        obj.via.large_array.capacity = static_cast<uint64_t>(capacity);
     } else {
-        obj.via.large_map.metadata.capacity = static_cast<uint64_t>(capacity);
+        obj.via.large_map.capacity = static_cast<uint64_t>(capacity);
     }
 }
 
@@ -262,9 +237,9 @@ inline object make_large_array_object(object *ptr, std::size_t size, std::size_t
 {
     assert(size <= capacity);
     assert(capacity <= max_large_array_capacity);
-    return {.via{.large_array{.metadata{._type = static_cast<uint8_t>(object_type::large_array),
-                                  .size = static_cast<uint64_t>(size),
-                                  .capacity = static_cast<uint64_t>(capacity)},
+    return {.via{.large_array{._type = static_cast<uint8_t>(object_type::large_array),
+        .size = static_cast<uint64_t>(size),
+        .capacity = static_cast<uint64_t>(capacity),
         .ptr = ptr}}};
 }
 
@@ -272,9 +247,9 @@ inline object make_large_map_object(object_kv *ptr, std::size_t size, std::size_
 {
     assert(size <= capacity);
     assert(capacity <= max_large_map_capacity);
-    return {.via{.large_map{.metadata{._type = static_cast<uint8_t>(object_type::large_map),
-                                .size = static_cast<uint64_t>(size),
-                                .capacity = static_cast<uint64_t>(capacity)},
+    return {.via{.large_map{._type = static_cast<uint8_t>(object_type::large_map),
+        .size = static_cast<uint64_t>(size),
+        .capacity = static_cast<uint64_t>(capacity),
         .ptr = ptr}}};
 }
 
