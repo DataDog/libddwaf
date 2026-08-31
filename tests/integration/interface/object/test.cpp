@@ -539,10 +539,14 @@ TEST(TestObjectIntegration, TestAddMap)
 }
 
 TEST(TestObjectIntegration, NullFree)
-{ ddwaf_object_destroy(nullptr, ddwaf_get_default_allocator()); }
+{
+    ddwaf_object_destroy(nullptr, ddwaf_get_default_allocator());
+}
 
 TEST(TestObjectIntegration, FindNullObject)
-{ EXPECT_EQ(ddwaf_object_find(nullptr, STRL("key")), nullptr); }
+{
+    EXPECT_EQ(ddwaf_object_find(nullptr, STRL("key")), nullptr);
+}
 
 TEST(TestObjectIntegration, FindInvalidKey)
 {

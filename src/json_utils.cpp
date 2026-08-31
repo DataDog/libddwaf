@@ -4,7 +4,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2025 Datadog, Inc.
 
-#include <algorithm>
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
@@ -115,7 +114,9 @@ class object_reader_handler
 public:
     object_reader_handler(nonnull_ptr<memory::memory_resource> alloc, json_parse_mode mode)
         : alloc_(alloc), mode_(mode)
-    { stack_.reserve(max_depth + 1); }
+    {
+        stack_.reserve(max_depth + 1);
+    }
     ~object_reader_handler() = default;
     object_reader_handler(object_reader_handler &&) = delete;
     object_reader_handler(const object_reader_handler &) = delete;
@@ -254,7 +255,9 @@ public:
     }
 
     [[nodiscard]] bool expects_map_key() const
-    { return !stack_.empty() && stack_.back().is_map() && key_.is_invalid(); }
+    {
+        return !stack_.empty() && stack_.back().is_map() && key_.is_invalid();
+    }
 
 private:
     // Values beyond the depth limit are silently dropped in strict mode. The
@@ -323,10 +326,14 @@ constexpr uint16_t low_surrogate_min = 0xDC00;
 constexpr uint16_t low_surrogate_max = 0xDFFF;
 
 [[nodiscard]] bool is_hex_digit(char c)
-{ return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'); }
+{
+    return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
+}
 
 [[nodiscard]] bool is_high_surrogate(uint16_t value)
-{ return value >= high_surrogate_min && value <= high_surrogate_max; }
+{
+    return value >= high_surrogate_min && value <= high_surrogate_max;
+}
 
 // Range of values an incomplete \uXXXX escape can still take, given the hex
 // digits already present (all of which must be valid hex digits).
@@ -406,7 +413,7 @@ constexpr uint16_t low_surrogate_max = 0xDFFF;
         }
     }
 
-    return !(range->first >= low_surrogate_min && range->second <= low_surrogate_max);
+    return range->first < low_surrogate_min || range->second > low_surrogate_max;
 }
 
 [[nodiscard]] bool is_incomplete_surrogate_pair(std::string_view json, std::size_t offset)

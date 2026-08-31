@@ -174,15 +174,21 @@ protected:
 
 inline ::testing::PolymorphicMatcher<WafResultActionMatcher> WithActions(
     ddwaf::test::action_map &&values)
-{ return ::testing::MakePolymorphicMatcher(WafResultActionMatcher(std::move(values))); }
+{
+    return ::testing::MakePolymorphicMatcher(WafResultActionMatcher(std::move(values)));
+}
 
 inline ::testing::PolymorphicMatcher<WafResultDataMatcher> WithEvents(
     std::vector<ddwaf::test::event> &&expected)
-{ return ::testing::MakePolymorphicMatcher(WafResultDataMatcher(std::move(expected))); }
+{
+    return ::testing::MakePolymorphicMatcher(WafResultDataMatcher(std::move(expected)));
+}
 
 inline ::testing::PolymorphicMatcher<MatchMatcher> WithMatches(
     std::vector<ddwaf::test::event::match> &&expected)
-{ return ::testing::MakePolymorphicMatcher(MatchMatcher(std::move(expected))); }
+{
+    return ::testing::MakePolymorphicMatcher(MatchMatcher(std::move(expected)));
+}
 
 std::list<ddwaf::test::event::match> from_matches(
     const std::vector<ddwaf::condition_match> &matches);
