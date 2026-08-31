@@ -284,7 +284,7 @@ def categorize_functions(functions):
             categories["Context"].append(func)
         elif "allocator" in name or name.endswith("_allocator_init"):
             categories["Allocator"].append(func)
-        elif name.startswith("ddwaf_object_set_") or name == "ddwaf_object_from_json":
+        elif name.startswith("ddwaf_object_set_") or name.startswith("ddwaf_object_from_"):
             categories["Object Creation"].append(func)
         elif name.startswith("ddwaf_object_get_"):
             categories["Object Inspection"].append(func)

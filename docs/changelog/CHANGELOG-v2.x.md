@@ -1,5 +1,12 @@
 # libddwaf release
 
+## Unreleased
+
+### Changes
+
+- Add `ddwaf_object_from_truncated_json()` to retain completed values from a truncated JSON prefix. Prefixes containing syntax errors before the end of the input, embedded NUL bytes, or containers nested more than 20 levels deep are rejected; a number cut off by the end of the input is retained only if the digits already present form a valid JSON number.
+- `ddwaf_object_from_json()` and `ddwaf_object_from_truncated_json()` now reject inputs containing an embedded NUL byte or trailing content after a complete root value, and require a non-null allocator.
+
 ## v2.0.0
 
 libddwaf v2.0.0 represents a significant redesign of the C API, focusing on explicit memory ownership, reduced memory footprint, and a more consistent interface. Beyond the public API, the internals have also been refactored to use safer and more C++-native abstractions.

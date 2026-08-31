@@ -185,6 +185,24 @@ memory::memory_resource *to_alloc_ptr(ddwaf_allocator alloc)
     return reinterpret_cast<memory::memory_resource *>(alloc);
 }
 
+bool object_from_json(ddwaf_object *output, const char *json_str, uint32_t length,
+    ddwaf_allocator alloc, json_parse_mode mode)
+{
+    if (output == nullptr || json_str == nullptr || length == 0 || alloc == nullptr) {
+        return false;
+    }
+
+    auto *alloc_ptr = to_alloc_ptr(alloc);
+    try {
+        // avoid to_borrowed(output, ...) = ... as that would destroy
+        // the current value in output, which could be uninitialized
+        *to_ptr(output) = json_to_object({json_str, length}, alloc_ptr, mode).move();
+        return to_borrowed(output, alloc_ptr).is_valid();
+    } catch (...) {} // NOLINT(bugprone-empty-catch)
+
+    return false;
+}
+
 } // namespace
 
 // explicit instantiation declaration to suppress warning
@@ -782,9 +800,7 @@ ddwaf_object *ddwaf_object_set_unsigned(ddwaf_object *object, uint64_t value)
 }
 
 ddwaf_object *ddwaf_object_unsigned(ddwaf_object *object, uint64_t value)
-{
-    return ddwaf_object_set_unsigned(object, value);
-}
+{ return ddwaf_object_set_unsigned(object, value); }
 
 ddwaf_object *ddwaf_object_set_signed(ddwaf_object *object, int64_t value)
 {
@@ -799,9 +815,7 @@ ddwaf_object *ddwaf_object_set_signed(ddwaf_object *object, int64_t value)
 }
 
 ddwaf_object *ddwaf_object_signed(ddwaf_object *object, int64_t value)
-{
-    return ddwaf_object_set_signed(object, value);
-}
+{ return ddwaf_object_set_signed(object, value); }
 
 ddwaf_object *ddwaf_object_set_bool(ddwaf_object *object, bool value)
 {
@@ -815,9 +829,7 @@ ddwaf_object *ddwaf_object_set_bool(ddwaf_object *object, bool value)
 }
 
 ddwaf_object *ddwaf_object_bool(ddwaf_object *object, bool value)
-{
-    return ddwaf_object_set_bool(object, value);
-}
+{ return ddwaf_object_set_bool(object, value); }
 
 ddwaf_object *ddwaf_object_set_float(ddwaf_object *object, double value)
 {
@@ -831,9 +843,7 @@ ddwaf_object *ddwaf_object_set_float(ddwaf_object *object, double value)
 }
 
 ddwaf_object *ddwaf_object_float(ddwaf_object *object, double value)
-{
-    return ddwaf_object_set_float(object, value);
-}
+{ return ddwaf_object_set_float(object, value); }
 
 ddwaf_object *ddwaf_object_set_array(ddwaf_object *object, size_t capacity, ddwaf_allocator alloc)
 {
@@ -867,21 +877,11 @@ ddwaf_object *ddwaf_object_set_map(ddwaf_object *object, size_t capacity, ddwaf_
 
 bool ddwaf_object_from_json(
     ddwaf_object *output, const char *json_str, uint32_t length, ddwaf_allocator alloc)
-{
-    if (output == nullptr || json_str == nullptr || length == 0) {
-        return false;
-    }
+{ return object_from_json(output, json_str, length, alloc, json_parse_mode::strict); }
 
-    auto *alloc_ptr = to_alloc_ptr(alloc);
-    try {
-        // avoid to_borrowed(output, ...) = ... as that would destroy
-        // the current value in output, which could be uninitialized
-        *to_ptr(output) = json_to_object({json_str, length}, alloc_ptr).move();
-        return to_borrowed(output, alloc_ptr).is_valid();
-    } catch (...) {} // NOLINT(bugprone-empty-catch)
-
-    return false;
-}
+bool ddwaf_object_from_truncated_json(
+    ddwaf_object *output, const char *json_str, uint32_t length, ddwaf_allocator alloc)
+{ return object_from_json(output, json_str, length, alloc, json_parse_mode::truncated_prefix); }
 
 ddwaf_object *ddwaf_object_insert(ddwaf_object *array, ddwaf_allocator alloc)
 {
@@ -934,8 +934,7 @@ ddwaf_object *ddwaf_object_insert_key_nocopy(
         auto value_obj = owned_object{};
 
         // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-        return reinterpret_cast<ddwaf_object *>(
-            to_borrowed(map, alloc_ptr)
+        return reinterpret_cast<ddwaf_object *>(to_borrowed(map, alloc_ptr)
                 // safety: it's part of the contract of this function that the
                 // key can be deallocated with alloc
                 .emplace(std::move(key_obj), std::move(value_obj))

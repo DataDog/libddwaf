@@ -14,7 +14,10 @@
 
 namespace ddwaf {
 
+enum class json_parse_mode { strict, truncated_prefix };
+
 owned_object json_to_object(std::string_view json,
-    nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource());
+    nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource(),
+    json_parse_mode mode = json_parse_mode::strict);
 
 } // namespace ddwaf
