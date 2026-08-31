@@ -18,7 +18,13 @@ for dir in /workspace/fuzzer/*/ ; do
         continue
     fi
     echo "==> Building fuzzer target ${base_dir}_fuzzer"
-    make -j $(nproc) ${base_dir}_fuzzer || true
+    # The truncated_json target is new and must not silently fail to build;
+    # older targets keep the tolerant behaviour until they can be verified.
+    if [[ "$base_dir" == "truncated_json" ]]; then
+        make -j $(nproc) ${base_dir}_fuzzer
+    else
+        make -j $(nproc) ${base_dir}_fuzzer || true
+    fi
 done
 
 echo "✅ Finished building fuzzers"
