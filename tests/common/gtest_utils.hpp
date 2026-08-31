@@ -174,21 +174,15 @@ protected:
 
 inline ::testing::PolymorphicMatcher<WafResultActionMatcher> WithActions(
     ddwaf::test::action_map &&values)
-{
-    return ::testing::MakePolymorphicMatcher(WafResultActionMatcher(std::move(values)));
-}
+{ return ::testing::MakePolymorphicMatcher(WafResultActionMatcher(std::move(values))); }
 
 inline ::testing::PolymorphicMatcher<WafResultDataMatcher> WithEvents(
     std::vector<ddwaf::test::event> &&expected)
-{
-    return ::testing::MakePolymorphicMatcher(WafResultDataMatcher(std::move(expected)));
-}
+{ return ::testing::MakePolymorphicMatcher(WafResultDataMatcher(std::move(expected))); }
 
 inline ::testing::PolymorphicMatcher<MatchMatcher> WithMatches(
     std::vector<ddwaf::test::event::match> &&expected)
-{
-    return ::testing::MakePolymorphicMatcher(MatchMatcher(std::move(expected)));
-}
+{ return ::testing::MakePolymorphicMatcher(MatchMatcher(std::move(expected))); }
 
 std::list<ddwaf::test::event::match> from_matches(
     const std::vector<ddwaf::condition_match> &matches);
@@ -241,6 +235,18 @@ template <typename T> ddwaf::object_view to_view(T &value)
         expected_doc.Parse(expected);                                                              \
         EXPECT_FALSE(expected_doc.HasParseError());                                                \
         EXPECT_TRUE(json_equals(obtained_doc, expected_doc)) << test::object_to_json(obtained);    \
+    }
+
+// Exact structural comparison: array order, string lengths and number types
+// (integral vs floating-point) must match exactly.
+#define EXPECT_JSON_EXACT(obtained, expected)                                                      \
+    {                                                                                              \
+        auto obtained_doc = test::object_to_rapidjson(obtained);                                   \
+        rapidjson::Document expected_doc;                                                          \
+        expected_doc.Parse(expected);                                                              \
+        EXPECT_FALSE(expected_doc.HasParseError());                                                \
+        EXPECT_TRUE(json_equals_exact(obtained_doc, expected_doc))                                 \
+            << test::object_to_json(obtained);                                                     \
     }
 
 // NOLINTEND(cppcoreguidelines-macro-usage)

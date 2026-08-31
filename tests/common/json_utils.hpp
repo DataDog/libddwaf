@@ -144,3 +144,61 @@ bool json_equals(const T &lhs, const T &rhs)
     }
     return false;
 }
+
+// Exact structural comparison: unlike json_equals, arrays are compared
+// order-sensitively, strings length-sensitively and numbers bit-exactly (an
+// integral value never matches a floating-point one). Maps are still compared
+// by key, as their iteration order is unspecified.
+template <typename T>
+// NOLINTNEXTLINE(misc-no-recursion)
+bool json_equals_exact(const T &lhs, const T &rhs)
+    requires std::is_same_v<rapidjson::Document, T> || std::is_same_v<rapidjson::Value, T>
+{
+    if (lhs.GetType() != rhs.GetType()) {
+        return false;
+    }
+
+    switch (lhs.GetType()) {
+    case rapidjson::kObjectType: {
+        if (lhs.MemberCount() != rhs.MemberCount()) {
+            return false;
+        }
+        for (const auto &lkv : lhs.GetObject()) {
+            // rapidjson guarantees null-termination for parsed and copied keys.
+            const auto it = rhs.FindMember(lkv.name.GetString());
+            if (it == rhs.MemberEnd() || !json_equals_exact(lkv.value, it->value)) {
+                return false;
+            }
+        }
+        return true;
+    }
+    case rapidjson::kArrayType:
+        if (lhs.Size() != rhs.Size()) {
+            return false;
+        }
+        for (rapidjson::SizeType i = 0; i < lhs.Size(); ++i) {
+            if (!json_equals_exact(lhs[i], rhs[i])) {
+                return false;
+            }
+        }
+        return true;
+    case rapidjson::kStringType:
+        return lhs.GetStringLength() == rhs.GetStringLength() &&
+               std::string_view{lhs.GetString(), lhs.GetStringLength()} ==
+                   std::string_view{rhs.GetString(), rhs.GetStringLength()};
+    case rapidjson::kNumberType:
+        if (lhs.IsDouble() || rhs.IsDouble()) {
+            return lhs.IsDouble() && rhs.IsDouble() && lhs.GetDouble() == rhs.GetDouble();
+        }
+        if (lhs.IsUint64() != rhs.IsUint64()) {
+            return false;
+        }
+        return lhs.IsUint64() ? lhs.GetUint64() == rhs.GetUint64()
+                              : lhs.GetInt64() == rhs.GetInt64();
+    case rapidjson::kTrueType:
+    case rapidjson::kFalseType:
+    case rapidjson::kNullType:
+    default:
+        return true;
+    }
+}
