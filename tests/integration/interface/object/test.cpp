@@ -4,7 +4,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+// This translation unit verifies both the legacy and transitional ABI entry points.
+#define DDWAF_DISABLE_API_POISON
 #include "ddwaf.h"
+#undef ddwaf_object_set_array
+#undef ddwaf_object_set_map
+
 #include "memory_resource.hpp"
 #include "utils.hpp"
 
@@ -215,11 +220,11 @@ TEST(TestObjectIntegration, TestContainerRepresentationSelection)
     ddwaf_object array;
     ddwaf_object map;
 
-    ASSERT_EQ(ddwaf_object_set_array(&array, compact_capacity, alloc), &array);
+    ASSERT_EQ(ddwaf_object_set_array_large(&array, compact_capacity, alloc), &array);
     EXPECT_EQ(ddwaf_object_get_type(&array), DDWAF_OBJ_ARRAY);
     ddwaf_object_destroy(&array, alloc);
 
-    ASSERT_EQ(ddwaf_object_set_array(&array, large_capacity, alloc), &array);
+    ASSERT_EQ(ddwaf_object_set_array_large(&array, large_capacity, alloc), &array);
     EXPECT_EQ(ddwaf_object_get_type(&array), DDWAF_OBJ_LARGE_ARRAY);
     EXPECT_TRUE(ddwaf_object_is_array(&array));
     EXPECT_FALSE(ddwaf_object_is_map(&array));
@@ -231,11 +236,11 @@ TEST(TestObjectIntegration, TestContainerRepresentationSelection)
     EXPECT_EQ(array.via.large_array.capacity, large_capacity);
     ddwaf_object_destroy(&array, alloc);
 
-    ASSERT_EQ(ddwaf_object_set_map(&map, compact_capacity, alloc), &map);
+    ASSERT_EQ(ddwaf_object_set_map_large(&map, compact_capacity, alloc), &map);
     EXPECT_EQ(ddwaf_object_get_type(&map), DDWAF_OBJ_MAP);
     ddwaf_object_destroy(&map, alloc);
 
-    ASSERT_EQ(ddwaf_object_set_map(&map, large_capacity, alloc), &map);
+    ASSERT_EQ(ddwaf_object_set_map_large(&map, large_capacity, alloc), &map);
     EXPECT_EQ(ddwaf_object_get_type(&map), DDWAF_OBJ_LARGE_MAP);
     EXPECT_TRUE(ddwaf_object_is_map(&map));
     EXPECT_FALSE(ddwaf_object_is_array(&map));
@@ -255,7 +260,7 @@ TEST(TestObjectIntegration, TestLargeArrayOperations)
         static_cast<std::size_t>(std::numeric_limits<std::uint16_t>::max()) + 1;
     ddwaf_object array;
 
-    ASSERT_EQ(ddwaf_object_set_array(&array, large_capacity, alloc), &array);
+    ASSERT_EQ(ddwaf_object_set_array_large(&array, large_capacity, alloc), &array);
     ASSERT_NE(array.via.large_array.ptr, nullptr);
     const auto *initial_data = array.via.large_array.ptr;
 
@@ -292,7 +297,7 @@ TEST(TestObjectIntegration, TestLargeMapOperations)
         static_cast<std::size_t>(std::numeric_limits<std::uint16_t>::max()) + 1;
     ddwaf_object map;
 
-    ASSERT_EQ(ddwaf_object_set_map(&map, large_capacity, alloc), &map);
+    ASSERT_EQ(ddwaf_object_set_map_large(&map, large_capacity, alloc), &map);
     ASSERT_NE(map.via.large_map.ptr, nullptr);
     const auto *initial_data = map.via.large_map.ptr;
 
@@ -334,21 +339,21 @@ TEST(TestObjectIntegration, TestLargeContainerCapacityOverflow)
     ddwaf_object object;
     ddwaf_object_set_signed(&object, 42);
 
-    EXPECT_EQ(ddwaf_object_set_array(&object, unrepresentable_capacity, alloc), nullptr);
+    EXPECT_EQ(ddwaf_object_set_array_large(&object, unrepresentable_capacity, alloc), nullptr);
     EXPECT_EQ(ddwaf_object_get_type(&object), DDWAF_OBJ_SIGNED);
     EXPECT_EQ(ddwaf_object_get_signed(&object), 42);
 
-    EXPECT_EQ(ddwaf_object_set_map(&object, unrepresentable_capacity, alloc), nullptr);
+    EXPECT_EQ(ddwaf_object_set_map_large(&object, unrepresentable_capacity, alloc), nullptr);
     EXPECT_EQ(ddwaf_object_get_type(&object), DDWAF_OBJ_SIGNED);
     EXPECT_EQ(ddwaf_object_get_signed(&object), 42);
 
-    EXPECT_EQ(
-        ddwaf_object_set_array(&object, std::numeric_limits<std::size_t>::max(), alloc), nullptr);
+    EXPECT_EQ(ddwaf_object_set_array_large(&object, std::numeric_limits<std::size_t>::max(), alloc),
+        nullptr);
     EXPECT_EQ(ddwaf_object_get_type(&object), DDWAF_OBJ_SIGNED);
     EXPECT_EQ(ddwaf_object_get_signed(&object), 42);
 
-    EXPECT_EQ(
-        ddwaf_object_set_map(&object, std::numeric_limits<std::size_t>::max(), alloc), nullptr);
+    EXPECT_EQ(ddwaf_object_set_map_large(&object, std::numeric_limits<std::size_t>::max(), alloc),
+        nullptr);
     EXPECT_EQ(ddwaf_object_get_type(&object), DDWAF_OBJ_SIGNED);
     EXPECT_EQ(ddwaf_object_get_signed(&object), 42);
 }

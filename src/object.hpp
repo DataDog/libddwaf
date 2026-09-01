@@ -98,13 +98,6 @@ struct object_large_map {
     object_kv *ptr;
 };
 
-#if defined(__GNUC__) && !defined(__clang__)
-constexpr object_large_array object_large_array_type_byte_probe{._type = 0xFF};
-static_assert(__builtin_memcmp(&object_large_array_type_byte_probe, "\xFF", 1) == 0);
-constexpr object_large_map object_large_map_type_byte_probe{._type = 0xFF};
-static_assert(__builtin_memcmp(&object_large_map_type_byte_probe, "\xFF", 1) == 0);
-#endif
-
 union [[gnu::may_alias]] object {
     object_type type;
     union {
@@ -181,13 +174,13 @@ inline std::optional<std::size_t> normalize_index(std::size_t size, int64_t inde
     return size - static_cast<std::size_t>(distance);
 }
 
-constexpr std::size_t large_container_metadata_capacity_limit = (uint32_t{1} << 28) - 1;
+constexpr std::size_t large_container_capacity_limit = (uint32_t{1} << 28) - 1;
 constexpr std::size_t max_large_array_capacity =
-    std::min(large_container_metadata_capacity_limit, maxof_v<std::size_t> / sizeof(object));
+    std::min(large_container_capacity_limit, maxof_v<std::size_t> / sizeof(object));
 constexpr std::size_t max_large_map_capacity =
-    std::min(large_container_metadata_capacity_limit, maxof_v<std::size_t> / sizeof(object_kv));
+    std::min(large_container_capacity_limit, maxof_v<std::size_t> / sizeof(object_kv));
 
-static_assert(max_large_array_capacity == large_container_metadata_capacity_limit);
+static_assert(max_large_array_capacity == large_container_capacity_limit);
 static_assert(max_large_map_capacity == (sizeof(std::size_t) == 4 ? 134'217'727 : 268'435'455));
 
 inline std::size_t large_container_size(const object &obj) noexcept
@@ -264,37 +257,28 @@ inline std::size_t container_size(const object &obj)
     return obj.via.array.size;
 }
 
-/*
- * Compact and large containers store the same element pointer type at this
- * offset. Copying its representation avoids reading an inactive union member.
- */
-template <typename Element> inline Element *container_data(object &obj) noexcept
+inline object *array_data(object &obj) noexcept
 {
-    Element *data;
-    // NOLINTNEXTLINE
-    memcpy(&data, reinterpret_cast<const std::byte *>(&obj) + offsetof(object_array, ptr),
-        sizeof(data)); // NOLINT(bugprone-sizeof-expression)
-    return data;
+    assert(ddwaf::is_array(obj.type));
+    return obj.type == object_type::large_array ? obj.via.large_array.ptr : obj.via.array.ptr;
 }
 
-template <typename Element> inline const Element *container_data(const object &obj) noexcept
+inline const object *array_data(const object &obj) noexcept
 {
-    Element *data;
-    // NOLINTNEXTLINE
-    memcpy(&data, reinterpret_cast<const std::byte *>(&obj) + offsetof(object_array, ptr),
-        sizeof(data)); // NOLINT(bugprone-sizeof-expression)
-    return data;
+    assert(ddwaf::is_array(obj.type));
+    return obj.type == object_type::large_array ? obj.via.large_array.ptr : obj.via.array.ptr;
 }
 
-inline object *array_data(object &obj) noexcept { return container_data<object>(obj); }
-
-inline const object *array_data(const object &obj) noexcept { return container_data<object>(obj); }
-
-inline object_kv *map_data(object &obj) noexcept { return container_data<object_kv>(obj); }
+inline object_kv *map_data(object &obj) noexcept
+{
+    assert(ddwaf::is_map(obj.type));
+    return obj.type == object_type::large_map ? obj.via.large_map.ptr : obj.via.map.ptr;
+}
 
 inline const object_kv *map_data(const object &obj) noexcept
 {
-    return container_data<object_kv>(obj);
+    assert(ddwaf::is_map(obj.type));
+    return obj.type == object_type::large_map ? obj.via.large_map.ptr : obj.via.map.ptr;
 }
 
 inline bool requires_allocator(object_type type)
@@ -356,7 +340,7 @@ template <> struct large_container_traits<object_kv> {
 template <typename Element> inline std::size_t large_container_bytes(std::size_t capacity)
 {
     if (capacity > large_container_traits<Element>::capacity_limit) [[unlikely]] {
-        throw std::length_error("container capacity exceeds allocation limit");
+        throw std::bad_alloc();
     }
     return capacity * sizeof(Element);
 }
@@ -369,11 +353,7 @@ inline Element *alloc_large_container(std::size_t capacity, memory::memory_resou
     }
 
     const auto bytes = large_container_bytes<Element>(capacity);
-    auto *data = static_cast<Element *>(alloc.allocate(bytes, alignof(Element)));
-    if (data == nullptr) [[unlikely]] {
-        throw std::bad_alloc();
-    }
-    return data;
+    return static_cast<Element *>(alloc.allocate(bytes, alignof(Element)));
 }
 
 template <typename Element>
@@ -386,7 +366,7 @@ inline void dealloc_large_container(
 inline std::size_t next_large_capacity(std::size_t capacity, std::size_t maximum)
 {
     if (capacity >= maximum) [[unlikely]] {
-        throw std::length_error("container has reached its maximum capacity");
+        throw std::bad_alloc();
     }
     if (capacity == 0) {
         return std::min<std::size_t>(8, maximum);

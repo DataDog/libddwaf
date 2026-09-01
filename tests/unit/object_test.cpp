@@ -472,21 +472,21 @@ TEST(TestObject, LargeContainerOverflowAndExhaustedCapacity)
     constexpr auto array_maximum = detail::max_large_array_capacity;
     constexpr auto map_maximum = detail::max_large_map_capacity;
 
-    static_assert(array_maximum <= detail::large_container_metadata_capacity_limit);
-    static_assert(map_maximum <= detail::large_container_metadata_capacity_limit);
-    EXPECT_THROW(owned_object::make_large_array(array_maximum + 1, &alloc), std::length_error);
-    EXPECT_THROW(owned_object::make_large_map(map_maximum + 1, &alloc), std::length_error);
-    EXPECT_THROW(detail::next_large_capacity(array_maximum, array_maximum), std::length_error);
-    EXPECT_THROW(detail::next_large_capacity(map_maximum, map_maximum), std::length_error);
+    static_assert(array_maximum <= detail::large_container_capacity_limit);
+    static_assert(map_maximum <= detail::large_container_capacity_limit);
+    EXPECT_THROW(owned_object::make_large_array(array_maximum + 1, &alloc), std::bad_alloc);
+    EXPECT_THROW(owned_object::make_large_map(map_maximum + 1, &alloc), std::bad_alloc);
+    EXPECT_THROW(detail::next_large_capacity(array_maximum, array_maximum), std::bad_alloc);
+    EXPECT_THROW(detail::next_large_capacity(map_maximum, map_maximum), std::bad_alloc);
 
     auto exhausted_array = detail::make_large_array_object(nullptr, array_maximum, array_maximum);
-    EXPECT_THROW(detail::grow_large_array(exhausted_array, alloc), std::length_error);
+    EXPECT_THROW(detail::grow_large_array(exhausted_array, alloc), std::bad_alloc);
     EXPECT_EQ(exhausted_array.via.large_array.ptr, nullptr);
     EXPECT_EQ(detail::large_container_size(exhausted_array), array_maximum);
     EXPECT_EQ(detail::large_container_capacity(exhausted_array), array_maximum);
 
     auto exhausted_map = detail::make_large_map_object(nullptr, map_maximum, map_maximum);
-    EXPECT_THROW(detail::grow_large_map(exhausted_map, alloc), std::length_error);
+    EXPECT_THROW(detail::grow_large_map(exhausted_map, alloc), std::bad_alloc);
     EXPECT_EQ(exhausted_map.via.large_map.ptr, nullptr);
     EXPECT_EQ(detail::large_container_size(exhausted_map), map_maximum);
     EXPECT_EQ(detail::large_container_capacity(exhausted_map), map_maximum);

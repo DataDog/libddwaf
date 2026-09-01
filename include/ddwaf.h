@@ -171,12 +171,6 @@ struct _ddwaf_object_map {
     struct _ddwaf_object_kv *ptr;
 };
 
-// Large-container metadata uses 28-bit fields for size and capacity, for a
-// maximum of 268,435,455 elements (potentially lower on 32-bit platforms due
-// to allocation-size limits). _type overlays the direct uint8_t type view of
-// ddwaf_object, and ptr points directly to the contiguous elements. Any
-// insertion that grows the container invalidates ptr and pointers to its
-// elements.
 struct _ddwaf_object_large_array {
     uint64_t _type : 8;
     uint64_t size : 28;
@@ -936,11 +930,7 @@ ddwaf_object* ddwaf_object_set_bool(ddwaf_object *object, bool value);
 ddwaf_object* ddwaf_object_set_float(ddwaf_object *object, double value);
 
 /**
- * Creates an array object for sequential storage. Capacities up to 65,535 use
- * DDWAF_OBJ_ARRAY; larger capacities use DDWAF_OBJ_LARGE_ARRAY. A compact array
- * is promoted automatically when insertion grows it beyond 65,535 elements.
- * Large arrays are limited to the smaller of 268,435,455 elements and
- * SIZE_MAX / sizeof(ddwaf_object).
+ * Creates an array object for sequential storage.
  *
  * @param object Object to perform the operation on. (nonnull)
  * @param capacity Initial capacity of the array.
@@ -948,14 +938,27 @@ ddwaf_object* ddwaf_object_set_float(ddwaf_object *object, double value);
  *
  * @return A pointer to the passed object or NULL if the operation failed.
  **/
-ddwaf_object* ddwaf_object_set_array(ddwaf_object *object, size_t capacity, ddwaf_allocator alloc);
+ddwaf_object* ddwaf_object_set_array(ddwaf_object *object, uint16_t capacity, ddwaf_allocator alloc);
 
 /**
- * Creates a map object for key-value storage. Capacities up to 65,535 use
- * DDWAF_OBJ_MAP; larger capacities use DDWAF_OBJ_LARGE_MAP. A compact map is
- * promoted automatically when insertion grows it beyond 65,535 entries. Large
- * maps are limited to the smaller of 268,435,455 entries and
- * SIZE_MAX / sizeof(ddwaf_object_kv).
+ * Creates an array object for sequential storage with a size_t initial
+ * capacity. Capacities above 65,535 use DDWAF_OBJ_LARGE_ARRAY. Large arrays are
+ * limited to the smaller of 268,435,455 elements and
+ * SIZE_MAX / sizeof(ddwaf_object).
+ *
+ * @warning This is a transitional ABI symbol. Source code must use
+ * ddwaf_object_set_array. This symbol will be removed in version 3.
+ *
+ * @param object Object to perform the operation on. (nonnull)
+ * @param capacity Initial capacity of the array.
+ * @param alloc Allocator to use for memory allocation. (nonnull)
+ *
+ * @return A pointer to the passed object or NULL if the operation failed.
+ **/
+ddwaf_object* ddwaf_object_set_array_large(ddwaf_object *object, size_t capacity, ddwaf_allocator alloc);
+
+/**
+ * Creates a map object for key-value storage.
  *
  * @param object Object to perform the operation on. (nonnull)
  * @param capacity Initial capacity of the map.
@@ -963,7 +966,23 @@ ddwaf_object* ddwaf_object_set_array(ddwaf_object *object, size_t capacity, ddwa
  *
  * @return A pointer to the passed object or NULL if the operation failed.
  **/
-ddwaf_object* ddwaf_object_set_map(ddwaf_object *object, size_t capacity, ddwaf_allocator alloc);
+ddwaf_object* ddwaf_object_set_map(ddwaf_object *object, uint16_t capacity, ddwaf_allocator alloc);
+
+/**
+ * Creates a map object for key-value storage with a size_t initial capacity.
+ * Capacities above 65,535 use DDWAF_OBJ_LARGE_MAP. Large maps are limited to
+ * the smaller of 268,435,455 entries and SIZE_MAX / sizeof(ddwaf_object_kv).
+ *
+ * @warning This is a transitional ABI symbol. Source code must use
+ * ddwaf_object_set_map. This symbol will be removed in version 3.
+ *
+ * @param object Object to perform the operation on. (nonnull)
+ * @param capacity Initial capacity of the map.
+ * @param alloc Allocator to use for memory allocation. (nonnull)
+ *
+ * @return A pointer to the passed object or NULL if the operation failed.
+ **/
+ddwaf_object* ddwaf_object_set_map_large(ddwaf_object *object, size_t capacity, ddwaf_allocator alloc);
 
 /**
  * Inserts a new object into an array object.
@@ -1277,5 +1296,13 @@ bool ddwaf_set_log_cb(ddwaf_log_cb cb, DDWAF_LOG_LEVEL min_level);
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
+
+#define ddwaf_object_set_array ddwaf_object_set_array_large
+#define ddwaf_object_set_map ddwaf_object_set_map_large
+
+/* The aliases above remain valid because they predate the poisoned identifiers. */
+#if (defined(__GNUC__) || defined(__clang__)) && !defined(DDWAF_DISABLE_API_POISON)
+#pragma GCC poison ddwaf_object_set_array_large ddwaf_object_set_map_large
+#endif
 
 #endif /*DDWAF_H */

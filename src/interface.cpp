@@ -4,6 +4,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+// This translation unit defines the transitional ABI entry points.
+#define DDWAF_DISABLE_API_POISON
+
 #include <algorithm>
 #include <chrono>
 #include <cstddef>
@@ -835,7 +838,16 @@ ddwaf_object *ddwaf_object_float(ddwaf_object *object, double value)
     return ddwaf_object_set_float(object, value);
 }
 
-ddwaf_object *ddwaf_object_set_array(ddwaf_object *object, size_t capacity, ddwaf_allocator alloc)
+#undef ddwaf_object_set_array
+#undef ddwaf_object_set_map
+
+ddwaf_object *ddwaf_object_set_array(ddwaf_object *object, uint16_t capacity, ddwaf_allocator alloc)
+{
+    return ddwaf_object_set_array_large(object, capacity, alloc);
+}
+
+ddwaf_object *ddwaf_object_set_array_large(
+    ddwaf_object *object, size_t capacity, ddwaf_allocator alloc)
 {
     if (object == nullptr || alloc == nullptr) {
         return nullptr;
@@ -850,7 +862,13 @@ ddwaf_object *ddwaf_object_set_array(ddwaf_object *object, size_t capacity, ddwa
     return nullptr;
 }
 
-ddwaf_object *ddwaf_object_set_map(ddwaf_object *object, size_t capacity, ddwaf_allocator alloc)
+ddwaf_object *ddwaf_object_set_map(ddwaf_object *object, uint16_t capacity, ddwaf_allocator alloc)
+{
+    return ddwaf_object_set_map_large(object, capacity, alloc);
+}
+
+ddwaf_object *ddwaf_object_set_map_large(
+    ddwaf_object *object, size_t capacity, ddwaf_allocator alloc)
 {
     if (object == nullptr || alloc == nullptr) {
         return nullptr;

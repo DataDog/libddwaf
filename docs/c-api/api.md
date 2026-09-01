@@ -666,6 +666,13 @@ is limited to the smaller of 268,435,455 elements and
 `SIZE_MAX / sizeof(ddwaf_object)`. An insertion that grows or promotes the array
 invalidates its element pointer and pointers to existing elements.
 
+In this header, `ddwaf_object_set_array` is defined as
+`ddwaf_object_set_array_large`. The old `ddwaf_object_set_array` binary symbol,
+which takes a `uint16_t` capacity, is deprecated and retained only for binary
+compatibility. Source code should continue using `ddwaf_object_set_array`.
+Do not call `ddwaf_object_set_array_large` directly; it is a transitional ABI
+symbol and will be removed in version 3.
+
 - `object`: Object to perform the operation on. (nonnull)
 - `capacity`: Initial capacity of the array.
 - `alloc`: Allocator to use for memory allocation. (nonnull)
@@ -686,7 +693,12 @@ limited to the smaller of 268,435,455 entries and
 `SIZE_MAX / sizeof(ddwaf_object_kv)`. An insertion that grows or promotes the
 map invalidates its element pointer and pointers to existing keys and values.
 
-**Parameters:**
+In this header, `ddwaf_object_set_map` is defined as
+`ddwaf_object_set_map_large`. The old `ddwaf_object_set_map` binary symbol,
+which takes a `uint16_t` capacity, is deprecated and retained only for binary
+compatibility. Source code should continue using `ddwaf_object_set_map`.
+Do not call `ddwaf_object_set_map_large` directly; it is a transitional ABI
+symbol and will be removed in version 3.
 
 - `object`: Object to perform the operation on. (nonnull)
 - `capacity`: Initial capacity of the map.
