@@ -177,13 +177,15 @@ static void _hstring_write_pwargs(hstring *str, size_t depth,
         HSTRING_APPEND_CONST(str, "\n");
         break;
     }
-    case DDWAF_OBJ_ARRAY: {
+    case DDWAF_OBJ_ARRAY:
+    case DDWAF_OBJ_LARGE_ARRAY: {
         HSTRING_APPEND_CONST(str, "<ARRAY>\n");
         for (size_t i = 0; i < ddwaf_object_get_size(pwargs); i++) {
             _hstring_write_pwargs(str, depth + 1, ddwaf_object_at_value(pwargs, i));
         }
         break;
-    case DDWAF_OBJ_MAP: {
+    case DDWAF_OBJ_MAP:
+    case DDWAF_OBJ_LARGE_MAP: {
         HSTRING_APPEND_CONST(str, "<MAP>\n");
         for (size_t i = 0; i < ddwaf_object_get_size(pwargs); i++) {
             const ddwaf_object *key = ddwaf_object_at_key(pwargs, i);

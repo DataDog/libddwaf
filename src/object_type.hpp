@@ -31,7 +31,12 @@ enum class object_type : uint8_t {
     array = 0x20,    // 0b00100000
     map = 0x40,      // 0b01000000
     hash_map = 0x60, // 0b01100000
+
+    large_array = 0xA0, // 0b10100000
+    large_map = 0xC0,   // 0b11000000
 };
+
+constexpr uint8_t logical_container_type_mask = 0x7f;
 
 template <typename T>
 constexpr object_type operator|(object_type left, T right)
@@ -72,9 +77,21 @@ inline bool is_scalar(object_type type)
                        object_type::small_string)) != 0;
 }
 
+inline bool is_array(object_type type)
+{
+    return (static_cast<uint8_t>(type) & logical_container_type_mask) ==
+           static_cast<uint8_t>(object_type::array);
+}
+
+inline bool is_map(object_type type)
+{
+    return (static_cast<uint8_t>(type) & logical_container_type_mask) ==
+           static_cast<uint8_t>(object_type::map);
+}
+
 inline bool is_container(object_type type)
 {
-    return (type & (object_type::array | object_type::map)) != 0;
+    return is_array(type) || is_map(type) || type == object_type::hash_map;
 }
 
 template <typename T> inline bool is_compatible_type(object_type /*type*/) { return false; }
@@ -121,8 +138,10 @@ T object_type_to_string(object_type type)
 {
     switch (type) {
     case object_type::map:
+    case object_type::large_map:
         return "map";
     case object_type::array:
+    case object_type::large_array:
         return "array";
     case object_type::string:
     case object_type::literal_string:

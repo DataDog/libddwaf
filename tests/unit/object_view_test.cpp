@@ -1019,6 +1019,21 @@ TEST(TestArrayView, Default)
     for (auto value : view) { EXPECT_FALSE(value.has_value()); }
 }
 
+TEST(TestArrayView, LargeArray)
+{
+    auto root = owned_object::make_large_array(2, memory::get_default_resource());
+    root.emplace_back(1U);
+    root.emplace_back(2U);
+    root.emplace_back(3U);
+
+    array_view view(root);
+    EXPECT_EQ(view.size(), 3);
+    EXPECT_EQ(view.at(0).as<std::uint64_t>(), 1);
+
+    std::uint64_t expected = 1;
+    for (const auto value : view) { EXPECT_EQ(value.as<std::uint64_t>(), expected++); }
+}
+
 TEST(TestArrayView, AtAccess)
 {
     auto root = test::ddwaf_object_da::make_array();
@@ -1068,6 +1083,25 @@ TEST(TestMapView, Default)
         EXPECT_FALSE(key.has_value());
         EXPECT_FALSE(value.has_value());
     }
+}
+
+TEST(TestMapView, LargeMap)
+{
+    auto root = owned_object::make_large_map(1, memory::get_default_resource());
+    root.emplace("one", 1U);
+    root.emplace("two", 2U);
+
+    map_view view(root);
+    EXPECT_EQ(view.size(), 2);
+    EXPECT_EQ(view.find("one").as<std::uint64_t>(), 1);
+    EXPECT_EQ(view.at_value(1).as<std::uint64_t>(), 2);
+
+    std::size_t entries = 0;
+    for (const auto &[key, value] : view) {
+        EXPECT_TRUE(key.is_string());
+        EXPECT_EQ(value.as<std::uint64_t>(), ++entries);
+    }
+    EXPECT_EQ(entries, 2);
 }
 
 TEST(TestMapView, AtAccess)

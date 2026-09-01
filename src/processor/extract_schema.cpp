@@ -283,7 +283,8 @@ base_node generate_helper(object_view object, std::string_view key,
     case object_type::int64:
     case object_type::uint64:
         return node_scalar{.type = scalar_type::integer};
-    case object_type::map: {
+    case object_type::map:
+    case object_type::large_map: {
         auto length = object.size();
         node_record_ptr record = std::make_unique<node_record>();
         if (length > extract_schema::max_record_nodes) {
@@ -303,7 +304,8 @@ base_node generate_helper(object_view object, std::string_view key,
         }
         return record;
     }
-    case object_type::array: {
+    case object_type::array:
+    case object_type::large_array: {
         auto length = object.size();
         node_array_ptr array = std::make_unique<node_array>();
         array->length = length;

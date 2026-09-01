@@ -124,7 +124,7 @@ void generate_objects(ddwaf_object &root, const object_specification &s)
                 --intermediate;
             }
 
-            if (object->type == DDWAF_OBJ_MAP) {
+            if (ddwaf_object_is_map(object)) {
                 auto *str = generate_random_string(s.key_length);
                 *ddwaf_object_insert_key(object, str, s.key_length, alloc) = next;
             } else {
@@ -140,7 +140,7 @@ void generate_objects(ddwaf_object &root, const object_specification &s)
             for (unsigned i = 0, j = 0; i < ddwaf_object_get_size(object); ++i) {
                 // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
                 auto *child = const_cast<ddwaf_object *>(ddwaf_object_at_value(object, i));
-                if (child->type == DDWAF_OBJ_MAP || child->type == DDWAF_OBJ_ARRAY) {
+                if (ddwaf_object_is_map(child) || ddwaf_object_is_array(child)) {
                     object_queue.emplace_back(
                         child, level + 1, next_level[j].intermediate, next_level[j].terminal);
                     ++j;

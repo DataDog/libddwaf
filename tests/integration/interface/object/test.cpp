@@ -4,13 +4,22 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+// This translation unit verifies both the legacy and transitional ABI entry points.
+#define DDWAF_DISABLE_API_POISON
 #include "ddwaf.h"
+#undef ddwaf_object_set_array
+#undef ddwaf_object_set_map
+
 #include "memory_resource.hpp"
 #include "utils.hpp"
 
 #include "common/gtest_utils.hpp"
 
 #include <gtest/gtest.h>
+
+#include <cstddef>
+#include <cstdint>
+#include <limits>
 
 using namespace ddwaf;
 
@@ -200,6 +209,227 @@ TEST(TestObjectIntegration, TestCreateMap)
     EXPECT_TRUE(ddwaf_object_is_map(&container));
 
     ddwaf_object_destroy(&container, alloc);
+}
+
+TEST(TestObjectIntegration, TestContainerRepresentationSelection)
+{
+    auto *alloc = ddwaf_get_default_allocator();
+    constexpr auto compact_capacity =
+        static_cast<std::size_t>(std::numeric_limits<std::uint16_t>::max());
+    constexpr auto large_capacity = compact_capacity + 1;
+    ddwaf_object array;
+    ddwaf_object map;
+
+    ASSERT_EQ(ddwaf_object_set_array_large(&array, compact_capacity, alloc), &array);
+    EXPECT_EQ(ddwaf_object_get_type(&array), DDWAF_OBJ_ARRAY);
+    ddwaf_object_destroy(&array, alloc);
+
+    ASSERT_EQ(ddwaf_object_set_array_large(&array, large_capacity, alloc), &array);
+    EXPECT_EQ(ddwaf_object_get_type(&array), DDWAF_OBJ_LARGE_ARRAY);
+    EXPECT_TRUE(ddwaf_object_is_array(&array));
+    EXPECT_FALSE(ddwaf_object_is_map(&array));
+    EXPECT_EQ(ddwaf_object_get_size(&array), 0);
+    EXPECT_NE(array.via.large_array.ptr, nullptr);
+    EXPECT_EQ(array.type, DDWAF_OBJ_LARGE_ARRAY);
+    EXPECT_EQ(array.via.large_array._type, DDWAF_OBJ_LARGE_ARRAY);
+    EXPECT_EQ(array.via.large_array.size, 0);
+    EXPECT_EQ(array.via.large_array.capacity, large_capacity);
+    ddwaf_object_destroy(&array, alloc);
+
+    ASSERT_EQ(ddwaf_object_set_map_large(&map, compact_capacity, alloc), &map);
+    EXPECT_EQ(ddwaf_object_get_type(&map), DDWAF_OBJ_MAP);
+    ddwaf_object_destroy(&map, alloc);
+
+    ASSERT_EQ(ddwaf_object_set_map_large(&map, large_capacity, alloc), &map);
+    EXPECT_EQ(ddwaf_object_get_type(&map), DDWAF_OBJ_LARGE_MAP);
+    EXPECT_TRUE(ddwaf_object_is_map(&map));
+    EXPECT_FALSE(ddwaf_object_is_array(&map));
+    EXPECT_EQ(ddwaf_object_get_size(&map), 0);
+    EXPECT_NE(map.via.large_map.ptr, nullptr);
+    EXPECT_EQ(map.type, DDWAF_OBJ_LARGE_MAP);
+    EXPECT_EQ(map.via.large_map._type, DDWAF_OBJ_LARGE_MAP);
+    EXPECT_EQ(map.via.large_map.size, 0);
+    EXPECT_EQ(map.via.large_map.capacity, large_capacity);
+    ddwaf_object_destroy(&map, alloc);
+}
+
+TEST(TestObjectIntegration, TestLargeArrayOperations)
+{
+    auto *alloc = ddwaf_get_default_allocator();
+    constexpr auto large_capacity =
+        static_cast<std::size_t>(std::numeric_limits<std::uint16_t>::max()) + 1;
+    ddwaf_object array;
+
+    ASSERT_EQ(ddwaf_object_set_array_large(&array, large_capacity, alloc), &array);
+    ASSERT_NE(array.via.large_array.ptr, nullptr);
+    const auto *initial_data = array.via.large_array.ptr;
+
+    ddwaf_object_set_signed(ddwaf_object_insert(&array, alloc), -1);
+    ddwaf_object_set_unsigned(ddwaf_object_insert(&array, alloc), 2);
+    EXPECT_EQ(array.via.large_array.ptr, initial_data);
+    EXPECT_EQ(array.via.large_array.size, 2);
+    EXPECT_EQ(array.via.large_array.capacity, large_capacity);
+    EXPECT_EQ(ddwaf_object_at_value(&array, 0), &array.via.large_array.ptr[0]);
+    EXPECT_EQ(ddwaf_object_at_value(&array, 1), &array.via.large_array.ptr[1]);
+
+    ddwaf_object_set_string(
+        ddwaf_object_insert(&array, alloc), STRL("third element is allocated"), alloc);
+    EXPECT_EQ(array.via.large_array.ptr, initial_data);
+    EXPECT_EQ(ddwaf_object_get_size(&array), 3);
+    EXPECT_EQ(ddwaf_object_get_signed(ddwaf_object_at_value(&array, 0)), -1);
+    EXPECT_EQ(ddwaf_object_get_unsigned(ddwaf_object_at_value(&array, 1)), 2);
+    EXPECT_STRV(object_to_view(*ddwaf_object_at_value(&array, 2)), "third element is allocated");
+
+    ddwaf_object clone;
+    ASSERT_EQ(ddwaf_object_clone(&array, &clone, alloc), &clone);
+    EXPECT_EQ(ddwaf_object_get_type(&clone), DDWAF_OBJ_ARRAY);
+    EXPECT_EQ(ddwaf_object_get_size(&clone), 3);
+    EXPECT_STRV(object_to_view(*ddwaf_object_at_value(&clone, 2)), "third element is allocated");
+
+    ddwaf_object_destroy(&clone, alloc);
+    ddwaf_object_destroy(&array, alloc);
+}
+
+TEST(TestObjectIntegration, TestLargeMapOperations)
+{
+    auto *alloc = ddwaf_get_default_allocator();
+    constexpr auto large_capacity =
+        static_cast<std::size_t>(std::numeric_limits<std::uint16_t>::max()) + 1;
+    ddwaf_object map;
+
+    ASSERT_EQ(ddwaf_object_set_map_large(&map, large_capacity, alloc), &map);
+    ASSERT_NE(map.via.large_map.ptr, nullptr);
+    const auto *initial_data = map.via.large_map.ptr;
+
+    ddwaf_object_set_unsigned(ddwaf_object_insert_literal_key(&map, STRL("first"), alloc), 1);
+    auto *nested = ddwaf_object_insert_literal_key(&map, STRL("nested"), alloc);
+    ddwaf_object_set_array(nested, 1, alloc);
+    EXPECT_EQ(map.via.large_map.ptr, initial_data);
+    EXPECT_EQ(map.via.large_map.size, 2);
+    EXPECT_EQ(map.via.large_map.capacity, large_capacity);
+
+    ASSERT_NE(nested, nullptr);
+    ddwaf_object_set_string(
+        ddwaf_object_insert(nested, alloc), STRL("recursively allocated value"), alloc);
+
+    EXPECT_EQ(ddwaf_object_get_size(&map), 2);
+    EXPECT_EQ(ddwaf_object_at_key(&map, 0), &map.via.large_map.ptr[0].key);
+    EXPECT_EQ(ddwaf_object_at_value(&map, 0), &map.via.large_map.ptr[0].val);
+    EXPECT_STRV(object_to_view(*ddwaf_object_at_key(&map, 0)), "first");
+    EXPECT_EQ(ddwaf_object_get_unsigned(ddwaf_object_find(&map, STRL("first"))), 1);
+    ASSERT_NE(ddwaf_object_find(&map, STRL("nested")), nullptr);
+
+    ddwaf_object clone;
+    ASSERT_EQ(ddwaf_object_clone(&map, &clone, alloc), &clone);
+    EXPECT_EQ(ddwaf_object_get_type(&clone), DDWAF_OBJ_MAP);
+    const auto *cloned_nested = ddwaf_object_find(&clone, STRL("nested"));
+    ASSERT_NE(cloned_nested, nullptr);
+    EXPECT_EQ(ddwaf_object_get_type(cloned_nested), DDWAF_OBJ_ARRAY);
+    EXPECT_STRV(
+        object_to_view(*ddwaf_object_at_value(cloned_nested, 0)), "recursively allocated value");
+
+    ddwaf_object_destroy(&clone, alloc);
+    ddwaf_object_destroy(&map, alloc);
+}
+
+TEST(TestObjectIntegration, TestLargeContainerCapacityOverflow)
+{
+    auto *alloc = ddwaf_get_default_allocator();
+    constexpr auto unrepresentable_capacity = std::size_t{1} << 28;
+    ddwaf_object object;
+    ddwaf_object_set_signed(&object, 42);
+
+    EXPECT_EQ(ddwaf_object_set_array_large(&object, unrepresentable_capacity, alloc), nullptr);
+    EXPECT_EQ(ddwaf_object_get_type(&object), DDWAF_OBJ_SIGNED);
+    EXPECT_EQ(ddwaf_object_get_signed(&object), 42);
+
+    EXPECT_EQ(ddwaf_object_set_map_large(&object, unrepresentable_capacity, alloc), nullptr);
+    EXPECT_EQ(ddwaf_object_get_type(&object), DDWAF_OBJ_SIGNED);
+    EXPECT_EQ(ddwaf_object_get_signed(&object), 42);
+
+    EXPECT_EQ(ddwaf_object_set_array_large(&object, std::numeric_limits<std::size_t>::max(), alloc),
+        nullptr);
+    EXPECT_EQ(ddwaf_object_get_type(&object), DDWAF_OBJ_SIGNED);
+    EXPECT_EQ(ddwaf_object_get_signed(&object), 42);
+
+    EXPECT_EQ(ddwaf_object_set_map_large(&object, std::numeric_limits<std::size_t>::max(), alloc),
+        nullptr);
+    EXPECT_EQ(ddwaf_object_get_type(&object), DDWAF_OBJ_SIGNED);
+    EXPECT_EQ(ddwaf_object_get_signed(&object), 42);
+}
+
+TEST(TestObjectIntegration, TestCompactArrayPromotion)
+{
+    auto *alloc = ddwaf_get_default_allocator();
+    ddwaf_object array;
+    constexpr auto compact_limit = std::numeric_limits<std::uint16_t>::max();
+
+    ASSERT_EQ(ddwaf_object_set_array(&array, compact_limit, alloc), &array);
+    for (std::size_t i = 0; i < compact_limit; ++i) {
+        auto *element = ddwaf_object_insert(&array, alloc);
+        ASSERT_NE(element, nullptr);
+        if (i == 0 || i + 1 == compact_limit) {
+            ddwaf_object_set_unsigned(element, i);
+        }
+    }
+
+    EXPECT_EQ(ddwaf_object_get_type(&array), DDWAF_OBJ_ARRAY);
+    EXPECT_EQ(ddwaf_object_get_size(&array), compact_limit);
+    EXPECT_EQ(ddwaf_object_get_unsigned(ddwaf_object_at_value(&array, 0)), 0);
+    EXPECT_EQ(ddwaf_object_get_unsigned(ddwaf_object_at_value(&array, compact_limit - 1)),
+        compact_limit - 1);
+
+    auto *promoted_element = ddwaf_object_insert(&array, alloc);
+    ASSERT_NE(promoted_element, nullptr);
+    ddwaf_object_set_unsigned(promoted_element, compact_limit);
+    EXPECT_EQ(ddwaf_object_get_type(&array), DDWAF_OBJ_LARGE_ARRAY);
+    EXPECT_TRUE(ddwaf_object_is_array(&array));
+    EXPECT_EQ(ddwaf_object_get_size(&array), compact_limit + std::size_t{1});
+    EXPECT_EQ(array.via.large_array._type, DDWAF_OBJ_LARGE_ARRAY);
+    EXPECT_EQ(array.via.large_array.size, compact_limit + std::size_t{1});
+    EXPECT_EQ(array.via.large_array.capacity, static_cast<std::size_t>(compact_limit) * 2);
+    EXPECT_EQ(ddwaf_object_get_unsigned(ddwaf_object_at_value(&array, compact_limit - 1)),
+        compact_limit - 1);
+    EXPECT_EQ(
+        ddwaf_object_get_unsigned(ddwaf_object_at_value(&array, compact_limit)), compact_limit);
+
+    ddwaf_object_destroy(&array, alloc);
+}
+
+TEST(TestObjectIntegration, TestCompactMapPromotion)
+{
+    auto *alloc = ddwaf_get_default_allocator();
+    ddwaf_object map;
+    constexpr auto compact_limit = std::numeric_limits<std::uint16_t>::max();
+
+    ASSERT_EQ(ddwaf_object_set_map(&map, compact_limit, alloc), &map);
+    for (std::size_t i = 0; i < compact_limit; ++i) {
+        auto *element = ddwaf_object_insert_literal_key(&map, STRL("key"), alloc);
+        ASSERT_NE(element, nullptr);
+        if (i == 0 || i + 1 == compact_limit) {
+            ddwaf_object_set_unsigned(element, i);
+        }
+    }
+
+    EXPECT_EQ(ddwaf_object_get_type(&map), DDWAF_OBJ_MAP);
+    EXPECT_EQ(ddwaf_object_get_size(&map), compact_limit);
+    EXPECT_STRV(object_to_view(*ddwaf_object_at_key(&map, compact_limit - 1)), "key");
+    EXPECT_EQ(ddwaf_object_get_unsigned(ddwaf_object_at_value(&map, compact_limit - 1)),
+        compact_limit - 1);
+
+    auto *promoted_element = ddwaf_object_insert_literal_key(&map, STRL("last"), alloc);
+    ASSERT_NE(promoted_element, nullptr);
+    ddwaf_object_set_unsigned(promoted_element, compact_limit);
+    EXPECT_EQ(ddwaf_object_get_type(&map), DDWAF_OBJ_LARGE_MAP);
+    EXPECT_TRUE(ddwaf_object_is_map(&map));
+    EXPECT_EQ(ddwaf_object_get_size(&map), compact_limit + std::size_t{1});
+    EXPECT_EQ(map.via.large_map._type, DDWAF_OBJ_LARGE_MAP);
+    EXPECT_EQ(map.via.large_map.size, compact_limit + std::size_t{1});
+    EXPECT_EQ(map.via.large_map.capacity, static_cast<std::size_t>(compact_limit) * 2);
+    EXPECT_EQ(ddwaf_object_get_unsigned(ddwaf_object_find(&map, STRL("last"))), compact_limit);
+    EXPECT_STRV(object_to_view(*ddwaf_object_at_key(&map, compact_limit)), "last");
+
+    ddwaf_object_destroy(&map, alloc);
 }
 
 TEST(TestObjectIntegration, TestAddArray)

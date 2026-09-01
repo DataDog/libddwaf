@@ -67,6 +67,7 @@ void object_to_json_helper(
             ddwaf_object_get_string(&obj, nullptr), ddwaf_object_get_length(&obj), alloc);
     } break;
     case DDWAF_OBJ_MAP:
+    case DDWAF_OBJ_LARGE_MAP:
         output.SetObject();
         for (std::size_t i = 0; i < ddwaf_object_get_size(&obj); i++) {
             rapidjson::Value key;
@@ -82,6 +83,7 @@ void object_to_json_helper(
         }
         break;
     case DDWAF_OBJ_ARRAY:
+    case DDWAF_OBJ_LARGE_ARRAY:
         output.SetArray();
         for (unsigned i = 0; i < ddwaf_object_get_size(&obj); i++) {
             rapidjson::Value value;
@@ -146,6 +148,7 @@ ddwaf_object object_dup(const ddwaf_object &o) noexcept
             &copy, ddwaf_object_get_string(&o, nullptr), ddwaf_object_get_length(&o), alloc);
         break;
     case DDWAF_OBJ_ARRAY:
+    case DDWAF_OBJ_LARGE_ARRAY:
         ddwaf_object_set_array(&copy, ddwaf_object_get_size(&o), alloc);
         for (std::size_t i = 0; i < ddwaf_object_get_size(&o); i++) {
             auto *child_copy = ddwaf_object_insert(&copy, alloc);
@@ -153,6 +156,7 @@ ddwaf_object object_dup(const ddwaf_object &o) noexcept
         }
         break;
     case DDWAF_OBJ_MAP:
+    case DDWAF_OBJ_LARGE_MAP:
         ddwaf_object_set_map(&copy, ddwaf_object_get_size(&o), alloc);
         for (std::size_t i = 0; i < ddwaf_object_get_size(&o); i++) {
             const auto *child_key = ddwaf_object_at_key(&o, i);

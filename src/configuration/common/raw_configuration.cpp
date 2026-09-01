@@ -27,8 +27,10 @@ std::string strtype(object_type type)
 {
     switch (type) {
     case object_type::map:
+    case object_type::large_map:
         return "map";
     case object_type::array:
+    case object_type::large_array:
         return "array";
     case object_type::string:
     case object_type::literal_string:

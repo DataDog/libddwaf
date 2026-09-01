@@ -169,8 +169,9 @@ void object_to_yaml_helper(const ddwaf_object &obj, YAML::Node &output)
         output = std::string{ddwaf_object_get_string(&obj, nullptr), ddwaf_object_get_length(&obj)};
         break;
     case DDWAF_OBJ_MAP:
+    case DDWAF_OBJ_LARGE_MAP:
         output = YAML::Load("{}");
-        for (unsigned i = 0; i < obj.via.map.size; i++) {
+        for (std::size_t i = 0; i < ddwaf_object_get_size(&obj); i++) {
             const auto *child_key = ddwaf_object_at_key(&obj, i);
             std::string key{
                 ddwaf_object_get_string(child_key, nullptr), ddwaf_object_get_length(child_key)};
@@ -181,8 +182,9 @@ void object_to_yaml_helper(const ddwaf_object &obj, YAML::Node &output)
         }
         break;
     case DDWAF_OBJ_ARRAY:
+    case DDWAF_OBJ_LARGE_ARRAY:
         output = YAML::Load("[]");
-        for (unsigned i = 0; i < obj.via.array.size; i++) {
+        for (std::size_t i = 0; i < ddwaf_object_get_size(&obj); i++) {
             const auto *child = ddwaf_object_at_value(&obj, i);
 
             YAML::Node value;
