@@ -3,7 +3,6 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
-#include <cstdint>
 #include <memory>
 #include <optional>
 #include <span>
@@ -33,11 +32,7 @@ namespace ddwaf {
 
 namespace {
 
-enum class match_result : uint8_t {
-    unknown,  // No data could be evaluated
-    no_match, // Data was evaluated but there was no match
-    match     // Data was evaluated and there was a match
-};
+using matcher::match_result;
 
 template <typename Iterator>
 match_result eval_object(Iterator &it, std::string_view address, const matcher::base &matcher,
@@ -53,8 +48,8 @@ match_result eval_object(Iterator &it, std::string_view address, const matcher::
             if (transformed) {
                 auto transformed_sv = static_cast<std::string_view>(transformed.value());
                 auto [res, highlight] = matcher.match(transformed_sv);
-                if (!res) {
-                    return match_result::no_match;
+                if (res != match_result::match) {
+                    return res;
                 }
 
                 DDWAF_TRACE("Target {} matched parameter value {}", address, highlight);
@@ -65,8 +60,8 @@ match_result eval_object(Iterator &it, std::string_view address, const matcher::
     }
 
     auto [res, highlight] = matcher.match(src);
-    if (!res) {
-        return match_result::no_match;
+    if (res != match_result::match) {
+        return res;
     }
 
     DDWAF_TRACE("Target {} matched parameter value {}", address, highlight);
@@ -91,7 +86,12 @@ match_result eval_target(Iterator &it, std::string_view address, const matcher::
             continue;
         }
 
-        result = eval_object(it, address, matcher, transformers);
+        auto object_result = eval_object(it, address, matcher, transformers);
+        if (object_result == match_result::unknown) {
+            continue;
+        }
+
+        result = object_result;
         if (result == match_result::match) {
             // If this target matched, we can stop processing
             break;

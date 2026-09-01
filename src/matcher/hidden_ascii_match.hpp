@@ -16,6 +16,8 @@ namespace ddwaf::matcher {
 
 class hidden_ascii_match : public base_impl<hidden_ascii_match> {
 public:
+    using value_type = std::string;
+
     static constexpr std::string_view matcher_name = "hidden_ascii_match";
     static constexpr std::string_view negated_matcher_name = "!hidden_ascii_match";
 
@@ -31,10 +33,11 @@ protected:
     [[nodiscard]] std::string_view to_string_impl() const { return ""; }
     static constexpr bool is_supported_type_impl(object_type type)
     {
-        return type == object_type::string;
+        return (type & object_type::string) != 0;
     }
 
-    [[nodiscard]] static std::pair<bool, dynamic_string> match_impl(std::string_view pattern);
+    [[nodiscard]] static std::pair<match_result, dynamic_string> match_impl(
+        std::string_view pattern);
 
     friend class base_impl<hidden_ascii_match>;
 };

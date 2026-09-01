@@ -28,12 +28,12 @@ TEST(TestPhraseMatch, TestBasic)
     owned_object param = test::ddwaf_object_da::make_string("bbbb");
 
     auto [res, highlight] = matcher.match(param);
-    EXPECT_TRUE(res);
+    EXPECT_EQ(res, ddwaf::matcher::match_result::match);
     EXPECT_STR(highlight, "bbbb");
 
     owned_object param2 = test::ddwaf_object_da::make_string("dddd");
 
-    EXPECT_FALSE(matcher.match(param2).first);
+    EXPECT_NE(matcher.match(param2).first, ddwaf::matcher::match_result::match);
 }
 
 TEST(TestPhraseMatch, TestEmptyArrays)
@@ -46,7 +46,7 @@ TEST(TestPhraseMatch, TestEmptyArrays)
 
     owned_object param = test::ddwaf_object_da::make_string("bbbb");
 
-    EXPECT_FALSE(matcher.match(param).first);
+    EXPECT_NE(matcher.match(param).first, ddwaf::matcher::match_result::match);
 }
 
 TEST(TestPhraseMatch, TestInconsistentArrays)
@@ -69,10 +69,11 @@ TEST(TestPhraseMatch, TestComplex)
         owned_object param = test::ddwaf_object_da::make_string(str);
         if (expect != nullptr) {
             auto [res, highlight] = matcher.match(ddwaf::object_view{param});
-            EXPECT_TRUE(res);
+            EXPECT_EQ(res, ddwaf::matcher::match_result::match);
             EXPECT_STR(highlight, expect);
         } else {
-            EXPECT_FALSE(matcher.match(ddwaf::object_view{param}).first);
+            EXPECT_NE(matcher.match(ddwaf::object_view{param}).first,
+                ddwaf::matcher::match_result::match);
         }
     };
 
@@ -102,10 +103,11 @@ TEST(TestPhraseMatch, TestWordBoundary)
         owned_object param = test::ddwaf_object_da::make_string(str);
         if (expect != nullptr) {
             auto [res, highlight] = matcher.match(ddwaf::object_view{param});
-            EXPECT_TRUE(res);
+            EXPECT_EQ(res, ddwaf::matcher::match_result::match);
             EXPECT_STR(highlight, expect);
         } else {
-            EXPECT_FALSE(matcher.match(ddwaf::object_view{param}).first);
+            EXPECT_NE(matcher.match(ddwaf::object_view{param}).first,
+                ddwaf::matcher::match_result::match);
         }
     };
 
@@ -177,9 +179,10 @@ TEST(TestPhraseMatch, TestInvalidInput)
 
     phrase_match matcher(strings, lengths);
 
-    EXPECT_FALSE(matcher.match(std::string_view{nullptr, 0}).first);
+    EXPECT_NE(
+        matcher.match(std::string_view{nullptr, 0}).first, ddwaf::matcher::match_result::match);
     // NOLINTNEXTLINE(bugprone-string-constructor)
-    EXPECT_FALSE(matcher.match(std::string_view{"*", 0}).first);
+    EXPECT_NE(matcher.match(std::string_view{"*", 0}).first, ddwaf::matcher::match_result::match);
 }
 
 TEST(TestPhraseMatch, TestSingleCharMatch)
@@ -195,12 +198,12 @@ TEST(TestPhraseMatch, TestSingleCharMatch)
     owned_object param = test::ddwaf_object_da::make_string("a");
 
     auto [res, highlight] = matcher.match(param);
-    EXPECT_TRUE(res);
+    EXPECT_EQ(res, ddwaf::matcher::match_result::match);
     EXPECT_STR(highlight, "a");
 
     owned_object param2 = test::ddwaf_object_da::make_string("2");
 
-    EXPECT_FALSE(matcher.match(param2).first);
+    EXPECT_NE(matcher.match(param2).first, ddwaf::matcher::match_result::match);
 }
 
 } // namespace
