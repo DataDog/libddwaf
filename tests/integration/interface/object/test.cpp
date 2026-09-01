@@ -15,6 +15,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <string>
 
 using namespace ddwaf;
 
@@ -900,6 +901,90 @@ TEST(TestObject, FromJsonInvalidCases)
     // Test truncated JSON
     const char *truncated_json = R"({"key": "val)";
     EXPECT_FALSE(ddwaf_object_from_json(&object, truncated_json, strlen(truncated_json), alloc));
+}
+
+TEST(TestObject, FromTruncatedJson)
+{
+    auto *alloc = ddwaf_get_default_allocator();
+
+    ddwaf_object object;
+    const char *json = R"({"name":"Alice","roles":["admin","oper)";
+
+    ASSERT_TRUE(ddwaf_object_from_truncated_json(&object, json, strlen(json), alloc));
+    ASSERT_TRUE(ddwaf_object_is_map(&object));
+
+    const auto *name = ddwaf_object_find(&object, STRL("name"));
+    ASSERT_NE(name, nullptr);
+    EXPECT_STRV(
+        std::string_view(ddwaf_object_get_string(name, nullptr), ddwaf_object_get_length(name)),
+        "Alice");
+
+    const auto *roles = ddwaf_object_find(&object, STRL("roles"));
+    ASSERT_NE(roles, nullptr);
+    ASSERT_TRUE(ddwaf_object_is_array(roles));
+    ASSERT_EQ(ddwaf_object_get_size(roles), 2);
+
+    const auto *role = ddwaf_object_at_value(roles, 1);
+    ASSERT_NE(role, nullptr);
+    EXPECT_STRV(
+        std::string_view(ddwaf_object_get_string(role, nullptr), ddwaf_object_get_length(role)),
+        "oper");
+
+    ddwaf_object_destroy(&object, alloc);
+}
+
+TEST(TestObject, FromTruncatedJsonIntoContainerSlot)
+{
+    auto *alloc = ddwaf_get_default_allocator();
+
+    ddwaf_object input;
+    ddwaf_object_set_map(&input, 1, alloc);
+    auto *body = ddwaf_object_insert_key(&input, STRL("server.request.body"), alloc);
+    ASSERT_NE(body, nullptr);
+
+    const char *json = R"({"message":"truncated value)";
+    ASSERT_TRUE(ddwaf_object_from_truncated_json(body, json, strlen(json), alloc));
+
+    const auto *stored_body = ddwaf_object_find(&input, STRL("server.request.body"));
+    ASSERT_NE(stored_body, nullptr);
+    const auto *message = ddwaf_object_find(stored_body, STRL("message"));
+    ASSERT_NE(message, nullptr);
+    EXPECT_STRV(std::string_view(
+                    ddwaf_object_get_string(message, nullptr), ddwaf_object_get_length(message)),
+        "truncated value");
+
+    ddwaf_object_destroy(&input, alloc);
+}
+
+TEST(TestObject, FromTruncatedJsonRejectsInvalidInput)
+{
+    auto *alloc = ddwaf_get_default_allocator();
+    ddwaf_object object;
+
+    EXPECT_FALSE(ddwaf_object_from_truncated_json(nullptr, "{}", 2, alloc));
+    EXPECT_FALSE(ddwaf_object_from_truncated_json(&object, nullptr, 2, alloc));
+    EXPECT_FALSE(ddwaf_object_from_truncated_json(&object, "{}", 0, alloc));
+
+    const char *malformed = R"({"valid":1,invalid)";
+    EXPECT_FALSE(ddwaf_object_from_truncated_json(&object, malformed, strlen(malformed), alloc));
+
+    const char *no_root = "tru";
+    EXPECT_FALSE(ddwaf_object_from_truncated_json(&object, no_root, strlen(no_root), alloc));
+
+    // A NUL byte is indistinguishable from end-of-input and must be rejected.
+    std::string embedded_nul = std::string(R"({"ok":1})") + '\0' + "garbage";
+    EXPECT_FALSE(ddwaf_object_from_truncated_json(
+        &object, embedded_nul.c_str(), embedded_nul.size(), alloc));
+
+    // A null allocator is rejected.
+    EXPECT_FALSE(ddwaf_object_from_truncated_json(&object, "{}", 2, nullptr));
+}
+
+TEST(TestObject, FromJsonRejectsNullAllocator)
+{
+    ddwaf_object object;
+    EXPECT_FALSE(ddwaf_object_from_json(&object, "{}", 2, nullptr));
+    EXPECT_FALSE(ddwaf_object_from_json(nullptr, "{}", 2, nullptr));
 }
 
 TEST(TestObject, FromJsonEmptyContainers)

@@ -83,16 +83,16 @@ Internal WAF log levels, to be used when setting the minimum log level and cb.
 | `ddwaf_subcontext` | `typedef struct _ddwaf_subcontext* ddwaf_subcontext` |
 | `ddwaf_builder` | `typedef struct _ddwaf_builder* ddwaf_builder` |
 | `ddwaf_allocator` | `typedef struct _ddwaf_allocator* ddwaf_allocator` |
-| `ddwaf_alloc_fn_type` | `typedef void *() ddwaf_alloc_fn_type(void *, size_t, size_t)` |
-| `ddwaf_free_fn_type` | `typedef void() ddwaf_free_fn_type(void *, void *, size_t, size_t)` |
-| `ddwaf_udata_free_fn_type` | `typedef void() ddwaf_udata_free_fn_type(void *)` |
+| `ddwaf_alloc_fn_type` | `typedef void * ddwaf_alloc_fn_type(void *, size_t, size_t)` |
+| `ddwaf_free_fn_type` | `typedef void ddwaf_free_fn_type(void *, void *, size_t, size_t)` |
+| `ddwaf_udata_free_fn_type` | `typedef void ddwaf_udata_free_fn_type(void *)` |
 | `ddwaf_object` | `typedef union _ddwaf_object ddwaf_object` |
 | `ddwaf_object_kv` | `typedef struct _ddwaf_object_kv ddwaf_object_kv` |
 
 ### ddwaf_log_cb
 
 ```c
-ddwaf_log_cb)(DDWAF_LOG_LEVEL level, const char *function, const char *file, unsigned line, const char *message, uint64_t message_len)
+typedef void(*) ddwaf_log_cb(DDWAF_LOG_LEVEL level, const char *function, const char *file, unsigned line, const char *message, uint64_t message_len)
 ```
 
 Callback that libddwaf will call to relay messages to the binding.
@@ -321,22 +321,53 @@ Perform a matching operation on the provided data
 - `data`: (nonnull) Data on which to perform the pattern matching. This data will be stored by the context and used across multiple calls to this function or ddwaf_subcontext_eval. Once the context is destroyed, the user defined allocator will be used to free the data provided. Note that the data passed must be valid until the destruction of the context. The object must be a map of {string,
 - `alloc`: (nullable) Allocator used to free the data provided. If NULL, the data will not be freed.
 - `result`: (nullable) Object map containing the following items:
-	- `events`: an array of the generated events.
-	- `actions`: a map of the generated actions in the format: "{action type: { <parameter map> }, ...}"
-	- `duration`: an unsigned specifying the total runtime of the call in nanoseconds.
-	- `timeout`: whether there has been a timeout during the call.
-	- `attributes`: a map containing all derived objects in the format: {tag, value}
-	- `keep`: whether the data contained herein must override any transport sampling through the relevant mechanism. This structure must be freed by the caller using the output allocator provided through ddwaf_context_init. The object will contain all specified keys when the value returned by ddwaf_context_eval is either DDWAF_OK or DDWAF_MATCH and will be empty otherwise.
-	- **IMPORTANT**: This object is not allocated with the allocator passed in this call. It uses the allocator given to ddwaf_context_init instead.
+- events: an array of the generated events.
+- actions: a map of the generated actions in the format: "{action type: { <parameter map> }, ...}"
+- duration: an unsigned specifying the total runtime of the call in nanoseconds.
+- timeout: whether there has been a timeout during the call.
+- attributes: a map containing all derived objects in the format: {tag, value}
+- keep: whether the data contained herein must override any transport sampling through the relevant mechanism.
+- evaluated: an unsigned integer indicating the number of input batches that were fully evaluated. For this single evaluation it is 1 once the batch has been evaluated, or 0 if a timeout prevented that. See ddwaf_context_multieval for the multi-batch case. This structure must be freed by the caller using the output allocator provided through ddwaf_context_init. The object will contain all specified keys when the value returned by ddwaf_context_eval is either DDWAF_OK or DDWAF_MATCH and will be empty otherwise. IMPORTANT: This object is not allocated with the allocator passed in this call. It uses the allocator given to ddwaf_context_init instead.
 - `timeout`: Maximum time budget in microseconds.
 
 **Returns:** Return code of the operation.
 
 **Return Values:**
 
-- `DDWAF_ERR_INVALID_ARGUMENT`: The context is invalid, the data will not be freed.
-- `DDWAF_ERR_INVALID_OBJECT`: The data provided didn't match the desired structure or contained invalid objects, the data will be freed by this function.
-- `DDWAF_ERR_INTERNAL`: There was an unexpected error and the operation did not succeed. The state of the WAF is undefined if this error is produced and the ownership of the data is unknown. The result structure will not be filled if this error occurs.
+- ``: The context is invalid, the data will not be freed.
+- ``: The data provided didn't match the desired structure or contained invalid objects, the data will be freed by this function.
+- ``: There was an unexpected error and the operation did not succeed. The state of the WAF is undefined if this error is produced and the ownership of the data is unknown. The result structure will not be filled if this error occurs.
+
+#### ddwaf_context_multieval
+
+```c
+DDWAF_RET_CODE ddwaf_context_multieval(ddwaf_context context, ddwaf_object * data, ddwaf_allocator alloc, ddwaf_object * result, uint64_t timeout)
+```
+
+Perform multiple matching operations on the provided data, evaluating each batch in sequence and returning a single combined result.
+
+**Parameters:**
+
+- `context`: WAF context to be used in this run, this will determine the ruleset which will be used and it will also ensure that parameters are taken into account across runs. (nonnull)
+- `data`: (nonnull) Array of input batches to evaluate. Each element must be a map of {string,
+- `alloc`: (nullable) Allocator used to free the data provided. If NULL, the data will not be freed.
+- `result`: (nullable) Object map containing the following items:
+- events: an array of all events generated across all batches.
+- actions: a map of all actions generated across all batches in the format: "{action type: { <parameter map> }, ...}"
+- duration: an unsigned specifying the total runtime of the call in nanoseconds.
+- timeout: whether there has been a timeout during the call.
+- attributes: a map containing all derived objects in the format: {tag, value}
+- keep: whether the data contained herein must override any transport sampling through the relevant mechanism.
+- evaluated: an unsigned integer indicating the number of input batches that were fully evaluated. In the normal case this equals the total number of batches provided; it is lower when evaluation stops early, e.g. on a timeout or once a batch produces a blocking result. Empty batches are evaluated like any other and count towards this value. This structure must be freed by the caller using the output allocator provided through ddwaf_context_init. The object will contain all specified keys when the value returned by ddwaf_context_multieval is either DDWAF_OK or DDWAF_MATCH and will be empty otherwise. IMPORTANT: This object is not allocated with the allocator passed in this call. It uses the allocator given to ddwaf_context_init instead.
+- `timeout`: Maximum time budget in microseconds.
+
+**Returns:** Return code of the operation.
+
+**Return Values:**
+
+- ``: The context is invalid, the data will not be freed.
+- ``: The data provided didn't match the desired structure or contained invalid objects, the data will be freed by this function.
+- ``: There was an unexpected error and the operation did not succeed. The state of the WAF is undefined if this error is produced and the ownership of the data is unknown. The result structure will not be filled if this error occurs.
 
 #### ddwaf_context_destroy
 
@@ -380,22 +411,53 @@ Perform a matching operation on the provided data
 - `data`: (nonnull) Data on which to perform the pattern matching. This data will be stored by the subcontext and used across multiple calls to this function. Once the subcontext is destroyed, the user defined allocator will be used to free the data provided. Note that the data passed must be valid until the destruction of the subcontext. The object must be a map of {string,
 - `alloc`: (nullable) Allocator used to free the data provided. If NULL, the data will not be freed.
 - `result`: (nullable) Object map containing the following items:
-	- `events`: an array of the generated events.
-	- `actions`: a map of the generated actions in the format: "{action type: { <parameter map> }, ...}"
-	- `duration`: an unsigned specifying the total runtime of the call in nanoseconds.
-	- `timeout`: whether there has been a timeout during the call.
-	- `attributes`: a map containing all derived objects in the format: {tag, value}
-	- `keep`: whether the data contained herein must override any transport sampling through the relevant mechanism. This structure must be freed by the caller and will contain all specified keys when the value returned by ddwaf_subcontext_eval is either DDWAF_OK or DDWAF_MATCH and will be empty otherwise.
-	- **IMPORTANT**: This object is not allocated with the allocator passed in this call. It uses the allocator given to ddwaf_context_init instead.
+- events: an array of the generated events.
+- actions: a map of the generated actions in the format: "{action type: { <parameter map> }, ...}"
+- duration: an unsigned specifying the total runtime of the call in nanoseconds.
+- timeout: whether there has been a timeout during the call.
+- attributes: a map containing all derived objects in the format: {tag, value}
+- keep: whether the data contained herein must override any transport sampling through the relevant mechanism.
+- evaluated: an unsigned integer indicating the number of input batches that were fully evaluated. For this single evaluation it is 1 once the batch has been evaluated, or 0 if a timeout prevented that. See ddwaf_subcontext_multieval for the multi-batch case. This structure must be freed by the caller and will contain all specified keys when the value returned by ddwaf_subcontext_eval is either DDWAF_OK or DDWAF_MATCH and will be empty otherwise. IMPORTANT: This object is not allocated with the allocator passed in this call. It uses the allocator given to ddwaf_context_init instead.
 - `timeout`: Maximum time budget in microseconds.
 
 **Returns:** Return code of the operation.
 
 **Return Values:**
 
-- `DDWAF_ERR_INVALID_ARGUMENT`: The subcontext is invalid, the data will not be freed.
-- `DDWAF_ERR_INVALID_OBJECT`: The data provided didn't match the desired structure or contained invalid objects, the data will be freed by this function.
-- `DDWAF_ERR_INTERNAL`: There was an unexpected error and the operation did not succeed. The state of the WAF is undefined if this error is produced and the ownership of the data is unknown. The result structure will not be filled if this error occurs.
+- ``: The subcontext is invalid, the data will not be freed.
+- ``: The data provided didn't match the desired structure or contained invalid objects, the data will be freed by this function.
+- ``: There was an unexpected error and the operation did not succeed. The state of the WAF is undefined if this error is produced and the ownership of the data is unknown. The result structure will not be filled if this error occurs.
+
+#### ddwaf_subcontext_multieval
+
+```c
+DDWAF_RET_CODE ddwaf_subcontext_multieval(ddwaf_subcontext subcontext, ddwaf_object * data, ddwaf_allocator alloc, ddwaf_object * result, uint64_t timeout)
+```
+
+Perform multiple matching operations on the provided data, evaluating each batch in sequence and returning a single combined result.
+
+**Parameters:**
+
+- `subcontext`: WAF subcontext to be used in this run, this will determine the ruleset which will be used and it will also ensure that parameters are taken into account across runs. (nonnull)
+- `data`: (nonnull) Array of input batches to evaluate. Each element must be a map of {string,
+- `alloc`: (nullable) Allocator used to free the data provided. If NULL, the data will not be freed.
+- `result`: (nullable) Object map containing the following items:
+- events: an array of all events generated across all batches.
+- actions: a map of all actions generated across all batches in the format: "{action type: { <parameter map> }, ...}"
+- duration: an unsigned specifying the total runtime of the call in nanoseconds.
+- timeout: whether there has been a timeout during the call.
+- attributes: a map containing all derived objects in the format: {tag, value}
+- keep: whether the data contained herein must override any transport sampling through the relevant mechanism.
+- evaluated: an unsigned integer indicating the number of input batches that were fully evaluated. In the normal case this equals the total number of batches provided; it is lower when evaluation stops early, e.g. on a timeout or once a batch produces a blocking result. Empty batches are evaluated like any other and count towards this value. This structure must be freed by the caller and will contain all specified keys when the value returned by ddwaf_subcontext_multieval is either DDWAF_OK or DDWAF_MATCH and will be empty otherwise. IMPORTANT: This object is not allocated with the allocator passed in this call. It uses the allocator given to ddwaf_context_init instead.
+- `timeout`: Maximum time budget in microseconds.
+
+**Returns:** Return code of the operation.
+
+**Return Values:**
+
+- ``: The subcontext is invalid, the data will not be freed.
+- ``: The data provided didn't match the desired structure or contained invalid objects, the data will be freed by this function.
+- ``: There was an unexpected error and the operation did not succeed. The state of the WAF is undefined if this error is produced and the ownership of the data is unknown. The result structure will not be filled if this error occurs.
 
 #### ddwaf_subcontext_destroy
 
@@ -658,13 +720,9 @@ Creates an object using a double, the resulting object will contain a double as 
 ddwaf_object * ddwaf_object_set_array(ddwaf_object * object, size_t capacity, ddwaf_allocator alloc)
 ```
 
-Creates an array object for sequential storage. Capacities up to 65,535 use
-`DDWAF_OBJ_ARRAY`; larger capacities use `DDWAF_OBJ_LARGE_ARRAY`. A compact
-array is automatically promoted when insertion grows it beyond 65,535 elements.
-Large arrays use 28-bit metadata fields for size and capacity. Their capacity
-is limited to the smaller of 268,435,455 elements and
-`SIZE_MAX / sizeof(ddwaf_object)`. An insertion that grows or promotes the array
-invalidates its element pointer and pointers to existing elements.
+Creates an array object for sequential storage. Capacities up to 65,535 use DDWAF_OBJ_ARRAY; larger capacities use DDWAF_OBJ_LARGE_ARRAY. A compact array is promoted automatically when insertion grows it beyond 65,535 elements. Large arrays are limited to the smaller of 268,435,455 elements and SIZE_MAX / sizeof(ddwaf_object).
+
+**Parameters:**
 
 - `object`: Object to perform the operation on. (nonnull)
 - `capacity`: Initial capacity of the array.
@@ -678,13 +736,7 @@ invalidates its element pointer and pointers to existing elements.
 ddwaf_object * ddwaf_object_set_map(ddwaf_object * object, size_t capacity, ddwaf_allocator alloc)
 ```
 
-Creates a map object for key-value storage. Capacities up to 65,535 use
-`DDWAF_OBJ_MAP`; larger capacities use `DDWAF_OBJ_LARGE_MAP`. A compact map is
-automatically promoted when insertion grows it beyond 65,535 entries. Large
-maps use 28-bit metadata fields for size and capacity. Their capacity is
-limited to the smaller of 268,435,455 entries and
-`SIZE_MAX / sizeof(ddwaf_object_kv)`. An insertion that grows or promotes the
-map invalidates its element pointer and pointers to existing keys and values.
+Creates a map object for key-value storage. Capacities up to 65,535 use DDWAF_OBJ_MAP; larger capacities use DDWAF_OBJ_LARGE_MAP. A compact map is promoted automatically when insertion grows it beyond 65,535 entries. Large maps are limited to the smaller of 268,435,455 entries and SIZE_MAX / sizeof(ddwaf_object_kv).
 
 **Parameters:**
 
@@ -711,11 +763,44 @@ Creates a ddwaf_object from a JSON string. The JSON will be parsed and converted
 
 **Returns:** The success or failure of the operation.
 
-> **Note:** The output object must be freed by the caller using ddwaf_object_free.
+> **Note:** The output object must be freed by the caller using ddwaf_object_destroy, invoked with the same allocator used to build it.
 
 > **Note:** If parsing fails, the output object will be left in an undefined state.
 
 > **Note:** The provided JSON string is owned by the caller.
+
+> **Note:** The input must contain a single complete JSON document: parsing fails if it contains an embedded NUL byte or trailing content after the root value.
+
+#### ddwaf_object_from_truncated_json
+
+```c
+bool ddwaf_object_from_truncated_json(ddwaf_object * output, const char * json_str, uint32_t length, ddwaf_allocator alloc)
+```
+
+Creates a ddwaf_object from a JSON prefix. Complete JSON inputs are accepted. If the input ends partway through an otherwise valid JSON document, completed values are retained, open containers are finalized, and an open string value is truncated to its last complete escape sequence and UTF-8 code point. Incomplete object keys are discarded.
+
+**Parameters:**
+
+- `output`: Object to populate with the parsed JSON data. (nonnull)
+- `json_str`: The JSON prefix to parse. (nonnull)
+- `length`: Length of the JSON prefix.
+- `alloc`: Allocator to use for memory allocation. (nonnull)
+
+**Returns:** The success or failure of the operation.
+
+> **Note:** This function must only be used when the caller knows that json_str is a prefix of a larger JSON document; syntax errors occurring before the end of the input are rejected.
+
+> **Note:** The output object must be freed by the caller using ddwaf_object_destroy, invoked with the same allocator used to build it.
+
+> **Note:** If parsing fails, the output object will be left in an undefined state.
+
+> **Note:** The provided JSON string is owned by the caller.
+
+> **Note:** Containers nested more than 20 levels deep are rejected; a prefix is never returned with deeply nested content silently removed.
+
+> **Note:** A number cut off by the end of the input is retained if the digits already present form a valid JSON number, and discarded otherwise. An open string truncated in the middle of a \uXXXX escape is rejected unless the digits present can still be completed into a valid code point or surrogate pair.
+
+> **Note:** The input must not contain an embedded NUL byte; as with ddwaf_object_from_json, trailing content after a complete root value is rejected.
 
 ### Object Inspection
 
@@ -849,8 +934,7 @@ Inserts a new object into an array object.
 
 **Returns:** A pointer to the newly inserted object or NULL if the operation failed.
 
-> **Note:** An insertion that grows or promotes the array invalidates pointers to
-> its existing elements.
+> **Note:** An insertion that grows or promotes the array invalidates pointers to existing elements.
 
 #### ddwaf_object_insert_key
 
@@ -869,8 +953,7 @@ Inserts a new object into a map object, using a key.
 
 **Returns:** A pointer to the newly inserted object or NULL if the operation failed.
 
-> **Note:** An insertion that grows or promotes the map invalidates pointers to
-> its existing keys and values.
+> **Note:** An insertion that grows or promotes the map invalidates pointers to existing keys and values.
 
 #### ddwaf_object_insert_literal_key
 
@@ -889,8 +972,7 @@ Inserts a new object into a map object, using a literal key.
 
 **Returns:** A pointer to the newly inserted object or NULL if the operation failed.
 
-> **Note:** An insertion that grows or promotes the map invalidates pointers to
-> its existing keys and values.
+> **Note:** An insertion that grows or promotes the map invalidates pointers to existing keys and values.
 
 #### ddwaf_object_insert_key_nocopy
 
@@ -911,8 +993,7 @@ Inserts a new object into a map object, using a key and its length, but without 
 
 > **Note:** The provided string must have been allocated with the same allocator used with ddwaf_object_destroy.
 
-> **Note:** An insertion that grows or promotes the map invalidates pointers to
-> its existing keys and values.
+> **Note:** An insertion that grows or promotes the map invalidates pointers to existing keys and values.
 
 #### ddwaf_object_at_key
 

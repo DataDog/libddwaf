@@ -240,7 +240,8 @@ typedef void (*ddwaf_log_cb)(
 /**
  * Initialize a ddwaf instance
  *
- * @param ruleset ddwaf::object map containing rules, exclusions, rules_override and rules_data. (nonnull)
+ * @param ruleset ddwaf::object map containing rules, exclusions, rules_override and rules_data.
+ * (nonnull)
  * @param diagnostics Optional ruleset parsing diagnostics. (nullable)
  *
  * @return Handle to the WAF instance or NULL on error.
@@ -640,9 +641,11 @@ ddwaf_builder ddwaf_builder_init();
  * identifier for the provided configuration.
  *
  * @param builder Builder to perform the operation on. (nonnull)
- * @param path A string containing the path of the configuration, this must uniquely identify the configuration. (nonnull)
+ * @param path A string containing the path of the configuration, this must uniquely identify the
+ * configuration. (nonnull)
  * @param path_len The length of the string contained within path.
- * @param config ddwaf::object map containing rules, exclusions, rules_override and rules_data. (nonnull)
+ * @param config ddwaf::object map containing rules, exclusions, rules_override and rules_data.
+ * (nonnull)
  * @param diagnostics Optional ruleset parsing diagnostics. (nullable)
  *
  * @return Whether the operation succeeded (true) or failed (false).
@@ -1040,11 +1043,51 @@ ddwaf_object *ddwaf_object_insert_key_nocopy(ddwaf_object *map, const char *key,
  *
  * @return The success or failure of the operation.
  *
- * @note The output object must be freed by the caller using ddwaf_object_free.
+ * @note The output object must be freed by the caller using
+ * ddwaf_object_destroy, invoked with the same allocator used to build it.
  * @note If parsing fails, the output object will be left in an undefined state.
  * @note The provided JSON string is owned by the caller.
+ * @note The input must contain a single complete JSON document: parsing fails
+ * if it contains an embedded NUL byte or trailing content after the root
+ * value.
  **/
-bool ddwaf_object_from_json(ddwaf_object *output, const char *json_str, uint32_t length, ddwaf_allocator alloc);
+bool ddwaf_object_from_json(
+    ddwaf_object *output, const char *json_str, uint32_t length, ddwaf_allocator alloc);
+
+/**
+ * Creates a ddwaf_object from a JSON prefix. Complete JSON inputs are accepted.
+ * If the input ends partway through an otherwise valid JSON document, completed
+ * values are retained, open containers are finalized, and an open string value
+ * is truncated to its last complete escape sequence and UTF-8 code point.
+ * Incomplete object keys are discarded.
+ *
+ * @param output Object to populate with the parsed JSON data. (nonnull)
+ * @param json_str The JSON prefix to parse. (nonnull)
+ * @param length Length of the JSON prefix.
+ * @param alloc Allocator to use for memory allocation. (nonnull)
+ *
+ * @return The success or failure of the operation.
+ *
+ * @note This function must only be used when the caller knows that json_str is
+ * a prefix of a larger JSON document; syntax errors occurring before the end
+ * of the input are rejected.
+ * @note The output object must be freed by the caller using
+ * ddwaf_object_destroy, invoked with the same allocator used to build it.
+ * @note If parsing fails, the output object will be left in an undefined state.
+ * @note The provided JSON string is owned by the caller.
+ * @note Containers nested more than 20 levels deep are rejected; a prefix is
+ * never returned with deeply nested content silently removed.
+ * @note A number cut off by the end of the input is retained if the digits
+ * already present form a valid JSON number, and discarded otherwise. An open
+ * string truncated in the middle of a \uXXXX escape is rejected unless the
+ * digits present can still be completed into a valid code point or surrogate
+ * pair.
+ * @note The input must not contain an embedded NUL byte; as with
+ * ddwaf_object_from_json, trailing content after a complete root value is
+ * rejected.
+ **/
+bool ddwaf_object_from_truncated_json(
+    ddwaf_object *output, const char *json_str, uint32_t length, ddwaf_allocator alloc);
 
 /**
  * Returns the type of the object.

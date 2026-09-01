@@ -243,4 +243,16 @@ template <typename T> ddwaf::object_view to_view(T &value)
         EXPECT_TRUE(json_equals(obtained_doc, expected_doc)) << test::object_to_json(obtained);    \
     }
 
+// Exact structural comparison: array order, string lengths and number types
+// (integral vs floating-point) must match exactly.
+#define EXPECT_JSON_EXACT(obtained, expected)                                                      \
+    {                                                                                              \
+        auto obtained_doc = test::object_to_rapidjson(obtained);                                   \
+        rapidjson::Document expected_doc;                                                          \
+        expected_doc.Parse(expected);                                                              \
+        EXPECT_FALSE(expected_doc.HasParseError());                                                \
+        EXPECT_TRUE(json_equals_exact(obtained_doc, expected_doc))                                 \
+            << test::object_to_json(obtained);                                                     \
+    }
+
 // NOLINTEND(cppcoreguidelines-macro-usage)
