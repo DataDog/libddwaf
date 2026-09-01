@@ -8,9 +8,9 @@
 #define DDWAF_H
 
 #ifdef __cplusplus
-#  include <cstddef>
+#include <cstddef>
 
-namespace ddwaf {
+namespace ddwaf{
 class waf;
 class context;
 class subcontext;
@@ -26,7 +26,8 @@ using ddwaf_alloc_fn_type = void *(*)(void *, size_t, size_t);
 using ddwaf_free_fn_type = void (*)(void *, void *, size_t, size_t);
 using ddwaf_udata_free_fn_type = void (*)(void *);
 
-extern "C" {
+extern "C"
+{
 #endif
 
 #include <stdbool.h>
@@ -38,29 +39,30 @@ extern "C" {
  *
  * Specifies the type of a ddwaf::object.
  **/
-typedef enum {
+typedef enum
+{
     /** Unkmown or uninitialised type **/
-    DDWAF_OBJ_INVALID = 0,
+    DDWAF_OBJ_INVALID  = 0,
     /** Null type, only used for its semantical value **/
-    DDWAF_OBJ_NULL = 0x01,
+    DDWAF_OBJ_NULL     = 0x01,
     /** Boolean type **/
-    DDWAF_OBJ_BOOL = 0x02,
+    DDWAF_OBJ_BOOL     = 0x02,
     /** 64-bit signed integer type **/
-    DDWAF_OBJ_SIGNED = 0x04,
+    DDWAF_OBJ_SIGNED   = 0x04,
     /** 64-bit unsigned integer type **/
     DDWAF_OBJ_UNSIGNED = 0x06,
     /** 64-bit float (or double) type **/
-    DDWAF_OBJ_FLOAT = 0x08,
+    DDWAF_OBJ_FLOAT    = 0x08,
     /** Dynamic UTF-8 string of up to max(uint32) length **/
-    DDWAF_OBJ_STRING = 0x10,
+    DDWAF_OBJ_STRING   = 0x10,
     /** Literal UTF-8 string of up to max(uint32) length, these are never freed **/
-    DDWAF_OBJ_LITERAL_STRING = 0x12,
+    DDWAF_OBJ_LITERAL_STRING   = 0x12,
     /** UTF-8 string of up to 14 bytes in length **/
-    DDWAF_OBJ_SMALL_STRING = 0x14,
+    DDWAF_OBJ_SMALL_STRING   = 0x14,
     /** Array of ddwaf_object, up to max(uint16) capacity **/
-    DDWAF_OBJ_ARRAY = 0x20,
+    DDWAF_OBJ_ARRAY    = 0x20,
     /** Array of ddwaf_object_kv, up to max(uint16) capacity **/
-    DDWAF_OBJ_MAP = 0x40,
+    DDWAF_OBJ_MAP      = 0x40,
     /** Array of ddwaf_object with up to 28-bit capacity **/
     DDWAF_OBJ_LARGE_ARRAY = 0xA0,
     /** Array of ddwaf_object_kv with up to 28-bit capacity **/
@@ -72,17 +74,18 @@ typedef enum {
  *
  * Codes returned by ddwaf_context_eval.
  **/
-typedef enum {
+typedef enum
+{
     /** Unknown error, typically due to an unexpected exception **/
-    DDWAF_ERR_INTERNAL = -3,
+    DDWAF_ERR_INTERNAL          = -3,
     /** The provided data object didn't match the expected schema **/
-    DDWAF_ERR_INVALID_OBJECT = -2,
+    DDWAF_ERR_INVALID_OBJECT    = -2,
     /** One or more of the provided arguments to a function is invalid **/
-    DDWAF_ERR_INVALID_ARGUMENT = -1,
+    DDWAF_ERR_INVALID_ARGUMENT  = -1,
     /** The data evaluation didn't yield any events, attributes, etc **/
-    DDWAF_OK = 0,
+    DDWAF_OK                    = 0,
     /** The data evaluation resulted in an event, attribute, etc **/
-    DDWAF_MATCH = 1,
+    DDWAF_MATCH                 = 1,
 } DDWAF_RET_CODE;
 
 /**
@@ -90,7 +93,8 @@ typedef enum {
  *
  * Internal WAF log levels, to be used when setting the minimum log level and cb.
  **/
-typedef enum {
+typedef enum
+{
     /** Finest-grained logging for detailed tracing */
     DDWAF_LOG_TRACE = 0,
     /** Debugging information for development */
@@ -106,15 +110,15 @@ typedef enum {
 } DDWAF_LOG_LEVEL;
 
 #ifndef __cplusplus
-typedef struct _ddwaf_handle *ddwaf_handle;
-typedef struct _ddwaf_context *ddwaf_context;
-typedef struct _ddwaf_subcontext *ddwaf_subcontext;
-typedef struct _ddwaf_builder *ddwaf_builder;
-typedef struct _ddwaf_allocator *ddwaf_allocator;
+typedef struct _ddwaf_handle* ddwaf_handle;
+typedef struct _ddwaf_context* ddwaf_context;
+typedef struct _ddwaf_subcontext* ddwaf_subcontext;
+typedef struct _ddwaf_builder* ddwaf_builder;
+typedef struct _ddwaf_allocator* ddwaf_allocator;
 
 typedef void *(ddwaf_alloc_fn_type)(void *, size_t, size_t);
-typedef void(ddwaf_free_fn_type)(void *, void *, size_t, size_t);
-typedef void(ddwaf_udata_free_fn_type)(void *);
+typedef void (ddwaf_free_fn_type)(void *, void *, size_t, size_t);
+typedef void (ddwaf_udata_free_fn_type)(void *);
 #endif
 
 typedef union _ddwaf_object ddwaf_object;
@@ -229,8 +233,9 @@ struct _ddwaf_object_kv {
  * @param message The size of the logging message. NUL-terminated
  * @param message_len The length of the logging message (excluding NUL terminator).
  */
-typedef void (*ddwaf_log_cb)(DDWAF_LOG_LEVEL level, const char *function, const char *file,
-    unsigned line, const char *message, uint64_t message_len);
+typedef void (*ddwaf_log_cb)(
+    DDWAF_LOG_LEVEL level, const char* function, const char* file, unsigned line,
+    const char* message, uint64_t message_len);
 
 /**
  * Initialize a ddwaf instance
@@ -245,7 +250,7 @@ typedef void (*ddwaf_log_cb)(DDWAF_LOG_LEVEL level, const char *function, const 
  *
  * @note The deallocation of the diagnostics must be made with default allocator.
  **/
-ddwaf_handle ddwaf_init(const ddwaf_object *ruleset, ddwaf_object *diagnostics);
+ddwaf_handle ddwaf_init(const ddwaf_object *ruleset,  ddwaf_object *diagnostics);
 
 /**
  * Destroy a WAF instance.
@@ -271,7 +276,7 @@ void ddwaf_destroy(ddwaf_handle handle);
  * @note The returned array should be considered invalid after calling ddwaf_destroy
  *       on the handle used to obtain it.
  **/
-const char *const *ddwaf_known_addresses(const ddwaf_handle handle, uint32_t *size);
+const char* const* ddwaf_known_addresses(const ddwaf_handle handle, uint32_t *size);
 /**
  * Get an array of all the action types which could be triggered as a result of
  * the current set of rules and exclusion filters.
@@ -364,8 +369,8 @@ ddwaf_context ddwaf_context_init(const ddwaf_handle handle, ddwaf_allocator outp
  *     used for evaluation.
  *   - Within two different batches, the second batch will only use the new data.
  **/
-DDWAF_RET_CODE ddwaf_context_eval(ddwaf_context context, ddwaf_object *data, ddwaf_allocator alloc,
-    ddwaf_object *result, uint64_t timeout);
+DDWAF_RET_CODE ddwaf_context_eval(ddwaf_context context, ddwaf_object *data,
+    ddwaf_allocator alloc, ddwaf_object *result,  uint64_t timeout);
 
 /**
  * Perform multiple matching operations on the provided data, evaluating each
@@ -529,7 +534,7 @@ ddwaf_subcontext ddwaf_subcontext_init(ddwaf_context context);
  *   - Within two different batches, the second batch will only use the new data.
  **/
 DDWAF_RET_CODE ddwaf_subcontext_eval(ddwaf_subcontext subcontext, ddwaf_object *data,
-    ddwaf_allocator alloc, ddwaf_object *result, uint64_t timeout);
+    ddwaf_allocator alloc, ddwaf_object *result,  uint64_t timeout);
 
 /**
  * Perform multiple matching operations on the provided data, evaluating each
@@ -621,6 +626,7 @@ DDWAF_RET_CODE ddwaf_subcontext_multieval(ddwaf_subcontext subcontext, ddwaf_obj
  **/
 void ddwaf_subcontext_destroy(ddwaf_subcontext subcontext);
 
+
 /**
  * Initialize an instace of the waf builder.
  *
@@ -649,8 +655,7 @@ ddwaf_builder ddwaf_builder_init();
  * @note The deallocation of the diagnostics must be made with default allocator.
  * @note This function is not thread-safe.
  **/
-bool ddwaf_builder_add_or_update_config(ddwaf_builder builder, const char *path, uint32_t path_len,
-    const ddwaf_object *config, ddwaf_object *diagnostics);
+bool ddwaf_builder_add_or_update_config(ddwaf_builder builder, const char *path, uint32_t path_len, const ddwaf_object *config, ddwaf_object *diagnostics);
 
 /**
  * Removes a configuration based on the provided path.
@@ -697,8 +702,7 @@ ddwaf_handle ddwaf_builder_build_instance(ddwaf_builder builder);
  * @note This function is not thread-safe and the memory of the paths object must
  *       be freed by the caller using the default allocator.
  **/
-uint32_t ddwaf_builder_get_config_paths(
-    ddwaf_builder builder, ddwaf_object *paths, const char *filter, uint32_t filter_len);
+uint32_t ddwaf_builder_get_config_paths(ddwaf_builder builder, ddwaf_object *paths, const char *filter, uint32_t filter_len);
 
 /**
  * Destroy an instance of the builder.
@@ -776,8 +780,7 @@ ddwaf_allocator ddwaf_monotonic_allocator_init();
  *
  * @return Allocator handle.
  **/
-ddwaf_allocator ddwaf_user_allocator_init(ddwaf_alloc_fn_type alloc_fn, ddwaf_free_fn_type free_fn,
-    void *udata, ddwaf_udata_free_fn_type udata_free_fn);
+ddwaf_allocator ddwaf_user_allocator_init(ddwaf_alloc_fn_type alloc_fn, ddwaf_free_fn_type free_fn, void *udata, ddwaf_udata_free_fn_type udata_free_fn);
 
 /**
  * Allocates a block of memory from the given allocator with the requested
@@ -819,6 +822,7 @@ void *ddwaf_allocator_alloc(ddwaf_allocator alloc, size_t bytes, size_t alignmen
  **/
 void ddwaf_allocator_free(ddwaf_allocator alloc, void *p, size_t bytes, size_t alignment);
 
+
 /**
  * Destroys an allocator created by one of the ddwaf_*_allocator_init functions
  * and releases any internal resources it holds.
@@ -840,7 +844,7 @@ void ddwaf_allocator_destroy(ddwaf_allocator alloc);
  *
  * @return A pointer to the passed object or NULL if the operation failed.
  **/
-ddwaf_object *ddwaf_object_set_invalid(ddwaf_object *object);
+ddwaf_object* ddwaf_object_set_invalid(ddwaf_object *object);
 
 /**
  * Creates an null object. Provides a different semantical value to invalid as
@@ -850,7 +854,7 @@ ddwaf_object *ddwaf_object_set_invalid(ddwaf_object *object);
  *
  * @return A pointer to the passed object or NULL if the operation failed.
  **/
-ddwaf_object *ddwaf_object_set_null(ddwaf_object *object);
+ddwaf_object* ddwaf_object_set_null(ddwaf_object *object);
 
 /**
  * Creates an object from a string.
@@ -862,8 +866,7 @@ ddwaf_object *ddwaf_object_set_null(ddwaf_object *object);
  *
  * @return A pointer to the passed object or NULL if the operation failed.
  **/
-ddwaf_object *ddwaf_object_set_string(
-    ddwaf_object *object, const char *string, uint32_t length, ddwaf_allocator alloc);
+ddwaf_object* ddwaf_object_set_string(ddwaf_object *object, const char *string, uint32_t length, ddwaf_allocator alloc);
 
 /**
  * Creates an object from a literal string and its length.
@@ -875,8 +878,7 @@ ddwaf_object *ddwaf_object_set_string(
  *
  * @return A pointer to the passed object or NULL if the operation failed.
  **/
-ddwaf_object *ddwaf_object_set_string_literal(
-    ddwaf_object *object, const char *string, uint32_t length);
+ddwaf_object* ddwaf_object_set_string_literal(ddwaf_object *object, const char *string, uint32_t length);
 
 /**
  * Creates an object with the string pointer and length provided, without copying the string.
@@ -891,8 +893,7 @@ ddwaf_object *ddwaf_object_set_string_literal(
  * @note The provided string must have been allocated with the same allocator used
  * with ddwaf_object_destroy.
  **/
-ddwaf_object *ddwaf_object_set_string_nocopy(
-    ddwaf_object *object, const char *string, uint32_t length);
+ddwaf_object* ddwaf_object_set_string_nocopy(ddwaf_object *object, const char *string, uint32_t length);
 /**
  * Creates an object using an unsigned integer (64-bit). The resulting object
  * will contain an unsigned integer as opposed to a string.
@@ -902,7 +903,7 @@ ddwaf_object *ddwaf_object_set_string_nocopy(
  *
  * @return A pointer to the passed object or NULL if the operation failed.
  **/
-ddwaf_object *ddwaf_object_set_unsigned(ddwaf_object *object, uint64_t value);
+ddwaf_object* ddwaf_object_set_unsigned(ddwaf_object *object, uint64_t value);
 
 /**
  * Creates an object using a signed integer (64-bit). The resulting object
@@ -913,7 +914,7 @@ ddwaf_object *ddwaf_object_set_unsigned(ddwaf_object *object, uint64_t value);
  *
  * @return A pointer to the passed object or NULL if the operation failed.
  **/
-ddwaf_object *ddwaf_object_set_signed(ddwaf_object *object, int64_t value);
+ddwaf_object* ddwaf_object_set_signed(ddwaf_object *object, int64_t value);
 
 /**
  * Creates an object using a boolean, the resulting object will contain a
@@ -924,7 +925,7 @@ ddwaf_object *ddwaf_object_set_signed(ddwaf_object *object, int64_t value);
  *
  * @return A pointer to the passed object or NULL if the operation failed.
  **/
-ddwaf_object *ddwaf_object_set_bool(ddwaf_object *object, bool value);
+ddwaf_object* ddwaf_object_set_bool(ddwaf_object *object, bool value);
 
 /**
  * Creates an object using a double, the resulting object will contain a
@@ -935,7 +936,7 @@ ddwaf_object *ddwaf_object_set_bool(ddwaf_object *object, bool value);
  *
  * @return A pointer to the passed object or NULL if the operation failed.
  **/
-ddwaf_object *ddwaf_object_set_float(ddwaf_object *object, double value);
+ddwaf_object* ddwaf_object_set_float(ddwaf_object *object, double value);
 
 /**
  * Creates an array object for sequential storage. Capacities up to 65,535 use
@@ -950,7 +951,7 @@ ddwaf_object *ddwaf_object_set_float(ddwaf_object *object, double value);
  *
  * @return A pointer to the passed object or NULL if the operation failed.
  **/
-ddwaf_object *ddwaf_object_set_array(ddwaf_object *object, size_t capacity, ddwaf_allocator alloc);
+ddwaf_object* ddwaf_object_set_array(ddwaf_object *object, size_t capacity, ddwaf_allocator alloc);
 
 /**
  * Creates a map object for key-value storage. Capacities up to 65,535 use
@@ -965,7 +966,7 @@ ddwaf_object *ddwaf_object_set_array(ddwaf_object *object, size_t capacity, ddwa
  *
  * @return A pointer to the passed object or NULL if the operation failed.
  **/
-ddwaf_object *ddwaf_object_set_map(ddwaf_object *object, size_t capacity, ddwaf_allocator alloc);
+ddwaf_object* ddwaf_object_set_map(ddwaf_object *object, size_t capacity, ddwaf_allocator alloc);
 
 /**
  * Inserts a new object into an array object.
@@ -994,8 +995,7 @@ ddwaf_object *ddwaf_object_insert(ddwaf_object *array, ddwaf_allocator alloc);
  * @note An insertion that grows or promotes the map invalidates pointers to
  * existing keys and values.
  **/
-ddwaf_object *ddwaf_object_insert_key(
-    ddwaf_object *map, const char *key, uint32_t length, ddwaf_allocator alloc);
+ddwaf_object *ddwaf_object_insert_key(ddwaf_object *map, const char *key, uint32_t length, ddwaf_allocator alloc);
 
 /**
  * Inserts a new object into a map object, using a literal key.
@@ -1010,8 +1010,8 @@ ddwaf_object *ddwaf_object_insert_key(
  * @note An insertion that grows or promotes the map invalidates pointers to
  * existing keys and values.
  **/
-ddwaf_object *ddwaf_object_insert_literal_key(
-    ddwaf_object *map, const char *key, uint32_t length, ddwaf_allocator alloc);
+ddwaf_object *ddwaf_object_insert_literal_key(ddwaf_object *map, const char *key, uint32_t length, ddwaf_allocator alloc);
+
 
 /**
  * Inserts a new object into a map object, using a key and its length, but without
@@ -1029,8 +1029,7 @@ ddwaf_object *ddwaf_object_insert_literal_key(
  * @note An insertion that grows or promotes the map invalidates pointers to
  * existing keys and values.
  **/
-ddwaf_object *ddwaf_object_insert_key_nocopy(
-    ddwaf_object *map, const char *key, uint32_t length, ddwaf_allocator alloc);
+ddwaf_object *ddwaf_object_insert_key_nocopy(ddwaf_object *map, const char *key, uint32_t length, ddwaf_allocator alloc);
 
 /**
  * Creates a ddwaf_object from a JSON string. The JSON will be parsed and converted
@@ -1126,7 +1125,7 @@ size_t ddwaf_object_get_length(const ddwaf_object *object);
  *
  * @return The string of the object or NULL if the object is not a string.
  **/
-const char *ddwaf_object_get_string(const ddwaf_object *object, size_t *length);
+const char* ddwaf_object_get_string(const ddwaf_object *object, size_t *length);
 
 /**
  * Returns the uint64 contained within the object.
@@ -1173,7 +1172,8 @@ bool ddwaf_object_get_bool(const ddwaf_object *object);
  * @return The requested object or NULL if the index is out of bounds or the
  *         object is not a container.
  **/
-const ddwaf_object *ddwaf_object_at_key(const ddwaf_object *object, size_t index);
+const ddwaf_object* ddwaf_object_at_key(const ddwaf_object *object, size_t index);
+
 
 /**
  * Returns the object contained in the container at the given index.
@@ -1184,7 +1184,7 @@ const ddwaf_object *ddwaf_object_at_key(const ddwaf_object *object, size_t index
  * @return The requested object or NULL if the index is out of bounds or the
  *         object is not a container.
  **/
-const ddwaf_object *ddwaf_object_at_value(const ddwaf_object *object, size_t index);
+const ddwaf_object* ddwaf_object_at_value(const ddwaf_object *object, size_t index);
 
 /**
  * Returns the object within the given map with a key matching the provided one.
@@ -1196,7 +1196,7 @@ const ddwaf_object *ddwaf_object_at_value(const ddwaf_object *object, size_t ind
  * @return The requested object or NULL if the key was not found or the
  *         object is not a container.
  **/
-const ddwaf_object *ddwaf_object_find(const ddwaf_object *object, const char *key, size_t length);
+const ddwaf_object* ddwaf_object_find(const ddwaf_object *object, const char *key, size_t length);
 
 /**
  * Creates a deep copy of the source object into the destination object.
@@ -1207,8 +1207,7 @@ const ddwaf_object *ddwaf_object_find(const ddwaf_object *object, const char *ke
  *
  * @return A pointer to the destination object or NULL if the operation failed.
  **/
-ddwaf_object *ddwaf_object_clone(
-    const ddwaf_object *source, ddwaf_object *destination, ddwaf_allocator alloc);
+ddwaf_object* ddwaf_object_clone(const ddwaf_object *source, ddwaf_object *destination, ddwaf_allocator alloc);
 
 /**
  * Returns true if the object is invalid.
