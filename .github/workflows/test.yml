@@ -15,6 +15,114 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 jobs:
+  cargo-package:
+    name: Cargo package
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+
+      - name: Install native build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes cmake g++ make
+
+      - name: Install Rust 1.85.0
+        run: rustup toolchain install 1.85.0 --profile minimal
+
+      - name: Fetch Rust dependencies
+        run: cargo +1.85.0 fetch
+
+      - name: Assemble and verify crate offline
+        run: cargo +1.85.0 package --all-features --offline
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: libddwaf-src-crate
+          path: target/package/libddwaf-src-*.crate
+          if-no-files-found: error
+
+  cargo-smoke-test-linux:
+    name: Cargo smoke test (Linux)
+    runs-on: ubuntu-24.04
+    needs: cargo-package
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
+        with:
+          name: libddwaf-src-crate
+          path: target/package
+
+      - name: Install native build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes cmake g++ make
+
+      - name: Install Rust 1.85.0
+        run: rustup toolchain install 1.85.0 --profile minimal
+
+      - name: Prepare smoke test against packaged sources
+        run: |
+          mkdir -p target/smoke-package
+          tar --extract --gzip --file target/package/libddwaf-src-*.crate \
+            --directory target/smoke-package
+          source_dir="$(find target/smoke-package -mindepth 1 -maxdepth 1 \
+            -type d -name 'libddwaf-src-*' -print -quit)"
+          cp -R cargo/smoke-test "$source_dir/cargo/smoke-test"
+          echo "SMOKE_MANIFEST=$source_dir/cargo/smoke-test/Cargo.toml" \
+            >> "$GITHUB_ENV"
+
+      - name: Fetch Rust dependencies
+        run: cargo +1.85.0 fetch --manifest-path "$SMOKE_MANIFEST"
+
+      - name: Build libddwaf and run Rust smoke test offline
+        run: |
+          cargo +1.85.0 run --release \
+            --manifest-path "$SMOKE_MANIFEST" \
+            --offline
+
+  cargo-smoke-test-windows:
+    name: Cargo smoke test (Windows)
+    runs-on: windows-2022
+    needs: cargo-package
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
+        with:
+          name: libddwaf-src-crate
+          path: target/package
+
+      - name: Install Rust 1.85.0
+        run: rustup toolchain install 1.85.0 --profile minimal
+
+      - name: Prepare smoke test against packaged sources
+        shell: pwsh
+        run: |
+          $archive = Get-ChildItem target/package/libddwaf-src-*.crate |
+            Select-Object -First 1
+          tar --extract --gzip --file $archive.FullName --directory target/package
+          $source = Get-ChildItem target/package -Directory -Filter 'libddwaf-src-*' |
+            Select-Object -First 1
+          $destination = Join-Path $source.FullName 'cargo/smoke-test'
+          Copy-Item -Recurse cargo/smoke-test $destination
+          "SMOKE_MANIFEST=$(Join-Path $destination 'Cargo.toml')" >> $env:GITHUB_ENV
+
+      - name: Fetch Rust dependencies
+        run: cargo +1.85.0 fetch --manifest-path $env:SMOKE_MANIFEST
+
+      - name: Build libddwaf and run Rust smoke test offline
+        run: |
+          cargo +1.85.0 run --release `
+            --manifest-path $env:SMOKE_MANIFEST `
+            --offline
+
   sanitizers:
     strategy:
       fail-fast: false

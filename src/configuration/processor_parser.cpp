@@ -28,7 +28,7 @@
 #include "ruleset_info.hpp"
 #include "semver.hpp"
 #include "target_address.hpp"
-#include "version.hpp"
+#include "generated/version.hpp"
 
 namespace ddwaf {
 

@@ -1,0 +1,48 @@
+[package]
+name = "libddwaf-src"
+version = "2.0.1"
+edition = "2021"
+rust-version = "1.85"
+authors = ["Datadog, Inc. <support@datadoghq.com>"]
+description = "Source distribution and build integration for DataDog/libddwaf"
+license = "Apache-2.0 OR BSD-3-Clause"
+repository = "https://github.com/DataDog/libddwaf"
+categories = ["external-ffi-bindings", "web-programming"]
+keywords = ["datadog", "security", "waf", "rasp"]
+links = "ddwaf_src"
+build = "build.rs"
+include = [
+    "/Cargo.toml",
+    "/README.md",
+    "/LICENSE",
+    "/LICENSE-*",
+    "/NOTICE",
+    "/build.rs",
+    "/cargo/lib.rs",
+    "/cmake/*.cmake",
+    "/cmake/try_mem_resource_ftm.cpp",
+    "/cmake/try_monotonic_resource.cpp",
+    "/cmake/try_rec_map.cpp",
+    "/include/**",
+    "/libddwaf.def",
+    "/libddwaf.version",
+    "/src/**",
+    "!/src/version.hpp",
+    "/third_party/CMakeLists.txt",
+    "/third_party/rapidjson/LICENSE",
+    "/third_party/rapidjson/README.libddwaf",
+    "/third_party/rapidjson/include/**",
+    "/version",
+    "/CMakeLists.txt",
+]
+
+[lib]
+path = "cargo/lib.rs"
+
+[features]
+default = ["static"]
+shared = []
+static = []
+
+[build-dependencies]
+cmake = "0.1.58"

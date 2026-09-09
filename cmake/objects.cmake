@@ -123,6 +123,7 @@ set(LIBDDWAF_SOURCE
 set(LIBDDWAF_PUBLIC_INCLUDES ${libddwaf_SOURCE_DIR}/include)
 
 set(LIBDDWAF_PRIVATE_INCLUDES
+    ${libddwaf_BINARY_DIR}
     ${libddwaf_SOURCE_DIR}/src
     ${libddwaf_SOURCE_DIR}/src/vendor
     ${libddwaf_SOURCE_DIR}/src/vendor/libinjection/src/
@@ -194,5 +195,4 @@ if (NOT MSVC AND LIBDDWAF_TESTING)
         endif()
     endif()
 endif()
-
 

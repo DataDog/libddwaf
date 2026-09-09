@@ -21,7 +21,8 @@ if(UNIX AND NOT APPLE)
     set(LINUX TRUE)
 endif()
 
-configure_file(src/version.hpp.in ${CMAKE_CURRENT_SOURCE_DIR}/src/version.hpp)
+configure_file(src/version.hpp.in
+    ${CMAKE_CURRENT_BINARY_DIR}/generated/version.hpp)
 
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_CXX_STANDARD 20)
@@ -37,7 +38,7 @@ message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 set(GIT_COMMIT "" CACHE STRING "Git commit hash (skips git invocation if set)")
 
 option(LIBDDWAF_BUILD_SHARED "Build shared library" ON)
-option(LIBDDWAF_BUILD_STATIC "Build shared library" ON)
+option(LIBDDWAF_BUILD_STATIC "Build static library" ON)
 option(LIBDDWAF_TESTING "Load test subdirectories and targets" ON)
 option(LIBDDWAF_TEST_COVERAGE "Do coverage if possible" OFF)
 option(LIBDDWAF_VECTORIZED_TRANSFORMERS "Enable vectorization for transformers" ON)
