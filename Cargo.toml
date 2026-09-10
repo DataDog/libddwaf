@@ -29,9 +29,6 @@ include = [
     "/src/**",
     "!/src/version.hpp",
     "/third_party/CMakeLists.txt",
-    "/third_party/rapidjson/LICENSE",
-    "/third_party/rapidjson/README.libddwaf",
-    "/third_party/rapidjson/include/**",
     "/version",
     "/CMakeLists.txt",
 ]

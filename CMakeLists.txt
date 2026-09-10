@@ -103,12 +103,17 @@ elseif(WIN32)
     list(APPEND LIBDDWAF_INTERFACE_LIBRARIES ws2_32)
 endif()
 
-add_subdirectory(third_party EXCLUDE_FROM_ALL)
+add_library(lib_rapidjson INTERFACE)
+target_compile_definitions(lib_rapidjson INTERFACE RAPIDJSON_HAS_STDSTRING=1)
+target_include_directories(lib_rapidjson INTERFACE
+    "${libddwaf_SOURCE_DIR}/src/vendor/rapidjson/include")
 
 set(LIBDDWAF_PRIVATE_LIBRARIES lib_rapidjson)
 if(NOT MSVC AND LIBDDWAF_TESTING AND LIBDDWAF_TEST_COVERAGE)
     list(APPEND LIBDDWAF_PRIVATE_LIBRARIES gcov)
 endif()
+
+add_subdirectory(third_party EXCLUDE_FROM_ALL)
 
 if (LIBDDWAF_ENABLE_LTO)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -flto")

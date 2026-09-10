@@ -79,7 +79,6 @@ fn emit_rerun_instructions(source_dir: &Path) {
         "libddwaf.version",
         "src",
         "third_party/CMakeLists.txt",
-        "third_party/rapidjson",
         "version",
     ] {
         println!("cargo::rerun-if-changed={path}");

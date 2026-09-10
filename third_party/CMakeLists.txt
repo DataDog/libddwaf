@@ -1,11 +1,6 @@
 project(third_party)
 
-add_library(lib_rapidjson INTERFACE IMPORTED GLOBAL)
-target_compile_definitions(lib_rapidjson INTERFACE RAPIDJSON_HAS_STDSTRING=1)
-target_include_directories(lib_rapidjson INTERFACE
-    "${CMAKE_CURRENT_SOURCE_DIR}/rapidjson/include")
-
-# Remaining dependencies are used only by tests, tools, and examples.
+# These dependencies are used only by tests, tools, and examples.
 if(NOT LIBDDWAF_TESTING)
     return()
 endif()
