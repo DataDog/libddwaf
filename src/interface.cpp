@@ -36,7 +36,7 @@
 #include "ruleset_info.hpp"
 #include "user_resource.hpp"
 #include "utils.hpp"
-#include "generated/version.hpp"
+#include "version.hpp"
 #include "waf.hpp"
 
 using namespace ddwaf;

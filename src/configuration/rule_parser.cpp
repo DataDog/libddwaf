@@ -29,7 +29,7 @@
 #include "semver.hpp"
 #include "target_address.hpp"
 #include "transformer/base.hpp"
-#include "generated/version.hpp"
+#include "version.hpp"
 
 namespace ddwaf {
 

@@ -22,7 +22,7 @@
 #include "ruleset_info.hpp"
 #include "scanner.hpp"
 #include "semver.hpp"
-#include "generated/version.hpp"
+#include "version.hpp"
 
 namespace ddwaf {
 
