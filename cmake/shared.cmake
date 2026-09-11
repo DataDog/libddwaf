@@ -31,8 +31,7 @@ if(LINUX)
         -Wl,-version-script=${libddwaf_SOURCE_DIR}/libddwaf.version
         -Wl,--build-id=0x${BUILD_ID}
         ${LIBDDWAF_PRIVATE_LIBRARIES}
-        -static-libstdc++
-        glibc_compat_time64 glibc_compat_math)
+        -static-libstdc++)
 
     if(NOT (CMAKE_BUILD_TYPE MATCHES Debug))
         set(SYMBOL_FILE $<TARGET_FILE:libddwaf_shared>.debug)

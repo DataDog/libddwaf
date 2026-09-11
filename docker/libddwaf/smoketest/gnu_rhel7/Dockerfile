@@ -1,4 +1,4 @@
-FROM quay.io/pypa/manylinux2010_x86_64:latest AS smoketest
+FROM quay.io/pypa/manylinux2014_x86_64:latest AS smoketest
 
 ARG ARCH
 

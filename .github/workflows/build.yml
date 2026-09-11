@@ -175,19 +175,21 @@ jobs:
             ${{ github.workspace }}/packages/*.sha256
 
   linux-musl-build:
+    env:
+      MUSL_BUILD_ENV_REPOSITORY: gcr.io/datadoghq/musl-build-env
+      MUSL_BUILD_ENV_DIGEST: >-
+        sha256:6fbb23a5089853eea7cd26dfaeded4e6541027927016fb1ccdaf2d6713da5c26
     strategy:
       fail-fast: false
       matrix:
         target:
           - arch: x86_64
             platform: linux/amd64
-          - arch: i386
-            platform: linux/386
+            runner: ubuntu-24.04
           - arch: aarch64
             platform: linux/arm64
-          - arch: armv7
-            platform: linux/arm/v7
-    runs-on: ${{ (matrix.target.arch == 'x86_64' || matrix.target.arch == 'i386') && 'ubuntu-24.04' || 'ubuntu-24.04-arm' }}
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.target.runner }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
@@ -196,7 +198,11 @@ jobs:
         id: buildx
         with:
           install: true
-      - run: docker build --progress=plain --build-arg "ARCH=${{ matrix.target.arch }}" -f docker/libddwaf/build/Dockerfile -o packages .
+      - run: |
+          build_image="${MUSL_BUILD_ENV_REPOSITORY}@${MUSL_BUILD_ENV_DIGEST}"
+          docker build --progress=plain \
+            --build-arg "MUSL_BUILD_ENV_IMAGE=${build_image}" \
+            -f docker/libddwaf/build/Dockerfile -o packages .
       - name: Smoketest musl (gcc)
         uses: nick-fields/retry@7152eba30c6575329ac0576536151aca5a72780e # v3
         with:
@@ -215,13 +221,13 @@ jobs:
           timeout_minutes: 10
           max_attempts: 3
           command: docker build --progress=plain --platform ${{ matrix.target.platform }} --build-arg "ARCH=${{ matrix.target.arch }}" -f docker/libddwaf/smoketest/gnu/Dockerfile  .
-      - name: Smoketest gnu rhel 6 (gcc)
+      - name: Smoketest gnu rhel 7 (gcc)
         if: matrix.target.arch == 'x86_64'
         uses: nick-fields/retry@7152eba30c6575329ac0576536151aca5a72780e # v3
         with:
           timeout_minutes: 10
           max_attempts: 3
-          command: docker build --progress=plain --platform ${{ matrix.target.platform }} --build-arg "ARCH=${{ matrix.target.arch }}" -f docker/libddwaf/smoketest/gnu_rhel6/Dockerfile  .
+          command: docker build --progress=plain --platform ${{ matrix.target.platform }} --build-arg "ARCH=${{ matrix.target.arch }}" -f docker/libddwaf/smoketest/gnu_rhel7/Dockerfile  .
       - name: Generate Package sha256
         working-directory: packages
         run: for file in *.tar.gz; do sha256sum "$file" > "$file.sha256"; done
@@ -426,7 +432,7 @@ jobs:
             mkdir -p "$destination"
             tar --extract --gzip --file="$archive" --directory="$destination" \
               --wildcards --no-anchored '*.debug'
-          done < <(find artifacts -type f -name '*.tar.gz' ! -name '*-i386-*' -print0)
+          done < <(find artifacts -type f -name '*.tar.gz' -print0)
 
           if ! find debug-symbols -type f -name '*.debug' -print -quit | grep -q .; then
             echo "No supported ELF debug symbols found" >&2
