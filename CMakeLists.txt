@@ -21,7 +21,8 @@ if(UNIX AND NOT APPLE)
     set(LINUX TRUE)
 endif()
 
-configure_file(src/version.hpp.in ${CMAKE_CURRENT_SOURCE_DIR}/src/version.hpp)
+configure_file(src/version.hpp.in
+    ${CMAKE_CURRENT_BINARY_DIR}/generated/version.hpp)
 
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_CXX_STANDARD 20)
@@ -37,7 +38,7 @@ message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 set(GIT_COMMIT "" CACHE STRING "Git commit hash (skips git invocation if set)")
 
 option(LIBDDWAF_BUILD_SHARED "Build shared library" ON)
-option(LIBDDWAF_BUILD_STATIC "Build shared library" ON)
+option(LIBDDWAF_BUILD_STATIC "Build static library" ON)
 option(LIBDDWAF_TESTING "Load test subdirectories and targets" ON)
 option(LIBDDWAF_TEST_COVERAGE "Do coverage if possible" OFF)
 option(LIBDDWAF_VECTORIZED_TRANSFORMERS "Enable vectorization for transformers" ON)
@@ -73,15 +74,7 @@ set_target_properties(glibc_compat_math PROPERTIES POSITION_INDEPENDENT_CODE 1)
 try_compile(STDLIB_MAP_RECURSIVE ${CMAKE_CURRENT_BINARY_DIR}
     SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/try_rec_map.cpp)
 
-try_compile(STDLIB_MEMORY_RESOURCE_FTM ${CMAKE_CURRENT_BINARY_DIR}
-    SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/try_mem_resource_ftm.cpp)
-
-try_compile(STDLIB_MONOTONIC_RESOURCE ${CMAKE_CURRENT_BINARY_DIR}
-    SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/try_monotonic_resource.cpp)
-
 message(STATUS "Has recursive unordered_map    : ${STDLIB_MAP_RECURSIVE}")
-message(STATUS "Has memory_resource test macro : ${STDLIB_MEMORY_RESOURCE_FTM}")
-message(STATUS "Has monotonic_resource         : ${STDLIB_MONOTONIC_RESOURCE}")
 
 # System dependencies
 set(LIBDDWAF_INTERFACE_LIBRARIES "")
@@ -102,12 +95,17 @@ elseif(WIN32)
     list(APPEND LIBDDWAF_INTERFACE_LIBRARIES ws2_32)
 endif()
 
-add_subdirectory(third_party EXCLUDE_FROM_ALL)
+add_library(lib_rapidjson INTERFACE)
+target_compile_definitions(lib_rapidjson INTERFACE RAPIDJSON_HAS_STDSTRING=1)
+target_include_directories(lib_rapidjson INTERFACE
+    "${libddwaf_SOURCE_DIR}/src/vendor/rapidjson/include")
 
 set(LIBDDWAF_PRIVATE_LIBRARIES lib_rapidjson)
 if(NOT MSVC AND LIBDDWAF_TESTING AND LIBDDWAF_TEST_COVERAGE)
     list(APPEND LIBDDWAF_PRIVATE_LIBRARIES gcov)
 endif()
+
+add_subdirectory(third_party EXCLUDE_FROM_ALL)
 
 if (LIBDDWAF_ENABLE_LTO)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -flto")

@@ -15,6 +15,9 @@ string(SUBSTRING "${BUILD_ID}" 2 39 BUILD_ID_SUFFIX)
 add_library(libddwaf_shared SHARED
     $<TARGET_OBJECTS:libddwaf_shared_objects> $<$<BOOL:${MSVC}>:libddwaf.def>)
 set_target_properties(libddwaf_shared PROPERTIES OUTPUT_NAME ddwaf)
+if(MINGW)
+    set_target_properties(libddwaf_shared PROPERTIES PREFIX "")
+endif()
 
 install(TARGETS libddwaf_shared EXPORT libddwaf-config
     DESTINATION ${CMAKE_INSTALL_LIBDIR}
@@ -68,10 +71,12 @@ elseif (APPLE)
             DESTINATION ${CMAKE_INSTALL_LIBDIR}/.build-id/${BUILD_ID_PREFIX}
             RENAME ${BUILD_ID_SUFFIX}.debug)
     endif()
-elseif (MSVC)
+elseif (WIN32)
     target_link_libraries(libddwaf_shared
         PRIVATE ${LIBDDWAF_PRIVATE_LIBRARIES}
         PUBLIC ${LIBDDWAF_INTERFACE_LIBRARIES})
 
-    install(FILES $<TARGET_PDB_FILE:libddwaf_shared> DESTINATION lib OPTIONAL)
+    if(MSVC)
+        install(FILES $<TARGET_PDB_FILE:libddwaf_shared> DESTINATION lib OPTIONAL)
+    endif()
 endif()

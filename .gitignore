@@ -1,6 +1,10 @@
 /Release
 /Debug
 /build
+/target
+/Cargo.lock
+/cargo/smoke-test/target
+/cargo/smoke-test/Cargo.lock
 PowerWAF.xcodeproj
 CMakeLists.txt.user
 compile_commands.json
