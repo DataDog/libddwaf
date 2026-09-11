@@ -11,21 +11,6 @@ install(TARGETS libddwaf_static EXPORT libddwaf-config
     DESTINATION ${CMAKE_INSTALL_LIBDIR}
     INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
-# Post-processing on the static library
-if(LINUX)
-    add_dependencies(libddwaf_static glibc_compat_time64 glibc_compat_math)
-    add_custom_command(TARGET libddwaf_static POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E make_directory ar_comb
-      COMMAND ${CMAKE_COMMAND} -E chdir ar_comb ${CMAKE_AR} -x $<TARGET_FILE:libddwaf_static>
-      COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_OBJECTS:glibc_compat_time64> ar_comb
-      COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_OBJECTS:glibc_compat_math> ar_comb
-      COMMAND ${CMAKE_AR} -qcs ar_comb/combined${CMAKE_STATIC_LIBRARY_SUFFIX} ar_comb/*.o*
-
-      COMMAND ${CMAKE_COMMAND} -E copy ar_comb/combined${CMAKE_STATIC_LIBRARY_SUFFIX} $<TARGET_FILE:libddwaf_static>
-      COMMAND rm -rf ar_comb
-      WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
-endif()
-
 if(NOT (CMAKE_BUILD_TYPE MATCHES Debug) AND (APPLE OR LINUX))
     if (NOT CMAKE_STRIP)
         find_program(STRIP strip)

@@ -23,9 +23,11 @@ if(LINUX)
         -Wl,--no-undefined
         -Wl,-version-script=${libddwaf_SOURCE_DIR}/libddwaf.version
         -Wl,--build-id=0x${BUILD_ID}
+        # The bundled C++ runtime's aligned_alloc calls go to
+        # src/compat/aligned_alloc.c; see there.
+        -Wl,--wrap=aligned_alloc
         ${LIBDDWAF_PRIVATE_LIBRARIES}
-        -static-libstdc++
-        glibc_compat_time64 glibc_compat_math)
+        -static-libstdc++)
 
     if(NOT (CMAKE_BUILD_TYPE MATCHES Debug))
         set(SYMBOL_FILE $<TARGET_FILE:libddwaf_shared>.debug)
