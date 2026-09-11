@@ -62,7 +62,13 @@ jobs:
       - name: Install native build tools
         run: |
           sudo apt-get update
-          sudo apt-get install --yes cmake g++ make
+          sudo apt-get install --yes \
+            clang \
+            cmake \
+            g++ \
+            libc++-dev \
+            libc++abi-dev \
+            make
 
       - name: Install Rust 1.85.0
         run: rustup toolchain install 1.85.0 --profile minimal
@@ -89,6 +95,29 @@ jobs:
             --no-default-features \
             --features static \
             --offline
+
+      - name: Build static libddwaf with Clang/libc++ and run Rust smoke test
+        env:
+          CC: clang
+          CXX: clang++
+          CXXFLAGS: -stdlib=libc++
+          CXXSTDLIB: c++
+        run: |
+          cargo +1.85.0 run --release \
+            --manifest-path "$SMOKE_MANIFEST" \
+            --target-dir target/smoke-libcxx \
+            --no-default-features \
+            --features static \
+            --offline
+          dependencies="$(
+            ldd target/smoke-libcxx/release/libddwaf-src-smoke-test
+          )"
+          printf '%s\n' "$dependencies"
+          grep -Fq 'libc++.so' <<< "$dependencies"
+          if grep -Fq 'libstdc++.so' <<< "$dependencies"; then
+            echo 'unexpected dynamic dependency on libstdc++'
+            exit 1
+          fi
 
       - name: Build shared libddwaf and run Rust smoke test offline
         run: |
