@@ -4,5 +4,8 @@
 //! bindings. Its build script exports `root`, `include`, and `lib` metadata for
 //! an immediate dependent such as `libddwaf-sys`.
 
+#[cfg(feature = "static")]
+extern crate link_cplusplus;
+
 /// Version of the bundled native `libddwaf` sources.
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");

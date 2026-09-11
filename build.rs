@@ -12,9 +12,9 @@ fn main() {
 
     let build_static = env::var_os("CARGO_FEATURE_STATIC").is_some();
     let build_shared = env::var_os("CARGO_FEATURE_SHARED").is_some();
-    assert!(
-        build_static || build_shared,
-        "enable at least one of the `static` or `shared` features"
+    assert_ne!(
+        build_static, build_shared,
+        "enable exactly one of the `static` or `shared` features"
     );
 
     let git_commit =
@@ -41,11 +41,42 @@ fn main() {
         lib_dir.display()
     );
 
+    emit_link_instructions(&lib_dir, build_static);
     println!("cargo::metadata=root={}", install_dir.display());
     println!("cargo::metadata=include={}", include_dir.display());
     println!("cargo::metadata=lib={}", lib_dir.display());
     println!("cargo::metadata=static={build_static}");
     println!("cargo::metadata=shared={build_shared}");
+}
+
+fn emit_link_instructions(lib_dir: &Path, build_static: bool) {
+    let target_os = env::var("CARGO_CFG_TARGET_OS").expect("Cargo did not provide target OS");
+    let target_env =
+        env::var("CARGO_CFG_TARGET_ENV").expect("Cargo did not provide target environment");
+    let library = if build_static && target_os == "windows" && target_env == "msvc" {
+        "ddwaf_static"
+    } else {
+        "ddwaf"
+    };
+    let library_kind = if build_static { "static" } else { "dylib" };
+
+    println!("cargo::rustc-link-search=native={}", lib_dir.display());
+    println!("cargo::rustc-link-lib={library_kind}={library}");
+
+    if !build_static {
+        return;
+    }
+
+    match target_os.as_str() {
+        "linux" => {
+            for library in ["pthread", "rt", "dl", "m"] {
+                println!("cargo::rustc-link-lib=dylib={library}");
+            }
+        }
+        "windows" => println!("cargo::rustc-link-lib=ws2_32"),
+        "macos" => {}
+        _ => panic!("unsupported libddwaf target OS: {target_os}"),
+    }
 }
 
 fn package_git_commit(source_dir: &Path) -> Option<String> {

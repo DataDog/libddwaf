@@ -4,5 +4,9 @@ version = "0.0.0"
 edition = "2021"
 publish = false
 
+[features]
+shared = ["libddwaf-src/shared"]
+static = ["libddwaf-src/static"]
+
 [dependencies]
-libddwaf-src = { path = "../.." }
+libddwaf-src = { path = "../..", default-features = false }

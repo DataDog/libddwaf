@@ -39,7 +39,10 @@ path = "cargo/lib.rs"
 [features]
 default = ["static"]
 shared = []
-static = []
+static = ["dep:link-cplusplus"]
+
+[dependencies]
+link-cplusplus = { version = "1", optional = true }
 
 [build-dependencies]
 cmake = "0.1.58"

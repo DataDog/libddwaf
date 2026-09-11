@@ -35,7 +35,9 @@ jobs:
         run: cargo +1.85.0 fetch
 
       - name: Assemble and verify crate offline
-        run: cargo +1.85.0 package --all-features --offline
+        run: |
+          cargo +1.85.0 check --no-default-features --features shared --offline
+          cargo +1.85.0 package --offline
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
@@ -79,10 +81,22 @@ jobs:
       - name: Fetch Rust dependencies
         run: cargo +1.85.0 fetch --manifest-path "$SMOKE_MANIFEST"
 
-      - name: Build libddwaf and run Rust smoke test offline
+      - name: Build static libddwaf and run Rust smoke test offline
         run: |
           cargo +1.85.0 run --release \
             --manifest-path "$SMOKE_MANIFEST" \
+            --target-dir target/smoke-static \
+            --no-default-features \
+            --features static \
+            --offline
+
+      - name: Build shared libddwaf and run Rust smoke test offline
+        run: |
+          cargo +1.85.0 run --release \
+            --manifest-path "$SMOKE_MANIFEST" \
+            --target-dir target/smoke-shared \
+            --no-default-features \
+            --features shared \
             --offline
 
   cargo-smoke-test-windows:
@@ -117,10 +131,22 @@ jobs:
       - name: Fetch Rust dependencies
         run: cargo +1.85.0 fetch --manifest-path $env:SMOKE_MANIFEST
 
-      - name: Build libddwaf and run Rust smoke test offline
+      - name: Build static libddwaf and run Rust smoke test offline
         run: |
           cargo +1.85.0 run --release `
             --manifest-path $env:SMOKE_MANIFEST `
+            --target-dir target/smoke-static `
+            --no-default-features `
+            --features static `
+            --offline
+
+      - name: Build shared libddwaf and run Rust smoke test offline
+        run: |
+          cargo +1.85.0 run --release `
+            --manifest-path $env:SMOKE_MANIFEST `
+            --target-dir target/smoke-shared `
+            --no-default-features `
+            --features shared `
             --offline
 
   sanitizers:
