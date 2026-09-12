@@ -22,6 +22,7 @@ namespace ddwaf::matcher {
 
 class exact_match : public base_impl<exact_match> {
 public:
+    using value_type = std::string;
     using data_type = std::vector<std::pair<std::string, uint64_t>>;
 
     static constexpr std::string_view matcher_name = "exact_match";
@@ -45,7 +46,7 @@ protected:
         return (type & object_type::string) != 0;
     }
 
-    [[nodiscard]] std::pair<bool, dynamic_string> match_impl(std::string_view str) const;
+    [[nodiscard]] std::pair<match_result, dynamic_string> match_impl(std::string_view str) const;
 
     std::vector<std::string> data_;
     std::unordered_map<std::string_view, uint64_t> values_;

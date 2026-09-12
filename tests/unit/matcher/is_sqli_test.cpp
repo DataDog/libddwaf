@@ -25,7 +25,7 @@ TEST(TestIsSQLi, TestBasic)
     owned_object param = test::ddwaf_object_da::make_string("'OR 1=1/*");
 
     auto [res, highlight] = matcher.match(param);
-    EXPECT_TRUE(res);
+    EXPECT_EQ(res, ddwaf::matcher::match_result::match);
     EXPECT_STR(highlight, "s&1c");
 }
 
@@ -37,7 +37,7 @@ TEST(TestIsSQLi, TestMatch)
 
     for (const auto *pattern : match) {
         owned_object param = test::ddwaf_object_da::make_string(pattern);
-        EXPECT_TRUE(matcher.match(param).first);
+        EXPECT_EQ(matcher.match(param).first, ddwaf::matcher::match_result::match);
     }
 }
 
@@ -49,7 +49,7 @@ TEST(TestIsSQLi, TestNoMatch)
 
     for (const auto *pattern : no_match) {
         owned_object param = test::ddwaf_object_da::make_string(pattern);
-        EXPECT_FALSE(matcher.match(param).first);
+        EXPECT_NE(matcher.match(param).first, ddwaf::matcher::match_result::match);
     }
 }
 
@@ -57,9 +57,10 @@ TEST(TestIsSQLi, TestInvalidInput)
 {
     is_sqli matcher;
 
-    EXPECT_FALSE(matcher.match(std::string_view{nullptr, 0}).first);
+    EXPECT_NE(
+        matcher.match(std::string_view{nullptr, 0}).first, ddwaf::matcher::match_result::match);
     // NOLINTNEXTLINE(bugprone-string-constructor)
-    EXPECT_FALSE(matcher.match(std::string_view{"*", 0}).first);
+    EXPECT_NE(matcher.match(std::string_view{"*", 0}).first, ddwaf::matcher::match_result::match);
 }
 
 } // namespace

@@ -21,6 +21,8 @@ namespace ddwaf::matcher {
 
 class phrase_match : public base_impl<phrase_match> {
 public:
+    using value_type = std::string;
+
     static constexpr std::string_view matcher_name = "phrase_match";
     static constexpr std::string_view negated_matcher_name = "!phrase_match";
 
@@ -39,7 +41,8 @@ protected:
         return (type & object_type::string) != 0;
     }
 
-    [[nodiscard]] std::pair<bool, dynamic_string> match_impl(std::string_view pattern) const;
+    [[nodiscard]] std::pair<match_result, dynamic_string> match_impl(
+        std::string_view pattern) const;
 
     bool enforce_word_boundary_{false};
     std::unique_ptr<ac_t, void (*)(void *)> ac{nullptr, nullptr};

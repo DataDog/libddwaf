@@ -13,6 +13,7 @@
 #include "checksum/base.hpp"
 #include "configuration/common/parser_exception.hpp"
 #include "dynamic_string.hpp"
+#include "matcher/base.hpp"
 #include "matcher/regex_match_with_checksum.hpp"
 #include "re2.h"
 
@@ -39,7 +40,7 @@ regex_match_with_checksum::regex_match_with_checksum(const std::string &regex_st
     }
 }
 
-std::pair<bool, dynamic_string> regex_match_with_checksum::match_impl(
+std::pair<match_result, dynamic_string> regex_match_with_checksum::match_impl(
     std::string_view pattern) const
 {
     while (!pattern.empty() && pattern.size() >= min_length) {
@@ -50,13 +51,13 @@ std::pair<bool, dynamic_string> regex_match_with_checksum::match_impl(
         }
 
         if (algo_->validate(match)) {
-            return {true, match};
+            return {match_result::match, match};
         }
 
         pattern.remove_prefix(match.data() - pattern.data() + match.size());
     }
 
-    return {false, {}};
+    return {match_result::no_match, {}};
 }
 
 } // namespace ddwaf::matcher

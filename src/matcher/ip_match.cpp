@@ -15,6 +15,7 @@
 #include "dynamic_string.hpp"
 #include "indexed_multivector.hpp"
 #include "ip_utils.hpp"
+#include "matcher/base.hpp"
 #include "matcher/ip_match.hpp"
 #include "radixlib.h"
 
@@ -94,24 +95,24 @@ ip_match::ip_match(const std::vector<std::pair<std::string, uint64_t>> &ip_list)
     return true;
 }
 
-std::pair<bool, dynamic_string> ip_match::match_impl(std::string_view str) const
+std::pair<match_result, dynamic_string> ip_match::match_impl(std::string_view str) const
 {
     if (!rtree_ || str.empty() || str.data() == nullptr) {
-        return {false, {}};
+        return {match_result::no_match, {}};
     }
 
     ddwaf::ipaddr ip{};
     if (!ddwaf::parse_ip(str, ip)) {
-        return {false, {}};
+        return {match_result::no_match, {}};
     }
     // Convert the IPv4 to IPv6
     ddwaf::ipv4_to_ipv6(ip);
 
     if (!match_ip(ip)) {
-        return {false, {}};
+        return {match_result::no_match, {}};
     }
 
-    return {true, std::string{str}};
+    return {match_result::match, std::string{str}};
 }
 
 } // namespace ddwaf::matcher

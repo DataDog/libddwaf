@@ -1,0 +1,4 @@
+{
+  name: "A string which can't be converted is not an eligible value",
+  runs: [ { input: { rule11-input: "abc" }, code: ok } ]
+}

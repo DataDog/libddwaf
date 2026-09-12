@@ -1,0 +1,8 @@
+{
+  name: "greater_equal matches a convertible string above the threshold",
+  runs: [
+    { input: { rule4-input: "150" },
+      rules: [ { 4: [ { address: rule4-input, value: "150" } ] } ],
+      code: match }
+  ]
+}
