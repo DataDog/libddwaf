@@ -29,7 +29,6 @@ include = [
     "/src/**",
     "!/src/version.hpp",
     "/third_party/CMakeLists.txt",
-    "/version",
     "/CMakeLists.txt",
 ]
 

@@ -1,9 +1,6 @@
 cmake_minimum_required(VERSION 3.14)
 
-file(READ "version" version)
-
-string(STRIP "${version}" version)
-string(REGEX REPLACE "-(alpha|beta)[0-9]*$" "" mmp_version ${version})
+include(cmake/version.cmake)
 
 if (APPLE)
     set(CMAKE_OSX_DEPLOYMENT_TARGET "14.2.1" CACHE STRING "Minimum OS X deployment version")

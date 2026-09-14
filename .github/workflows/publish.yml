@@ -47,14 +47,9 @@ jobs:
           tag_version="${RELEASE_TAG#v}"
           crate_version="$(cargo +1.85.0 metadata --no-deps --format-version 1 \
             | jq -r '.packages[] | select(.name == "libddwaf-src") | .version')"
-          native_version="$(<version)"
 
           if [[ "$tag_version" != "$crate_version" ]]; then
             echo "::error::tag version $tag_version does not match crate version $crate_version"
-            exit 1
-          fi
-          if [[ "$native_version" != "$crate_version" ]]; then
-            echo "::error::native version $native_version does not match crate version $crate_version"
             exit 1
           fi
 

@@ -280,8 +280,10 @@ jobs:
             '/libddwaf\.dylib$' ./packages/nuget/runtimes/osx/native
 
           # create nuget
-          version=`cat ./version`
-          echo Version is: $version
+          version="$(sed -nE \
+            's/^version[[:space:]]*=[[:space:]]*"([^"]+)"[[:space:]]*$/\1/p' \
+            Cargo.toml)"
+          echo "Version is: $version"
 
           mkdir output-packages
           nuget pack ./packages/nuget/libddwaf.nuspec -Version $version -OutputDirectory ./output-packages

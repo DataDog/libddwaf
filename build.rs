@@ -7,7 +7,6 @@ const UNKNOWN_GIT_COMMIT: &str = "0000000000000000000000000000000000000000";
 fn main() {
     let source_dir = PathBuf::from(env::var_os("CARGO_MANIFEST_DIR").unwrap());
 
-    verify_package_version(&source_dir);
     emit_rerun_instructions(&source_dir);
 
     let build_static = env::var_os("CARGO_FEATURE_STATIC").is_some();
@@ -90,16 +89,6 @@ fn package_git_commit(source_dir: &Path) -> Option<String> {
         .then(|| sha.to_owned())
 }
 
-fn verify_package_version(source_dir: &Path) {
-    let native_version = fs::read_to_string(source_dir.join("version"))
-        .expect("failed to read the native libddwaf version");
-    assert_eq!(
-        native_version.trim(),
-        env!("CARGO_PKG_VERSION"),
-        "Cargo.toml and the native libddwaf version file disagree"
-    );
-}
-
 fn emit_rerun_instructions(source_dir: &Path) {
     for path in [
         "CMakeLists.txt",
@@ -110,7 +99,6 @@ fn emit_rerun_instructions(source_dir: &Path) {
         "libddwaf.version",
         "src",
         "third_party/CMakeLists.txt",
-        "version",
     ] {
         println!("cargo::rerun-if-changed={path}");
     }
