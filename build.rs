@@ -11,6 +11,7 @@ fn main() {
 
     let build_static = env::var_os("CARGO_FEATURE_STATIC").is_some();
     let build_shared = env::var_os("CARGO_FEATURE_SHARED").is_some();
+    let manual_link = env::var_os("CARGO_FEATURE_MANUAL_LINK").is_some();
     assert_ne!(
         build_static, build_shared,
         "enable exactly one of the `static` or `shared` features"
@@ -40,7 +41,9 @@ fn main() {
         lib_dir.display()
     );
 
-    emit_link_instructions(&lib_dir, build_static);
+    if !manual_link {
+        emit_link_instructions(&lib_dir, build_static);
+    }
     println!("cargo::metadata=root={}", install_dir.display());
     println!("cargo::metadata=include={}", include_dir.display());
     println!("cargo::metadata=lib={}", lib_dir.display());

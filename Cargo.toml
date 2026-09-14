@@ -37,6 +37,7 @@ path = "cargo/lib.rs"
 
 [features]
 default = ["static"]
+manual-link = []
 shared = []
 static = ["dep:link-cplusplus"]
 
