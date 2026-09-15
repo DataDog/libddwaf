@@ -1,10 +1,29 @@
 # libddwaf release
 
+## v2.0.1
+
+### Release changelog
+
+#### Changes
+
+- Use inline storage for value iterators ([#502](https://github.com/DataDog/libddwaf/pull/502)).
+
+#### Fixes
+
+- Avoid exception in user resource comparison ([#501](https://github.com/DataDog/libddwaf/pull/501)).
+- Preserve relative path of source files in logs ([#500](https://github.com/DataDog/libddwaf/pull/500)).
+- Fix warnings when building for wasm32 ([#499](https://github.com/DataDog/libddwaf/pull/499)).
+- Fix bad has_from_chars concept ([#497](https://github.com/DataDog/libddwaf/pull/497)).
+
+#### Miscellaneous
+
+- Remove CodeCov upload from CI ([#498](https://github.com/DataDog/libddwaf/pull/498)).
+
 ## v2.0.0
 
 libddwaf v2.0.0 represents a significant redesign of the C API, focusing on explicit memory ownership, reduced memory footprint, and a more consistent interface. Beyond the public API, the internals have also been refactored to use safer and more C++-native abstractions.
 
-As expected, this release is not backwards compatible; the upgrading guide at `docs/upgrading/UPGRADING-v2.0.md` provides detailed migration examples for each of the breaking changes.
+As expected, this release is not backwards compatible; the upgrading guide at `docs/upgrading/UPGRADING-v2.x.md` provides detailed migration examples for each of the breaking changes.
 
 ### Memory Ownership and Allocators
 

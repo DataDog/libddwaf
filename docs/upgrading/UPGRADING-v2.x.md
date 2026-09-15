@@ -1,8 +1,10 @@
 # Upgrading libddwaf
 
+## Upgrading from v1.x to v2.0.0
+
 The C API in libddwaf v2 has experienced a large number of changes, primarily around the creation and use of ddwaf_object. This guide aims to provide an overview of the changes required to upgrade from v1.x to v2.x; however it is recommended that the reader carefully read the [C API Reference](c-api/api.md) and [ddwaf.h](../../include/ddwaf.h).
 
-## Summary
+### Summary
 - Allocators have been introduced to all relevant API functions.
 - The layout of `ddwaf_object` has dramatically changed to reduce the amount of memory required for a single object, which now only requires 16 bytes.
 - Two new string types have been introduced:
@@ -16,14 +18,14 @@ The C API in libddwaf v2 has experienced a large number of changes, primarily ar
   - Obfuscator regexes must now be provided through configuration: `{obfuscator: {key_regex: <value>, value_regex: <value>}}`.
   - The free function is no longer needed due to the introduction of allocators.
 
-## Note on Allocators
+### Note on Allocators
 The ownership of any allocated memory crossing the API boundary was one of the pain points of libddwaf v1. To fix this, v2 introduces allocators, which can be used to define the explicit ownership of the allocated memory.
 
 Since the use of allocators is now required on many of the API functions, the migration examples will use the default allocator and will also include allocator destruction for illustrative purposes, as the destruction of the default allocator is a no-op.
 
 However, note that other allocators are also available. See the [allocators document](../allocators.md) for more information on the different types of allocators available.
 
-## 1. WAF instantiation: Removal of `ddwaf_config`
+### 1. WAF instantiation: Removal of `ddwaf_config`
 
 The main changes pertaining to WAF initialisation are the removal of `ddwaf_config`, as the evaluation limits have been entirely removed, in favour of user-controlled truncation, the free function is no longer required due to the explicit memory ownership defined through allocators and the obfuscator is now configured through a configuration. As a consequence, instantiation through `ddwaf_init` has changed as follows:
 
@@ -56,7 +58,7 @@ ddwaf_builder builder = ddwaf_builder_init(&config);
 ddwaf_builder builder = ddwaf_builder_init();
 ```
 
-### Obfuscator Configuration
+#### Obfuscator Configuration
 
 In v1.x, the obfuscator regexes were provided through `ddwaf_config`. In v2.x, the obfuscator must be configured through the builder by providing a configuration containing the `obfuscator` key. The configuration format is:
 
@@ -119,11 +121,11 @@ ddwaf_object_destroy(&diagnostics, ddwaf_get_default_allocator());
 ```
 This applies to both `ddwaf_init` and to relevant `ddwaf_builder_*` functions.
 
-## 2. WAF Context: Input & Output Allocators and Removal of Ephemerals
+### 2. WAF Context: Input & Output Allocators and Removal of Ephemerals
 
 The WAF context lifecycle functions have changed significantly in v2 with the introduction of allocators and subcontexts as a replacement for ephemerals. In v1.x, `ddwaf_run` accepted separate persistent and ephemeral data parameters, while v2.x no longer provides ephemeral semantics, therefore only persistent data is provided.
 
-### Context Initialisation
+#### Context Initialisation
 
 During context initialisation, the caller must provide the output allocator which is used by the WAF to allocate memory for the result object, provided as an output parameter to `ddwaf_context_eval`. This allocator must remain valid for the lifetime of the context.
 
@@ -146,7 +148,7 @@ ddwaf_allocator output_alloc = ddwaf_get_default_allocator();
 ddwaf_context context = ddwaf_context_init(handle, output_alloc);
 ```
 
-### Context Evaluation
+#### Context Evaluation
 
 As mentioned, context evaluation no longer supports ephemeral data, consequently the main difference between v1.x and v2.x is the removal of `ddwaf_run`, which has been renamed to `ddwaf_context_eval`. Additionally, the allocator used to generate the input data must also be provided. Note that this allocator may be the same as the output allocator provided through `ddwaf_context_init` and it must also remain valid for the lifetime of the context.
 
@@ -186,7 +188,7 @@ if (code == DDWAF_MATCH) {
 // Destroy result using the output allocator from ddwaf_context_init
 ddwaf_object_destroy(&result, output_alloc);
 ```
-### Multiple Evaluations Example
+#### Multiple Evaluations Example
 
 **v1.x:**
 ```c
@@ -225,7 +227,7 @@ ddwaf_object_destroy(&result2, alloc);
 // Both data1 and data2 are available for evaluation
 ```
 
-## 3. WAF Subcontext: Replacement of Ephemerals
+### 3. WAF Subcontext: Replacement of Ephemerals
 
 Subcontexts are the v2 replacement for ephemeral data. In v1.x, ephemeral data was passed separately to `ddwaf_run()` and was not stored in the context. In v2.x, subcontexts inherit all persistent data from their parent context but can be evaluated with data that doesn't persist beyond the subcontext's lifetime.
 
@@ -276,7 +278,7 @@ ddwaf_subcontext_destroy(subctx);
 // No side-effects are visible to the context
 ```
 
-### Subcontext Lifecycle
+#### Subcontext Lifecycle
 
 The subcontext follows the same lifecycle pattern as the context:
 
@@ -288,7 +290,7 @@ Some things to consider:
 - The subcontext inherits the output allocator of the parent context.
 - In this version (v2.0) the subcontext is independent of the context, meaning that the context may be destroyed before the subcontext. Any shared objects are reference counted and freed when the last subcontext or context is destroyed.
 
-### Multiple Subcontexts
+#### Multiple Subcontexts
 
 Multiple concurrent subcontexts may also be created from the same parent context, each of which defines the scope and lifecycle of the provided data:
 
@@ -320,11 +322,11 @@ ddwaf_subcontext_destroy(subctx2);
 // Both subcontexts inherited persistent data, but had independent ephemeral data
 ```
 
-## 4. Object Creation: New API & Allocator support
+### 4. Object Creation: New API & Allocator support
 
 The object creation API has changed extensively in v2 to support allocators and reduce memory overhead. All object creation functions now use the `ddwaf_object_set_*` naming pattern, and most require an allocator parameter.
 
-### String Creation
+#### String Creation
 
 The creation of a string object typically involves an allocation, therefore the allocator parameter is now required. Additionally, the string length is now always required to avoid potential issues with NUL characters.
 
@@ -352,7 +354,7 @@ ddwaf_object_destroy(&obj, alloc);
 
 **Note**: Small strings (14 bytes or less) are automatically stored inline within the object itself without additional allocation.
 
-#### Literal Strings
+##### Literal Strings
 
 To address some existing use cases, v2 introduces a new literal string type which, upon destruction, never frees the associated buffer. This makes it easier to provide literals or interned strings as part of an object. The associated memory must be managed by the caller:
 
@@ -363,7 +365,7 @@ ddwaf_object obj;
 ddwaf_object_set_string_literal(&obj, "constant string", 15);
 ```
 
-#### No-Copy Strings
+##### No-Copy Strings
 
 It is still possible to create freeable strings by providing a pre-allocated/pre-initialised buffer, however note that the memory of the provided buffer must have been allocated with the same allocator used for object destruction, e.g. using `ddwaf_allocator_alloc`.
 
@@ -383,7 +385,7 @@ ddwaf_object_set_string_nocopy(&obj, str, strlen(str));
 ddwaf_object_destroy(&obj, alloc);
 ```
 
-### Numeric Types
+#### Numeric Types
 
 **v1.x:**
 ```c
@@ -403,7 +405,7 @@ The same pattern applies to other numeric types:
 - `ddwaf_object_float()` → `ddwaf_object_set_float()`
 
 
-### Array Creation and Insertion
+#### Array Creation and Insertion
 
 The array creation now requires both the expected size of the array (which may be 0) and a suitable allocator. Note that if the size of the array is incorrect, the container will still grow dynamically.
 
@@ -446,7 +448,7 @@ ddwaf_object_destroy(&array, alloc);
 ```
 
 
-### Map Creation and Insertion
+#### Map Creation and Insertion
 
 The map creation now requires both the expected size of the map (which may be 0) and a suitable allocator. Note that if the size of the map is incorrect, the container will still grow dynamically.
 
@@ -489,7 +491,7 @@ ddwaf_object_set_unsigned(
 
 ddwaf_object_destroy(&map, alloc);
 ```
-#### Insertion Variants
+##### Insertion Variants
 
 To cover different allocation and/or string management strategies, v2 provides multiple insertion functions for different use cases:
 
@@ -515,7 +517,7 @@ ddwaf_object_set_string(val3, "value3", 6, alloc);
 ddwaf_object_destroy(&map, alloc);
 ```
 
-### Getter Functions
+#### Getter Functions
 
 Object getter functions have been renamed for consistency:
 
@@ -535,7 +537,7 @@ uint64_t num = ddwaf_object_get_unsigned(&obj);  // Unchanged
 
 The same pattern applies to all other getters.
 
-### JSON Parsing
+#### JSON Parsing
 
 If you use `ddwaf_object_from_json()`, it now takes an allocator and the resulting object must be destroyed with the same allocator:
 
@@ -549,7 +551,7 @@ if (ddwaf_object_from_json(&obj, json, json_len, alloc)) {
 }
 ```
 
-### Complete Example: Building Request Data
+#### Complete Example: Building Request Data
 
 **v1.x:**
 ```c
@@ -594,7 +596,7 @@ ddwaf_object_set_string(
 ddwaf_object_destroy(&root, alloc);
 ```
 
-## 5. Batched Evaluation: `ddwaf_context_multieval` and `ddwaf_subcontext_multieval`
+### 5. Batched Evaluation: `ddwaf_context_multieval` and `ddwaf_subcontext_multieval`
 
 v2.x introduces `ddwaf_context_multieval` and `ddwaf_subcontext_multieval`, which evaluate multiple input batches in sequence within a single call and return a single combined result. These functions have no v1.x equivalent.
 
