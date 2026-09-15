@@ -63,8 +63,12 @@ The repository is also a Cargo package named `libddwaf-src`. Its build script
 uses CMake and the target C and C++ compilers selected by Cargo to build the
 native library. The default `static` feature builds `libddwaf.a`; enable the
 `shared` feature with `default-features = false` to build the shared library.
-The features are mutually exclusive. The crate propagates the selected native
-library and its link dependencies to Cargo consumers.
+The `static` and `shared` features are mutually exclusive. The crate propagates
+the selected native library and its link dependencies to Cargo consumers.
+
+The `manual-link` feature can be combined with either library feature to
+suppress its native link directive. It is intended for sys crates that need to
+handle linking or load the selected artifact themselves.
 
 The build script exports `root`, `include`, and `lib` metadata for an immediate
 dependent such as `libddwaf-sys`. Cargo exposes those values as
