@@ -1,0 +1,8 @@
+{
+  name: "equals matches a numeric string when conversion is enabled",
+  runs: [
+    { input: { rule11-input: "42" },
+      rules: [ { 11: [ { address: rule11-input, value: "42" } ] } ],
+      code: match }
+  ]
+}

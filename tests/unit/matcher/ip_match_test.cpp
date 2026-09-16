@@ -14,7 +14,10 @@ using namespace ddwaf::matcher;
 
 namespace {
 
-bool match(ip_match &matcher, std::string_view ip) { return matcher.match(ip).first; }
+bool match(ip_match &matcher, std::string_view ip)
+{
+    return matcher.match(ip).first == ddwaf::matcher::match_result::match;
+}
 
 TEST(TestIPMatch, Basic)
 {
@@ -100,9 +103,10 @@ TEST(TestIPMatch, InvalidInput)
         "1234:0:0:0:0:0:0:5678",
     });
 
-    EXPECT_FALSE(matcher.match(std::string_view{nullptr, 0}).first);
+    EXPECT_NE(
+        matcher.match(std::string_view{nullptr, 0}).first, ddwaf::matcher::match_result::match);
     // NOLINTNEXTLINE(bugprone-string-constructor)
-    EXPECT_FALSE(matcher.match(std::string_view{"*", 0}).first);
+    EXPECT_NE(matcher.match(std::string_view{"*", 0}).first, ddwaf::matcher::match_result::match);
 }
 
 TEST(TestIPMatch, Expiration)

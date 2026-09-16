@@ -19,13 +19,15 @@ namespace ddwaf::matcher {
 
 template <typename T = void> class greater_than : public base_impl<greater_than<T>> {
 public:
+    using value_type = T;
+
     static constexpr std::string_view matcher_name = "greater_than";
     static constexpr std::string_view negated_matcher_name = "lower_equal";
 
-    explicit greater_than(T minimum)
+    explicit greater_than(T minimum, bool convert_strings = false)
         requires std::is_same_v<T, uint64_t> || std::is_same_v<T, int64_t> ||
-                 std::is_same_v<T, double>
-        : minimum_(std::move(minimum))
+                     std::is_same_v<T, double>
+        : base_impl<greater_than<T>>(convert_strings), minimum_(std::move(minimum))
     {}
     ~greater_than() override = default;
     greater_than(const greater_than &) = default;
@@ -42,15 +44,16 @@ protected:
     }
 
     template <typename U>
-    [[nodiscard]] std::pair<bool, dynamic_string> match_impl(const U &obtained) const
+    [[nodiscard]] std::pair<match_result, dynamic_string> match_impl(const U &obtained) const
         requires(!std::is_floating_point_v<T>)
     {
-        return {std::cmp_greater(obtained, minimum_), {}};
+        return {std::cmp_greater(obtained, minimum_) ? match_result::match : match_result::no_match,
+            {}};
     }
 
-    [[nodiscard]] std::pair<bool, dynamic_string> match_impl(double obtained) const
+    [[nodiscard]] std::pair<match_result, dynamic_string> match_impl(double obtained) const
     {
-        return {obtained > minimum_, {}};
+        return {obtained > minimum_ ? match_result::match : match_result::no_match, {}};
     }
     T minimum_;
 
@@ -59,6 +62,8 @@ protected:
 
 template <> class greater_than<void> : public base_impl<greater_than<void>> {
 public:
+    using value_type = void;
+
     static constexpr std::string_view matcher_name = "greater_than";
     static constexpr std::string_view negated_matcher_name = "lower_equal";
 
@@ -74,7 +79,7 @@ protected:
     static constexpr std::string_view to_string_impl() { return ""; }
     static constexpr bool is_supported_type_impl(object_type /*type*/) { return false; }
 
-    [[nodiscard]] static std::pair<bool, dynamic_string> match_impl() { return {}; }
+    [[nodiscard]] static std::pair<match_result, dynamic_string> match_impl() { return {}; }
 
     friend class base_impl<greater_than<void>>;
 };

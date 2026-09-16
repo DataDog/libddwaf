@@ -31,7 +31,7 @@ TEST(TestHiddenAscii, CompleteMatch)
         "\xF3\xA0\x81\xA8\xF3\xA0\x81\xA9\xF3\xA0\x81\xA4\xF3\xA0\x81\xA4\xF3\xA0\x81\xA5\xF3\xA0"
         "\x81\xAE \xF3\xA0\x81\xA1\xF3\xA0\x81\xB3\xF3\xA0\x81\xA3\xF3\xA0\x81\xA9\xF3\xA0\x81\xA9";
     auto [res, highlight] = matcher.match(input);
-    EXPECT_TRUE(res);
+    EXPECT_EQ(res, ddwaf::matcher::match_result::match);
     EXPECT_STR(highlight, "this is hidden ascii");
 }
 
@@ -41,7 +41,7 @@ TEST(TestHiddenAscii, NoMatch)
 
     std::string input = "this is perfectly normal text";
     auto [res, highlight] = matcher.match(input);
-    EXPECT_FALSE(res);
+    EXPECT_NE(res, ddwaf::matcher::match_result::match);
     EXPECT_STR(highlight, "");
 }
 
@@ -53,7 +53,7 @@ TEST(TestHiddenAscii, InlineMatch)
                         "\xF3\xA0\x81\xA8\xF3\xA0\x81\xA9\xF3\xA0\x81\xA4\xF3\xA0\x81\xA4\xF3\xA0"
                         "\x81\xA5\xF3\xA0\x81\xAE asci\xF3\xA0\x81\xA9";
     auto [res, highlight] = matcher.match(input);
-    EXPECT_TRUE(res);
+    EXPECT_EQ(res, ddwaf::matcher::match_result::match);
     EXPECT_STR(highlight, "this is hidden ascii");
 }
 } // namespace

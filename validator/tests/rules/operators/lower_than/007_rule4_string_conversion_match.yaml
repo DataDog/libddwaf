@@ -1,0 +1,8 @@
+{
+  name: "lower_than matches a numeric string when conversion is enabled",
+  runs: [
+    { input: { rule4-input: "50" },
+      rules: [ { 4: [ { address: rule4-input, value: "50" } ] } ],
+      code: match }
+  ]
+}

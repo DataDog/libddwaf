@@ -22,7 +22,7 @@ TEST(TestIsXSS, TestBasic)
 
     owned_object param = test::ddwaf_object_da::make_string("<script>alert(1);</script>");
     auto [res, highlight] = matcher.match(param);
-    EXPECT_TRUE(res);
+    EXPECT_EQ(res, ddwaf::matcher::match_result::match);
     EXPECT_STR(highlight, "");
 }
 
@@ -30,16 +30,17 @@ TEST(TestIsXSS, TestNoMatch)
 {
     is_xss matcher;
     owned_object param = test::ddwaf_object_da::make_string("non-xss");
-    EXPECT_FALSE(matcher.match(param).first);
+    EXPECT_NE(matcher.match(param).first, ddwaf::matcher::match_result::match);
 }
 
 TEST(TestIsXSS, TestInvalidInput)
 {
     is_xss matcher;
 
-    EXPECT_FALSE(matcher.match(std::string_view{nullptr, 0}).first);
+    EXPECT_NE(
+        matcher.match(std::string_view{nullptr, 0}).first, ddwaf::matcher::match_result::match);
     // NOLINTNEXTLINE(bugprone-string-constructor)
-    EXPECT_FALSE(matcher.match(std::string_view{"*", 0}).first);
+    EXPECT_NE(matcher.match(std::string_view{"*", 0}).first, ddwaf::matcher::match_result::match);
 }
 
 } // namespace
