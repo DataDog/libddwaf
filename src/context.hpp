@@ -10,6 +10,7 @@
 #include <utility>
 #include <vector>
 
+#include "arena_resource.hpp"
 #include "clock.hpp"
 #include "context_allocator.hpp"
 #include "evaluation_engine.hpp"
@@ -25,12 +26,19 @@ namespace ddwaf {
 
 class context;
 
+// Initial block sizes of the context and subcontext arenas; further blocks
+// double in size (see memory::arena_resource). With the recommended ruleset, a
+// context or a subcontext (which copies the evaluation caches of its context)
+// typically uses between 32 and 64 KiB, so two blocks.
+inline constexpr std::size_t context_arena_initial_size = 32768;
+inline constexpr std::size_t subcontext_arena_initial_size = 32768;
+
 class subcontext {
 public:
     ~subcontext()
     {
         {
-            const memory::memory_resource_guard guard(mr_.get());
+            const memory::memory_resource_guard guard(&mr_);
             engine_.reset();
             store_.reset();
         }
@@ -49,82 +57,82 @@ public:
 
     bool insert_batch(owned_object data)
     {
-        const memory::memory_resource_guard guard(mr_.get());
+        const memory::memory_resource_guard guard(&mr_);
         return engine_->insert_batch(std::move(data));
     }
 
     bool insert_batch(map_view data)
     {
-        const memory::memory_resource_guard guard(mr_.get());
+        const memory::memory_resource_guard guard(&mr_);
         return engine_->insert_batch(data);
     }
 
     bool insert_batches(owned_object data)
     {
-        const memory::memory_resource_guard guard(mr_.get());
+        const memory::memory_resource_guard guard(&mr_);
         return engine_->insert_batches(std::move(data));
     }
 
     bool insert_batches(array_view data)
     {
-        const memory::memory_resource_guard guard(mr_.get());
+        const memory::memory_resource_guard guard(&mr_);
         return engine_->insert_batches(data);
     }
 
     std::pair<bool, owned_object> eval(timer &deadline)
     {
-        const memory::memory_resource_guard guard(mr_.get());
+        const memory::memory_resource_guard guard(&mr_);
         return engine_->eval(deadline);
     }
 
     // Internals exposed for testing
     bool next_batch()
     {
-        const memory::memory_resource_guard guard(mr_.get());
+        const memory::memory_resource_guard guard(&mr_);
         return engine_->next_batch();
     }
     bool insert_and_apply(owned_object data)
     {
-        const memory::memory_resource_guard guard(mr_.get());
+        const memory::memory_resource_guard guard(&mr_);
         return engine_->insert_and_apply(std::move(data));
     }
     bool insert_and_apply(map_view data)
     {
-        const memory::memory_resource_guard guard(mr_.get());
+        const memory::memory_resource_guard guard(&mr_);
         return engine_->insert_and_apply(data);
     }
     void eval_preprocessors(timer &deadline)
     {
-        const memory::memory_resource_guard guard(mr_.get());
+        const memory::memory_resource_guard guard(&mr_);
         engine_->eval_preprocessors(deadline);
     }
     void eval_postprocessors(timer &deadline)
     {
-        const memory::memory_resource_guard guard(mr_.get());
+        const memory::memory_resource_guard guard(&mr_);
         engine_->eval_postprocessors(deadline);
     }
     // This function below returns a reference to an internal object,
     // however using them this way helps with testing
     exclusion_policy &eval_filters(timer &deadline)
     {
-        const memory::memory_resource_guard guard(mr_.get());
+        const memory::memory_resource_guard guard(&mr_);
         return engine_->eval_filters(deadline);
     }
     void eval_rules(
         const exclusion_policy &policy, std::vector<rule_result> &results, timer &deadline)
     {
-        const memory::memory_resource_guard guard(mr_.get());
+        const memory::memory_resource_guard guard(&mr_);
         engine_->eval_rules(policy, results, deadline);
     }
 
 protected:
     explicit subcontext(evaluation_engine &ctx_engine, std::shared_ptr<object_store> ctx_store,
-        std::shared_ptr<memory::monotonic_buffer_resource> ctx_mr)
-        : mr_(std::make_unique<memory::monotonic_buffer_resource>()),
-          ctx_store_(std::move(ctx_store)), ctx_cache_(ctx_engine.share_cache()),
+        std::shared_ptr<memory::arena_resource> ctx_mr)
+        : mr_(subcontext_arena_initial_size), ctx_store_(std::move(ctx_store)),
+          ctx_cache_(ctx_engine.share_cache()),
           ctx_mr_(std::move(ctx_mr))
     {
-        const memory::memory_resource_guard guard(mr_.get());
+        const memory::memory_resource_guard guard(&mr_);
         store_ = std::make_unique<object_store>(object_store::from_upstream_store(*ctx_store_));
         engine_ = std::make_unique<evaluation_engine>(
             evaluation_engine::subcontext_engine(ctx_engine, *store_, *ctx_cache_));
@@ -136,7 +144,7 @@ protected:
     // This memory resource is primarily used for non-subcontext allocations within the context
     // itself, such as for caching purposes of finite elements. This has the advantage of
     // improving the context destruction and memory deallocation performance.
-    std::unique_ptr<memory::monotonic_buffer_resource> mr_;
+    memory::arena_resource mr_;
 
     // Shared context store to preserve the lifetime of user-provided objects, the
     // memory resource is required to be able to free the context store
@@ -145,7 +153,7 @@ protected:
     // released with the context's memory resource (see
     // evaluation_engine::share_cache)
     std::shared_ptr<const evaluation_cache> ctx_cache_;
-    std::shared_ptr<memory::monotonic_buffer_resource> ctx_mr_;
+    std::shared_ptr<memory::arena_resource> ctx_mr_;
 
     friend class context;
 };
@@ -154,7 +162,7 @@ class context {
 public:
     explicit context(std::shared_ptr<ruleset> ruleset,
         nonnull_ptr<memory::memory_resource> output_alloc = memory::get_default_resource())
-        : mr_(std::make_shared<memory::monotonic_buffer_resource>())
+        : mr_(std::make_shared<memory::arena_resource>(context_arena_initial_size))
     {
         const memory::memory_resource_guard guard(mr_.get());
         // The ruleset, and so its lookup, outlives the store, as it's kept
@@ -209,6 +217,7 @@ public:
     subcontext create_subcontext() { return subcontext{*engine_, store_, mr_}; }
 
     // Internals exposed for testing
+    [[nodiscard]] std::size_t arena_block_bytes() const { return mr_->block_bytes(); }
     bool next_batch()
     {
         const memory::memory_resource_guard guard(mr_.get());
@@ -255,7 +264,7 @@ protected:
     // This memory resource is primarily used for non-subcontext allocations within the context
     // itself, such as for caching purposes of finite elements. This has the advantage of
     // improving the context destruction and memory deallocation performance.
-    std::shared_ptr<memory::monotonic_buffer_resource> mr_;
+    std::shared_ptr<memory::arena_resource> mr_;
 };
 
 } // namespace ddwaf

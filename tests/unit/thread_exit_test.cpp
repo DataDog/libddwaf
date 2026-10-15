@@ -9,6 +9,7 @@
 #include <string>
 #include <thread>
 
+#include "arena_resource.hpp"
 #include "thread_exit.hpp"
 
 #include "common/gtest_utils.hpp"
@@ -103,6 +104,34 @@ TEST(TestThreadExit, CallbackRegisteredFromKeyDestructor)
     calls = 0;
     std::thread([key] { pthread_setspecific(key, &key); }).join();
     EXPECT_EQ(calls, 1);
+
+    pthread_key_delete(key);
+}
+
+std::atomic<int> cached_blocks_after_exit{-1};
+
+// The arena block cache of a thread is freed even when the thread first
+// caches a block from a pthread key destructor, e.g. when a context is
+// destroyed there.
+TEST(TestThreadExit, ArenaBlockCacheFreedWhenFirstUsedInKeyDestructor)
+{
+    pthread_key_t key;
+    ASSERT_EQ(pthread_key_create(&key, [](void * /*value*/) {
+        // Registered before the cache registers its own, so it runs after it
+        EXPECT_TRUE(thread_exit::register_callback([]() noexcept {
+            cached_blocks_after_exit = static_cast<int>(memory::arena_block_cache::cached_blocks());
+        }));
+
+        std::size_t size = memory::arena_block_cache::min_block_size;
+        void *block = memory::arena_block_cache::acquire(size);
+        memory::arena_block_cache::release(block, size);
+        EXPECT_EQ(memory::arena_block_cache::cached_blocks(), 1);
+    }),
+        0);
+
+    cached_blocks_after_exit = -1;
+    std::thread([key] { pthread_setspecific(key, &key); }).join();
+    EXPECT_EQ(cached_blocks_after_exit, 0);
 
     pthread_key_delete(key);
 }

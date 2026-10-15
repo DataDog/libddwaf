@@ -2527,6 +2527,42 @@ TEST(TestEvaluationEngine, ContextEvaluatedDuringSubcontextLifetime)
     }
 }
 
+// A context evaluated while a subcontext is alive modifies a copy of its
+// cache; the copies superseded since must be released once the subcontexts
+// using them are destroyed, rather than accumulate in the context's arena.
+TEST(TestEvaluationEngine, ContextEvaluatedDuringSubcontextLifetimeReleasesCacheCopies)
+{
+    test::ruleset_builder rbuilder;
+    for (unsigned i = 0; i < 256; ++i) {
+        auto id = "rule" + std::to_string(i);
+        rbuilder.insert_base_rule(core_rule{id, id, make_tags("type" + std::to_string(i)),
+            make_exact_match_expression("addr" + std::to_string(i), "admin")});
+    }
+
+    context ctx{rbuilder.build()};
+
+    auto eval_context = [&ctx]() {
+        EXPECT_TRUE(ctx.insert_batch(object_builder_da::map()));
+        timer deadline{std::chrono::microseconds(LONG_TIME)};
+        auto [code, res] = ctx.eval(deadline);
+        EXPECT_EQ(code, DDWAF_OK);
+    };
+
+    auto eval_with_live_subcontext = [&](unsigned iterations) {
+        for (unsigned i = 0; i < iterations; ++i) {
+            auto sctx = ctx.create_subcontext();
+            eval_context();
+        }
+    };
+
+    eval_context();
+    eval_with_live_subcontext(8);
+    const auto bytes = ctx.arena_block_bytes();
+
+    eval_with_live_subcontext(256);
+    EXPECT_EQ(ctx.arena_block_bytes(), bytes);
+}
+
 TEST(TestEvaluationEngine, FilterEvaluatedOnceItsTargetsAreUpdated)
 {
     test::ruleset_builder rbuilder;

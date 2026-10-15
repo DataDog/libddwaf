@@ -15,6 +15,7 @@
 #include <variant>
 #include <vector>
 
+#include "arena_resource.hpp"
 #include "attribute_collector.hpp"
 #include "cache_array.hpp"
 #include "clock.hpp"
@@ -27,7 +28,6 @@
 #include "expression.hpp"
 #include "log.hpp"
 #include "matcher/prefilter_cache.hpp"
-#include "memory_resource.hpp"
 #include "module.hpp"
 #include "object.hpp"
 #include "object_store.hpp"
@@ -116,7 +116,7 @@ public:
     evaluation_cache &cache() { return *cache_; }
 
 private:
-    memory::monotonic_buffer_resource arena_;
+    memory::arena_resource arena_;
     std::optional<evaluation_cache> cache_;
 };
 

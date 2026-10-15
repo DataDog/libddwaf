@@ -3,6 +3,7 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/interface.cpp
     ${libddwaf_SOURCE_DIR}/src/evaluation_engine.cpp
     ${libddwaf_SOURCE_DIR}/src/context_allocator.cpp
+    ${libddwaf_SOURCE_DIR}/src/arena_resource.cpp
     ${libddwaf_SOURCE_DIR}/src/thread_exit.cpp
     ${libddwaf_SOURCE_DIR}/src/serializer.cpp
     ${libddwaf_SOURCE_DIR}/src/object_store.cpp
