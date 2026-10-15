@@ -6,6 +6,7 @@
 
 #include <cstdio>
 
+#include "ddwaf.h"
 #include "log.hpp"
 
 namespace ddwaf {
@@ -22,7 +23,7 @@ void logger::init(log_cb_type cb, log_level min_level)
 void logger::log(log_level level, const char *function, const char *file, unsigned line,
     const char *message, size_t length)
 {
-    logger::cb(level, function, file, line, message, length);
+    logger::cb(static_cast<DDWAF_LOG_LEVEL>(level), function, file, line, message, length);
 }
 
 } // namespace ddwaf
