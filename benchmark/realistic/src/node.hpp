@@ -118,6 +118,39 @@ void apply_limits(node &n, php_limits &lim, unsigned depth = 0);
 // Convert to a ddwaf_object allocated with `alloc`.
 void to_object(const node &n, ddwaf_object *out, ddwaf_allocator alloc);
 
+// A node tree flattened into a pre-order token tape with all strings in one
+// buffer, the way the binding sees a msgpack message. Building a ddwaf_object
+// from it is a single linear pass, so the per-request input construction done
+// inside the timed region (owned inputs, see README) costs about what the
+// binding's msgpack decoding does, and not the pointer chasing of the tree.
+class flat_object {
+public:
+    explicit flat_object(const node &n) { flatten(n, {}); }
+
+    // Builds the object with `alloc` (ddwaf_object_* functions only).
+    void build(ddwaf_object *out, ddwaf_allocator alloc) const
+    {
+        std::size_t pos = 0;
+        build_at(pos, out, alloc);
+    }
+
+private:
+    struct token {
+        node::kind type;
+        uint32_t key_off;
+        uint32_t key_len;
+        uint32_t off;  // string offset
+        uint64_t val;  // string length, container size, integer or boolean value
+    };
+
+    void flatten(const node &n, std::string_view key);
+    void build_at(std::size_t &pos, ddwaf_object *out, ddwaf_allocator alloc) const;
+    uint32_t add_string(std::string_view s);
+
+    std::string strings_;
+    std::vector<token> tokens_;
+};
+
 // Serialise a node to JSON (used for request bodies' raw size estimation and
 // debugging only).
 std::string to_json(const node &n);

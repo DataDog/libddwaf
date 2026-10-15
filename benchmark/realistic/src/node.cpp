@@ -76,6 +76,60 @@ void to_object(const node &n, ddwaf_object *out, ddwaf_allocator alloc)
     }
 }
 
+uint32_t flat_object::add_string(std::string_view s)
+{
+    const auto off = static_cast<uint32_t>(strings_.size());
+    strings_.append(s);
+    return off;
+}
+
+void flat_object::flatten(const node &n, std::string_view key)
+{
+    token t{n.type, add_string(key), static_cast<uint32_t>(key.size()), 0, 0};
+    switch (n.type) {
+    case node::kind::null: break;
+    case node::kind::boolean: t.val = n.b ? 1 : 0; break;
+    case node::kind::integer: t.val = static_cast<uint64_t>(n.i); break;
+    case node::kind::string:
+        t.off = add_string(n.s);
+        t.val = n.s.size();
+        break;
+    case node::kind::array: t.val = n.arr.size(); break;
+    case node::kind::map: t.val = n.obj.size(); break;
+    }
+    tokens_.push_back(t);
+    if (n.type == node::kind::array) {
+        for (const auto &c : n.arr) { flatten(c, {}); }
+    } else if (n.type == node::kind::map) {
+        for (const auto &[k, c] : n.obj) { flatten(c, k); }
+    }
+}
+
+void flat_object::build_at(std::size_t &pos, ddwaf_object *out, ddwaf_allocator alloc) const
+{
+    const token &t = tokens_[pos++];
+    switch (t.type) {
+    case node::kind::null: ddwaf_object_set_null(out); return;
+    case node::kind::boolean: ddwaf_object_set_bool(out, t.val != 0); return;
+    case node::kind::integer: ddwaf_object_set_signed(out, static_cast<int64_t>(t.val)); return;
+    case node::kind::string:
+        ddwaf_object_set_string(out, strings_.data() + t.off, static_cast<uint32_t>(t.val), alloc);
+        return;
+    case node::kind::array:
+        ddwaf_object_set_array(out, static_cast<std::size_t>(t.val), alloc);
+        for (uint64_t i = 0; i < t.val; ++i) { build_at(pos, ddwaf_object_insert(out, alloc), alloc); }
+        return;
+    case node::kind::map:
+        ddwaf_object_set_map(out, static_cast<std::size_t>(t.val), alloc);
+        for (uint64_t i = 0; i < t.val; ++i) {
+            const token &c = tokens_[pos];
+            build_at(pos,
+                ddwaf_object_insert_key(out, strings_.data() + c.key_off, c.key_len, alloc), alloc);
+        }
+        return;
+    }
+}
+
 namespace {
 void json_escape(std::string &out, std::string_view s)
 {

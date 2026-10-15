@@ -13,6 +13,7 @@
 #include <chrono>
 #include <cinttypes>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
@@ -43,6 +44,7 @@
 
 #include "canon.hpp"
 #include "ddwaf.h"
+#include "mem.hpp"
 #include "node.hpp"
 #include "traffic.hpp"
 
@@ -71,9 +73,15 @@ struct options {
     std::string dump_path;
     std::string json_path;
     std::string data_dir;
+    // Memory characterisation instead of timing (see README).
+    std::string memory_path;
+    unsigned mem_contexts{0}; // > 0: concurrent live contexts instead of traffic
+    unsigned mem_traffic_ms{3000};
     unsigned reps{5};
     unsigned rep_ms{300};
     unsigned warmup_ms{300};
+    // Inputs owned by the WAF (production) or borrowed (alloc = NULL). See README.
+    bool owned_inputs{true};
     bool reps_set{false}, rep_ms_set{false}, warmup_set{false};
 };
 
@@ -112,6 +120,14 @@ void usage()
         "  --list              list scenarios and exit\n"
         "  --verify            check determinism and expected matches/blocks, no timing\n"
         "  --dump-results FILE write canonical eval outputs (for cross-revision diffs), no timing\n"
+        "  --inputs MODE       owned (default: built per eval with a malloc-backed user allocator\n"
+        "                      and freed by the WAF, as dd-trace-php does) or borrowed (prebuilt,\n"
+        "                      shared read-only, alloc = NULL)\n"
+        "  --memory FILE       memory characterisation instead of timing, written as JSON (meant\n"
+        "                      for one scenario and thread count per process, see README)\n"
+        "  --mem-contexts N    with --memory: hold N contexts open after request_init and\n"
+        "                      measure their cost, instead of running traffic\n"
+        "  --mem-traffic-ms MS with --memory: length of the traffic phase (default 3000)\n"
         "  --verbose           print ruleset diagnostics\n");
 }
 
@@ -159,6 +175,19 @@ bool parse_args(int argc, char **argv, options &o)
             o.verify = true;
         } else if (is("--dump-results")) {
             o.dump_path = value();
+        } else if (is("--inputs")) {
+            const std::string v = value();
+            if (v != "owned" && v != "borrowed") {
+                fprintf(stderr, "--inputs must be owned or borrowed\n");
+                return false;
+            }
+            o.owned_inputs = v == "owned";
+        } else if (is("--memory")) {
+            o.memory_path = value();
+        } else if (is("--mem-contexts")) {
+            o.mem_contexts = static_cast<unsigned>(std::stoul(value()));
+        } else if (is("--mem-traffic-ms")) {
+            o.mem_traffic_ms = static_cast<unsigned>(std::stoul(value()));
         } else if (a == "--verbose") {
             o.verbose = true;
         } else if (a == "-h" || a == "--help") {
@@ -394,6 +423,9 @@ struct scenario {
     bool blocklists{false};
     bool quick{false};
     std::string description;
+    // Evict the CPU caches before each timed operation, outside the timing
+    // (see evict_caches)
+    bool cold{false};
 };
 
 std::vector<scenario> define_scenarios()
@@ -425,6 +457,8 @@ std::vector<scenario> define_scenarios()
             "full build including 100k IPs / 10k users"},
         {"update/blocked_ips_100k", sk::update_data, "rc_bl100k", tm::small, 0, 0, false, true,
             "RC update: replace the 100k blocked_ips config and rebuild"},
+        {"update/blocked_ips_100k_cold", sk::update_data, "rc_bl100k", tm::small, 0, 0, false,
+            false, "update/blocked_ips_100k with the caches evicted before each update", true},
         {"update/asm_exclusion", sk::update_asm, "rc", tm::small, 0, 0, false, false,
             "RC update: remove/re-add one ASM exclusion config and rebuild"},
     };
@@ -436,7 +470,8 @@ std::vector<scenario> define_scenarios()
 
 struct prepared_step {
     bool subcontext;
-    ddwaf_object data;
+    ddwaf_object data; // prebuilt (borrowed mode, statistics)
+    flat_object flat;  // source of the per-eval copy (owned mode)
 };
 
 struct prepared_request {
@@ -452,9 +487,9 @@ std::vector<prepared_request> prepare(std::vector<request_spec> specs)
     for (auto &s : specs) {
         prepared_request p{{}, s.attack, s.expect_block};
         for (auto &st : s.steps) {
-            prepared_step ps{st.subcontext, {}};
+            prepared_step ps{st.subcontext, {}, flat_object{st.data}};
             to_object(st.data, &ps.data, ddwaf_get_default_allocator());
-            p.steps.push_back(ps);
+            p.steps.push_back(std::move(ps));
         }
         out.push_back(std::move(p));
     }
@@ -482,12 +517,43 @@ struct step_observer {
     virtual void on_step(std::size_t step, DDWAF_RET_CODE rc, const ddwaf_object *res) = 0;
 };
 
-// One HTTP request as dd-trace-php drives it. Input objects are borrowed
-// (alloc = NULL), they are prebuilt and shared read-only between threads.
+// The allocator libddwaf-rust hands to libddwaf (RustDdwafAllocator): a user
+// allocator forwarding to the global Rust allocator, which in the sidecar is
+// the system malloc. Rust's System allocator uses malloc unless the alignment
+// exceeds the platform minimum (or the size).
+void *user_alloc(void * /*udata*/, std::size_t size, std::size_t alignment)
+{
+    if (alignment <= alignof(std::max_align_t) && alignment <= size) { return malloc(size); }
+    void *p = nullptr;
+    return posix_memalign(&p, std::max(alignment, sizeof(void *)), size) == 0 ? p : nullptr;
+}
+
+void user_free(void * /*udata*/, void *p, std::size_t /*size*/, std::size_t /*alignment*/) { free(p); }
+
+// How inputs and results are allocated.
+struct io_mode {
+    ddwaf_allocator out_alloc; // context output allocator (results)
+    ddwaf_allocator in_alloc;  // allocator of owned inputs; nullptr = borrowed inputs
+};
+
+io_mode make_io_mode(bool owned)
+{
+    if (!owned) { return {ddwaf_get_default_allocator(), nullptr}; }
+    static ddwaf_allocator alloc = ddwaf_user_allocator_init(user_alloc, user_free, nullptr, nullptr);
+    return {alloc, alloc};
+}
+
+// One HTTP request as dd-trace-php drives it. With owned inputs (the default,
+// as in production) each eval's input is built right before the call with the
+// user allocator and handed to the WAF, which frees it when the (sub)context
+// is destroyed; the construction stands in for the binding's msgpack
+// decoding. With borrowed inputs (alloc = NULL) the prebuilt objects are
+// shared read-only between threads.
 template <bool Observe>
-inline void run_request(ddwaf_handle handle, ddwaf_allocator out_alloc, const prepared_request &req,
+inline void run_request(ddwaf_handle handle, const io_mode &io, const prepared_request &req,
     step_observer *obs = nullptr)
 {
+    const ddwaf_allocator out_alloc = io.out_alloc;
     ddwaf_context ctx = ddwaf_context_init(handle, out_alloc);
     bool blocked = false;
     const std::size_t last = req.steps.size() - 1;
@@ -496,16 +562,23 @@ inline void run_request(ddwaf_handle handle, ddwaf_allocator out_alloc, const pr
         if (blocked && i != last) { continue; } // blocked: request aborted, shutdown still runs
         ddwaf_object res;
         DDWAF_RET_CODE rc;
-        auto *data = const_cast<ddwaf_object *>(&st.data);
+        ddwaf_object owned;
+        ddwaf_object *data;
+        if (io.in_alloc != nullptr) {
+            st.flat.build(&owned, io.in_alloc);
+            data = &owned;
+        } else {
+            data = const_cast<ddwaf_object *>(&st.data);
+        }
         if (st.subcontext) {
             ddwaf_subcontext sub = ddwaf_subcontext_init(ctx);
-            rc = ddwaf_subcontext_eval(sub, data, nullptr, &res, eval_timeout_us);
+            rc = ddwaf_subcontext_eval(sub, data, io.in_alloc, &res, eval_timeout_us);
             if constexpr (Observe) { obs->on_step(i, rc, &res); }
             blocked = blocked || is_blocking(&res);
             ddwaf_object_destroy(&res, out_alloc);
             ddwaf_subcontext_destroy(sub);
         } else {
-            rc = ddwaf_context_eval(ctx, data, nullptr, &res, eval_timeout_us);
+            rc = ddwaf_context_eval(ctx, data, io.in_alloc, &res, eval_timeout_us);
             if constexpr (Observe) { obs->on_step(i, rc, &res); }
             blocked = blocked || is_blocking(&res);
             ddwaf_object_destroy(&res, out_alloc);
@@ -537,7 +610,12 @@ struct alignas(64) worker_slot {
     uint64_t count{0};
     int64_t start_ns{0};
     int64_t end_ns{0};
+    int64_t excluded_ns{0}; // time an operation excluded from the measurement
 };
+
+// Where an operation run by run_phases adds the time to exclude from the
+// measurement (see evict_caches)
+thread_local int64_t *excluded_ns_slot = nullptr;
 
 int64_t now_ns()
 {
@@ -591,6 +669,8 @@ std::vector<double> run_phases(const options &o, unsigned nthreads, std::size_t 
                 const int64_t dl = deadline.load(std::memory_order_relaxed);
                 worker_slot &s = slots[t];
                 s.count = 0;
+                s.excluded_ns = 0;
+                excluded_ns_slot = &s.excluded_ns;
                 s.start_ns = now_ns();
                 int64_t end;
                 do {
@@ -618,13 +698,28 @@ std::vector<double> run_phases(const options &o, unsigned nthreads, std::size_t 
         if (phase == 0) { continue; }
         double rate = 0;
         for (const auto &s : slots) {
-            rate += static_cast<double>(s.count) * 1e9 / static_cast<double>(s.end_ns - s.start_ns);
+            rate += static_cast<double>(s.count) * 1e9 /
+                    static_cast<double>(s.end_ns - s.start_ns - s.excluded_ns);
         }
         rates.push_back(rate);
     }
     generation.store(-1, std::memory_order_release);
     for (auto &w : workers) { w.join(); }
     return rates;
+}
+
+// Evicts the data of the previous operations from the CPU caches, as when a
+// long time and other work separate two RC updates, by writing to a buffer
+// three times the size of the L3 cache of a CCD of the benchmark host (32 MiB
+// on a Ryzen 9 9950X). Called from an operation run by run_phases; the time it
+// takes is excluded from the measurement.
+void evict_caches()
+{
+    const int64_t start = now_ns();
+    static std::vector<uint8_t> buffer(std::size_t{96} << 20);
+    static constexpr std::size_t line = 64;
+    for (std::size_t i = 0; i < buffer.size(); i += line) { ++buffer[i]; }
+    if (excluded_ns_slot != nullptr) { *excluded_ns_slot += now_ns() - start; }
 }
 
 // ---------------------------------------------------------------------------
@@ -660,7 +755,8 @@ void write_json(const options &o, const std::vector<result_row> &rows)
     f << ", \"compiler\": " << json_str(__VERSION__);
 #endif
     f << ", \"reps\": " << o.reps << ", \"rep_ms\": " << o.rep_ms
-      << ", \"warmup_ms\": " << o.warmup_ms << ", \"cpus\": [";
+      << ", \"warmup_ms\": " << o.warmup_ms
+      << ", \"inputs\": " << json_str(o.owned_inputs ? "owned" : "borrowed") << ", \"cpus\": [";
     for (std::size_t i = 0; i < o.cpus.size(); ++i) { f << (i ? "," : "") << o.cpus[i]; }
     f << "]},\n  \"results\": [\n";
     for (std::size_t i = 0; i < rows.size(); ++i) {
@@ -676,6 +772,45 @@ void write_json(const options &o, const std::vector<result_row> &rows)
         f << "], \"median\": " << buf;
         snprintf(buf, sizeof(buf), "%.3f", r.mad_pct);
         f << ", \"mad_pct\": " << buf << "}" << (i + 1 < rows.size() ? "," : "") << "\n";
+    }
+    f << "  ]\n}\n";
+}
+
+// Memory characterisation of one scenario (--memory): samples at the points
+// of a phase sequence, plus scalar values such as request counts.
+struct mem_row {
+    std::string name;
+    std::string scenario;
+    unsigned threads;
+    std::string kind; // traffic, contexts, build, update
+    std::vector<std::pair<std::string, mem_sample>> points;
+    std::vector<std::pair<std::string, uint64_t>> values;
+
+    void add(std::string label, const mem_sample &s) { points.emplace_back(std::move(label), s); }
+};
+
+void write_memory_json(const options &o, const std::vector<mem_row> &rows, bool hwm_reset)
+{
+    std::ofstream f(o.memory_path);
+    f << "{\n  \"meta\": {";
+    f << "\"ddwaf_version\": " << json_str(ddwaf_get_version());
+    f << ", \"mallinfo2\": " << (have_mallinfo() ? "true" : "false")
+      << ", \"hwm_reset\": " << (hwm_reset ? "true" : "false")
+      << ", \"traffic_ms\": " << o.mem_traffic_ms
+      << ", \"inputs\": " << json_str(o.owned_inputs ? "owned" : "borrowed") << ", \"cpus\": [";
+    for (std::size_t i = 0; i < o.cpus.size(); ++i) { f << (i ? "," : "") << o.cpus[i]; }
+    f << "]},\n  \"results\": [\n";
+    for (std::size_t i = 0; i < rows.size(); ++i) {
+        const auto &r = rows[i];
+        f << "    {\"name\": " << json_str(r.name) << ", \"scenario\": " << json_str(r.scenario)
+          << ", \"threads\": " << r.threads << ", \"kind\": " << json_str(r.kind);
+        for (const auto &[k, v] : r.values) { f << ", " << json_str(k) << ": " << v; }
+        f << ",\n     \"points\": {";
+        for (std::size_t j = 0; j < r.points.size(); ++j) {
+            f << (j ? ",\n                " : "") << json_str(r.points[j].first) << ": "
+              << mem_json(r.points[j].second);
+        }
+        f << "}}" << (i + 1 < rows.size() ? "," : "") << "\n";
     }
     f << "  ]\n}\n";
 }
@@ -718,7 +853,7 @@ struct digest_observer final : step_observer {
 int verify_lifecycle(const options &o, const scenario &sc, ddwaf_handle h,
     const std::vector<prepared_request> &reqs, std::vector<std::string> *dump_lines)
 {
-    const auto alloc = ddwaf_get_default_allocator();
+    const auto io = make_io_mode(o.owned_inputs);
     int failures = 0;
     std::vector<uint64_t> digests(reqs.size());
     unsigned steps = 0, steps_with_events = 0, events = 0, blocked_reqs = 0;
@@ -733,7 +868,7 @@ int verify_lifecycle(const options &o, const scenario &sc, ddwaf_handle h,
         digest_observer obs;
         obs.lines = dump_lines;
         obs.prefix = sc.name + "\t" + std::to_string(i);
-        run_request<true>(h, alloc, reqs[i], &obs);
+        run_request<true>(h, io, reqs[i], &obs);
         digests[i] = obs.digest;
         steps += obs.steps;
         steps_with_events += obs.steps_with_events;
@@ -781,7 +916,7 @@ int verify_lifecycle(const options &o, const scenario &sc, ddwaf_handle h,
                 for (std::size_t k = 0; k < reqs.size(); ++k) {
                     const std::size_t i = (k * (2 * t + 1) + t * 7) % reqs.size();
                     digest_observer obs;
-                    run_request<true>(h, alloc, reqs[i], &obs);
+                    run_request<true>(h, io, reqs[i], &obs);
                     if (obs.digest != digests[i]) { mismatches.fetch_add(1); }
                 }
             });
@@ -850,6 +985,8 @@ public:
         std::vector<std::string> dump;
         int failures = 0;
         std::vector<result_row> rows;
+        std::vector<mem_row> mem_rows;
+        const bool memory = !o_.memory_path.empty();
 
         for (const auto &sc : scenarios) {
             if (o_.quick && !sc.quick) { continue; }
@@ -880,6 +1017,10 @@ public:
                     ddwaf_handle h = build_handle(store_, rs, o_.verbose);
                     failures += verify_lifecycle(o_, sc, h, reqs, o_.dump_path.empty() ? nullptr : &dump);
                     ddwaf_destroy(h);
+                } else if (memory && o_.mem_contexts > 0) {
+                    mem_rows.push_back(memory_contexts(sc, rs, reqs));
+                } else if (memory) {
+                    for (unsigned t : selected) { mem_rows.push_back(memory_traffic(sc, rs, reqs, t)); }
                 } else {
                     for (unsigned t : selected) { rows.push_back(time_lifecycle(sc, rs, reqs, t)); }
                 }
@@ -899,6 +1040,8 @@ public:
                     ddwaf_destroy(h);
                     ddwaf_builder_destroy(b);
                 }
+            } else if (memory) {
+                if (o_.mem_contexts == 0) { mem_rows.push_back(memory_build(sc, rs)); }
             } else {
                 rows.push_back(time_build(sc, rs));
             }
@@ -910,6 +1053,7 @@ public:
             printf("wrote %zu lines to %s\n", dump.size(), o_.dump_path.c_str());
         }
         if (!o_.json_path.empty() && !rows.empty()) { write_json(o_, rows); }
+        if (memory) { write_memory_json(o_, mem_rows, hwm_reset_ok_); }
         if (o_.verify) { printf(failures == 0 ? "verify: OK\n" : "verify: FAILED (%d)\n", failures); }
         return failures == 0 ? 0 : 1;
     }
@@ -953,7 +1097,7 @@ private:
         const std::vector<prepared_request> &reqs, unsigned nthreads)
     {
         ddwaf_handle h = build_handle(store_, rs, o_.verbose);
-        const auto alloc = ddwaf_get_default_allocator();
+        const auto io = make_io_mode(o_.owned_inputs);
         struct alignas(64) padded_cursor {
             std::size_t v;
         };
@@ -961,7 +1105,7 @@ private:
         for (unsigned t = 0; t < nthreads; ++t) { cursor[t].v = (t * reqs.size()) / nthreads; }
         auto rates = run_phases(o_, nthreads, reqs.size(), [&](unsigned t) {
             std::size_t &c = cursor[t].v;
-            run_request<false>(h, alloc, reqs[c]);
+            run_request<false>(h, io, reqs[c]);
             c = c + 1 == reqs.size() ? 0 : c + 1;
         });
         ddwaf_destroy(h);
@@ -991,6 +1135,7 @@ private:
             ddwaf_handle current = ddwaf_builder_build_instance(b);
             unsigned i = 0;
             rates = run_phases(o_, 1, 1, [&](unsigned) {
+                if (sc.cold) { evict_caches(); }
                 ++i;
                 ddwaf_builder_add_or_update_config(b, blocked_ips_path,
                     static_cast<uint32_t>(strlen(blocked_ips_path)), variants[i & 1], nullptr);
@@ -1038,9 +1183,263 @@ private:
         return r;
     }
 
+    // -----------------------------------------------------------------------
+    // Memory characterisation (--memory). Each function expects to run in a
+    // fresh process (ab.py starts one per scenario and thread count), so that
+    // what earlier scenarios left in the allocator or in process-wide caches
+    // does not show up in its numbers. Values are absolute; ab.py reports
+    // them relative to the "start" point, which already includes the
+    // harness's own data (parsed configs, prepared requests).
+    // -----------------------------------------------------------------------
+
+    // Parses the ruleset's config files now, so that the parse is not
+    // counted in the build.
+    void preload(const ruleset_def &rs)
+    {
+        for (const auto &c : rs.configs) { (void)store_.get(c.file); }
+    }
+
+    void reset_peak() { hwm_reset_ok_ = reset_hwm() && hwm_reset_ok_; }
+
+    // Handle build, then `nthreads` workers running the request pool for
+    // --mem-traffic-ms, then idle workers (all contexts destroyed), then
+    // worker exit and handle destruction.
+    mem_row memory_traffic(const scenario &sc, const ruleset_def &rs,
+        const std::vector<prepared_request> &reqs, unsigned nthreads)
+    {
+        mem_row r{sc.name + "/t" + std::to_string(nthreads), sc.name, nthreads, "traffic", {}, {}};
+        const auto io = make_io_mode(o_.owned_inputs);
+        preload(rs);
+        mem_sampler sampler;
+        r.add("start", take_sample());
+
+        reset_peak();
+        sampler.start(250);
+        ddwaf_handle h = build_handle(store_, rs, o_.verbose);
+        sampler.stop();
+        r.add("build_peak", sampler.peak());
+        r.add("built", take_sample());
+
+        enum : int { running, stopping, exiting };
+        std::atomic<int> state{running};
+        std::atomic<unsigned> idle{0};
+        std::vector<uint64_t> counts(nthreads * 8, 0); // one cache line per worker
+        std::vector<std::thread> workers;
+        reset_peak();
+        sampler.start(5000);
+        for (unsigned t = 0; t < nthreads; ++t) {
+            workers.emplace_back([&, t]() {
+                pin_to(o_.cpus.empty() ? -1 : o_.cpus[t % o_.cpus.size()]);
+                std::size_t c = (t * reqs.size()) / nthreads;
+                uint64_t n = 0;
+                while (state.load(std::memory_order_relaxed) == running) {
+                    run_request<false>(h, io, reqs[c]);
+                    c = c + 1 == reqs.size() ? 0 : c + 1;
+                    ++n;
+                }
+                counts[t * 8] = n;
+                idle.fetch_add(1);
+                while (state.load() != exiting) {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                }
+            });
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(o_.mem_traffic_ms));
+        state.store(stopping);
+        while (idle.load() != nthreads) { std::this_thread::sleep_for(std::chrono::milliseconds(1)); }
+        sampler.stop();
+        r.add("steady", sampler.steady());
+        r.add("peak", sampler.peak());
+        r.add("idle", take_sample());
+
+        state.store(exiting);
+        for (auto &w : workers) { w.join(); }
+        r.add("threads_exited", take_sample());
+        ddwaf_destroy(h);
+        r.add("handle_destroyed", take_sample());
+
+        uint64_t total = 0;
+        for (unsigned t = 0; t < nthreads; ++t) { total += counts[t * 8]; }
+        r.values = {{"requests", total}, {"samples", sampler.count()}};
+        print_mem(r);
+        return r;
+    }
+
+    // N contexts held open in the middle of a request (after the request_init
+    // eval), on one thread, after one warm-up pass over the pool. Also builds
+    // N request_init inputs alone, so that the WAF's own share of a context
+    // can be told apart from the (owned) input it holds.
+    mem_row memory_contexts(const scenario &sc, const ruleset_def &rs,
+        const std::vector<prepared_request> &reqs)
+    {
+        const unsigned n = o_.mem_contexts;
+        mem_row r{sc.name + "/contexts", sc.name, 1, "contexts", {}, {}};
+        const auto io = make_io_mode(o_.owned_inputs);
+        preload(rs);
+        pin_to(o_.cpus.empty() ? -1 : o_.cpus[0]);
+        r.add("start", take_sample());
+        ddwaf_handle h = build_handle(store_, rs, o_.verbose);
+        for (const auto &rq : reqs) { run_request<false>(h, io, rq); }
+        std::vector<ddwaf_object> inputs(n);
+        std::vector<ddwaf_context> contexts;
+        contexts.reserve(n);
+        r.add("warm", take_sample());
+
+        if (io.in_alloc != nullptr) {
+            for (unsigned i = 0; i < n; ++i) {
+                reqs[i % reqs.size()].steps[0].flat.build(&inputs[i], io.in_alloc);
+            }
+            r.add("inputs", take_sample());
+            for (auto &in : inputs) { ddwaf_object_destroy(&in, io.in_alloc); }
+            r.add("inputs_freed", take_sample());
+        }
+
+        reset_peak();
+        for (unsigned i = 0; i < n; ++i) {
+            const auto &st = reqs[i % reqs.size()].steps[0];
+            ddwaf_context ctx = ddwaf_context_init(h, io.out_alloc);
+            ddwaf_object *data = &inputs[i];
+            if (io.in_alloc != nullptr) {
+                st.flat.build(data, io.in_alloc);
+            } else {
+                data = const_cast<ddwaf_object *>(&st.data);
+            }
+            ddwaf_object res;
+            ddwaf_context_eval(ctx, data, io.in_alloc, &res, eval_timeout_us);
+            ddwaf_object_destroy(&res, io.out_alloc);
+            contexts.push_back(ctx);
+        }
+        r.add("contexts", take_sample());
+        for (auto ctx : contexts) { ddwaf_context_destroy(ctx); }
+        r.add("contexts_destroyed", take_sample());
+        ddwaf_destroy(h);
+        r.add("handle_destroyed", take_sample());
+        r.values = {{"contexts", n}};
+        print_mem(r);
+        return r;
+    }
+
+    // build/*: three builds from scratch; the points of the first one (a
+    // fresh process, like a sidecar's first build) and the state after the
+    // last. update/*: two warm-up updates, then one measured update.
+    mem_row memory_build(const scenario &sc, const ruleset_def &rs)
+    {
+        mem_row r{sc.name + "/t1", sc.name, 1, sc.kind == scenario_kind::build ? "build" : "update",
+            {}, {}};
+        preload(rs);
+        mem_sampler sampler;
+        if (sc.kind == scenario_kind::build) {
+            r.add("start", take_sample());
+            constexpr unsigned iterations = 3;
+            for (unsigned it = 0; it < iterations; ++it) {
+                reset_peak();
+                sampler.start(250);
+                ddwaf_builder b = make_builder(store_, rs, false);
+                ddwaf_handle h = ddwaf_builder_build_instance(b);
+                sampler.stop();
+                const mem_sample peak = sampler.peak();
+                const mem_sample with_builder = take_sample();
+                ddwaf_builder_destroy(b);
+                const mem_sample built = take_sample();
+                ddwaf_destroy(h);
+                const mem_sample destroyed = take_sample();
+                if (it == 0) {
+                    r.add("build_peak", peak);
+                    r.add("built_with_builder", with_builder);
+                    r.add("built", built);
+                    r.add("handle_destroyed", destroyed);
+                } else if (it + 1 == iterations) {
+                    r.add("final", destroyed);
+                }
+            }
+            r.values = {{"iterations", iterations}};
+            print_mem(r);
+            return r;
+        }
+
+        // Updates: the same operations as time_build().
+        std::string rc_path;
+        const ddwaf_object *variants[2]{nullptr, nullptr};
+        if (sc.kind == scenario_kind::update_data) {
+            std::string file;
+            for (const auto &c : rs.configs) {
+                if (c.rc_path == blocked_ips_path) { file = c.file; }
+            }
+            rc_path = blocked_ips_path;
+            variants[0] = &store_.get(file);
+            variants[1] = &store_.get_with(file, "\"198.51.100.77\"", "\"198.51.100.78\"");
+        } else {
+            for (const auto &c : rs.configs) {
+                if (c.file.find("exclusion") != std::string::npos) {
+                    rc_path = c.rc_path;
+                    variants[0] = &store_.get(c.file);
+                    break;
+                }
+            }
+            if (variants[0] == nullptr) {
+                fprintf(stderr, "no exclusion config found for %s\n", sc.name.c_str());
+                exit(1);
+            }
+        }
+        r.add("start", take_sample());
+        ddwaf_builder b = make_builder(store_, rs, false);
+        ddwaf_handle current = ddwaf_builder_build_instance(b);
+        unsigned i = 0;
+        auto update = [&]() {
+            ++i;
+            const auto len = static_cast<uint32_t>(rc_path.size());
+            if (sc.kind == scenario_kind::update_data) {
+                ddwaf_builder_add_or_update_config(b, rc_path.data(), len, variants[i & 1], nullptr);
+            } else if ((i & 1) != 0) {
+                ddwaf_builder_remove_config(b, rc_path.data(), len);
+            } else {
+                ddwaf_builder_add_or_update_config(b, rc_path.data(), len, variants[0], nullptr);
+            }
+            return ddwaf_builder_build_instance(b);
+        };
+        for (int k = 0; k < 2; ++k) {
+            ddwaf_handle next = update();
+            ddwaf_destroy(current);
+            current = next;
+        }
+        r.add("before", take_sample());
+        reset_peak();
+        sampler.start(250);
+        ddwaf_handle next = update();
+        sampler.stop();
+        r.add("update_peak", sampler.peak());
+        r.add("both_handles", take_sample());
+        ddwaf_destroy(current);
+        current = next;
+        r.add("after", take_sample());
+        ddwaf_destroy(current);
+        ddwaf_builder_destroy(b);
+        r.add("destroyed", take_sample());
+        r.values = {{"warmup_updates", 2}};
+        print_mem(r);
+        return r;
+    }
+
+    static void print_mem(const mem_row &r)
+    {
+        auto mib = [](int64_t v) {
+            char buf[32];
+            if (v < 0) { return std::string("     n/a"); }
+            snprintf(buf, sizeof(buf), "%8.2f", static_cast<double>(v) / 1048576.0);
+            return std::string(buf);
+        };
+        printf("%s [%s]\n", r.name.c_str(), r.kind.c_str());
+        for (const auto &[k, v] : r.points) {
+            printf("  %-20s in_use %s MiB  rss %s MiB  hwm %s MiB\n", k.c_str(), mib(v.in_use).c_str(),
+                mib(v.rss).c_str(), mib(v.hwm).c_str());
+        }
+        fflush(stdout);
+    }
+
     options o_;
     config_store store_;
     std::map<std::string, ruleset_def> rulesets_;
+    bool hwm_reset_ok_{true};
 };
 
 } // namespace
@@ -1061,10 +1460,11 @@ int main(int argc, char **argv)
         fprintf(stderr, "no rulesets/ in data dir %s (use --data-dir)\n", o.data_dir.c_str());
         return 2;
     }
-    if (!o.list && !o.verify && o.dump_path.empty()) {
+    if (!o.list && !o.verify && o.dump_path.empty() && o.memory_path.empty()) {
         printf("# libddwaf %s, threads:", ddwaf_get_version());
         for (unsigned t : o.threads) { printf(" %u", t); }
-        printf(", reps %u x %u ms (warm-up %u ms), cpus:", o.reps, o.rep_ms, o.warmup_ms);
+        printf(", reps %u x %u ms (warm-up %u ms), %s inputs, cpus:", o.reps, o.rep_ms,
+            o.warmup_ms, o.owned_inputs ? "owned" : "borrowed");
         if (o.cpus.empty()) { printf(" unpinned"); }
         for (int c : o.cpus) { printf(" %d", c); }
         printf("\n");

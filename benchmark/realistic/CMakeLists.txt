@@ -13,7 +13,8 @@ set(BENCH_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/traffic.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/node.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/canon.cpp)
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/canon.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/mem.cpp)
 
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
     project(ddwaf_realistic_bench CXX)
