@@ -489,8 +489,7 @@ const char *ddwaf_get_version() { return ddwaf::current_version.cstring(); }
 bool ddwaf_set_log_cb(ddwaf_log_cb cb, DDWAF_LOG_LEVEL min_level)
 {
     auto level = static_cast<log_level>(min_level);
-    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-    ddwaf::logger::init(reinterpret_cast<logger::log_cb_type>(cb), level);
+    ddwaf::logger::init(cb, level);
     DDWAF_INFO("Sending log messages to binding, min level {}", log_level_to_str(level));
     return true;
 }
