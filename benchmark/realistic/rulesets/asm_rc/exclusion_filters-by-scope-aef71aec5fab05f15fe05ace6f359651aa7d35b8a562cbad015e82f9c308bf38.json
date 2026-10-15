@@ -1,0 +1,84 @@
+{
+ "exclusions": [
+  {
+   "conditions": [
+    {
+     "operator": "match_regex",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.uri.raw",
+        "transformers": [
+         "_sqr_filename",
+         "normalizePath"
+        ]
+       },
+       {
+        "address": "grpc.server.method"
+       }
+      ],
+      "options": {
+       "case_sensitive": false
+      },
+      "regex": "^/aidh/dzovcxoz_gmiqmhdz"
+     }
+    }
+   ],
+   "id": "2fd7b2aa-6288-461e-a5e4-a5776b922699",
+   "inputs": [
+    {
+     "address": "server.request.query",
+     "key_path": [
+      "html"
+     ]
+    },
+    {
+     "address": "server.request.body",
+     "key_path": [
+      "html"
+     ]
+    },
+    {
+     "address": "server.request.path_params",
+     "key_path": [
+      "html"
+     ]
+    }
+   ],
+   "rules_target": [
+    {
+     "tags": {
+      "category": "attack_attempt",
+      "type": "xss"
+     }
+    }
+   ]
+  },
+  {
+   "conditions": [
+    {
+     "operator": "match_regex",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.uri.raw",
+        "transformers": [
+         "_sqr_filename",
+         "normalizePath"
+        ]
+       },
+       {
+        "address": "grpc.server.method"
+       }
+      ],
+      "options": {
+       "case_sensitive": false
+      },
+      "regex": "^/aidh/dzovcxoz_gmiqmhdz"
+     }
+    }
+   ],
+   "id": "81c38dba-a8ea-4988-a62d-bbeeb1059e76"
+  }
+ ]
+}

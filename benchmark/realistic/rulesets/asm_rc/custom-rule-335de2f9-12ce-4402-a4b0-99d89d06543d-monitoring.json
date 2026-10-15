@@ -1,0 +1,86 @@
+{
+ "custom_rules": [
+  {
+   "conditions": [
+    {
+     "operator": "match_regex",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.uri.raw",
+        "transformers": [
+         "_sqr_filename",
+         "normalizePath"
+        ]
+       },
+       {
+        "address": "grpc.server.method"
+       }
+      ],
+      "options": {
+       "case_sensitive": false
+      },
+      "regex": "^/api/signup"
+     }
+    },
+    {
+     "operator": "phrase_match",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.method"
+       }
+      ],
+      "list": [
+       "KJQP"
+      ]
+     }
+    },
+    {
+     "operator": "match_regex",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.body",
+        "key_path": [
+         "email"
+        ]
+       }
+      ],
+      "options": {
+       "case_sensitive": false
+      },
+      "regex": ".*"
+     }
+    },
+    {
+     "operator": "match_regex",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.body",
+        "key_path": [
+         "email"
+        ]
+       }
+      ],
+      "options": {
+       "case_sensitive": false
+      },
+      "regex": ".*"
+     }
+    }
+   ],
+   "id": "335de2f9-12ce-4402-a4b0-99d89d06543d",
+   "name": "Rcjkl users.signup on wsytvedzkd /api/signup",
+   "tags": {
+    "category": "business_logic",
+    "custom": "1",
+    "type": "users.signup",
+    "usr.email": "user@example.com",
+    "usr.id": "user-0"
+   },
+   "transformers": []
+  }
+ ]
+}

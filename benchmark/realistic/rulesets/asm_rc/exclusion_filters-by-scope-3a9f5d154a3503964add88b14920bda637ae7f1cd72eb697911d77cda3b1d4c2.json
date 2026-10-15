@@ -1,0 +1,50 @@
+{
+ "exclusions": [
+  {
+   "conditions": [
+    {
+     "operator": "match_regex",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.uri.raw",
+        "transformers": [
+         "_sqr_filename",
+         "normalizePath"
+        ]
+       },
+       {
+        "address": "grpc.server.method"
+       }
+      ],
+      "options": {
+       "case_sensitive": false
+      },
+      "regex": "^/.*"
+     }
+    }
+   ],
+   "id": "c250a099-1bb3-4e8c-a279-928e7556c6c8",
+   "inputs": [
+    {
+     "address": "server.request.query",
+     "key_path": [
+      "query_filter"
+     ]
+    },
+    {
+     "address": "server.request.body",
+     "key_path": [
+      "query_filter"
+     ]
+    },
+    {
+     "address": "server.request.path_params",
+     "key_path": [
+      "query_filter"
+     ]
+    }
+   ]
+  }
+ ]
+}

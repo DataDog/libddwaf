@@ -1,0 +1,50 @@
+{
+ "custom_rules": [
+  {
+   "conditions": [
+    {
+     "operator": "match_regex",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.uri.raw",
+        "transformers": [
+         "_sqr_filename",
+         "normalizePath"
+        ]
+       },
+       {
+        "address": "grpc.server.method"
+       }
+      ],
+      "options": {
+       "case_sensitive": false
+      },
+      "regex": "^/api/v2/nnv/yyqkghieohgap/.*/fngpcnlr"
+     }
+    },
+    {
+     "operator": "phrase_match",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.method"
+       }
+      ],
+      "list": [
+       "DIW"
+      ]
+     }
+    }
+   ],
+   "id": "6a599472-0575-46f0-95fd-83a96543a7e7",
+   "name": "Rcjkl yyqkghieohgap.fngpcnlr.pdblhz - /api/v2/nnv/yyqkghieohgap/{}/fngpcnlr",
+   "tags": {
+    "category": "business_logic",
+    "custom": "1",
+    "type": "vulnerability.assignee.update"
+   },
+   "transformers": []
+  }
+ ]
+}

@@ -1,0 +1,50 @@
+{
+ "custom_rules": [
+  {
+   "conditions": [
+    {
+     "operator": "match_regex",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.uri.raw",
+        "transformers": [
+         "_sqr_filename",
+         "normalizePath"
+        ]
+       },
+       {
+        "address": "grpc.server.method"
+       }
+      ],
+      "options": {
+       "case_sensitive": false
+      },
+      "regex": "/api/v2/ptibsihj/atrzsf/ctosy/note"
+     }
+    },
+    {
+     "operator": "phrase_match",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.method"
+       }
+      ],
+      "list": [
+       "KJQP"
+      ]
+     }
+    }
+   ],
+   "id": "708490db-539f-488f-9bac-fad2b7e95586",
+   "name": "Rcjkl jnm.ctosy.note.mgvvzpu on /api/v2/ptibsihj/atrzsf/ctosy/note",
+   "tags": {
+    "category": "business_logic",
+    "custom": "1",
+    "type": "asm.actor.note.created"
+   },
+   "transformers": []
+  }
+ ]
+}

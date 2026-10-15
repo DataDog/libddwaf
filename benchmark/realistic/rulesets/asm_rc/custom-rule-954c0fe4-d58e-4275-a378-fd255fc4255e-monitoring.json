@@ -1,0 +1,54 @@
+{
+ "custom_rules": [
+  {
+   "conditions": [
+    {
+     "operator": "match_regex",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.uri.raw",
+        "transformers": [
+         "_sqr_filename",
+         "normalizePath"
+        ]
+       },
+       {
+        "address": "grpc.server.method"
+       }
+      ],
+      "options": {
+       "case_sensitive": false
+      },
+      "regex": "^/api/ui/ptibsihj/jnm/fcxridoy"
+     }
+    },
+    {
+     "operator": "match_regex",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.response.headers.no_cookies",
+        "key_path": [
+         "x-security-evaluation"
+        ]
+       }
+      ],
+      "options": {
+       "case_sensitive": false
+      },
+      "regex": "(data_ugjqvtcorzqq|zhzasy_gmibxczgm):0(\\.([0-5][0-9]*|6(0+)?))?"
+     }
+    }
+   ],
+   "id": "954c0fe4-d58e-4275-a378-fd255fc4255e",
+   "name": "deaz ovirwm lbsz",
+   "tags": {
+    "category": "attack_attempt",
+    "custom": "1",
+    "type": "custom"
+   },
+   "transformers": []
+  }
+ ]
+}

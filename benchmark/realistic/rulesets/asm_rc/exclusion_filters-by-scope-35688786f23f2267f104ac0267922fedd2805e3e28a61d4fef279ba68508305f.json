@@ -1,0 +1,38 @@
+{
+ "exclusions": [
+  {
+   "conditions": [
+    {
+     "operator": "match_regex",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.uri.raw",
+        "transformers": [
+         "_sqr_filename",
+         "normalizePath"
+        ]
+       },
+       {
+        "address": "grpc.server.method"
+       }
+      ],
+      "options": {
+       "case_sensitive": false
+      },
+      "regex": "/pdqed/.*"
+     }
+    }
+   ],
+   "id": "0cebaa5f-b0a5-45f9-86e8-cd7d087e4fc3",
+   "rules_target": [
+    {
+     "tags": {
+      "category": "attack_attempt",
+      "type": "sql_injection"
+     }
+    }
+   ]
+  }
+ ]
+}

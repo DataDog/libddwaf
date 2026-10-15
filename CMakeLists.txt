@@ -117,6 +117,11 @@ endif()
 
 include(cmake/package.cmake)
 
+# Opt-in realistic benchmark (ninja ddwaf_realistic_bench), see benchmark/realistic
+if (LIBDDWAF_BUILD_STATIC)
+    add_subdirectory(benchmark/realistic EXCLUDE_FROM_ALL)
+endif()
+
 if (LIBDDWAF_TESTING)
     add_subdirectory(tests EXCLUDE_FROM_ALL)
     add_subdirectory(validator EXCLUDE_FROM_ALL)

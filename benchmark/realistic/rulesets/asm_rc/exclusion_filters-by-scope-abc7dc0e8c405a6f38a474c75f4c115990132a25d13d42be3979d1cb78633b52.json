@@ -1,0 +1,38 @@
+{
+ "exclusions": [
+  {
+   "conditions": [
+    {
+     "operator": "match_regex",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.uri.raw",
+        "transformers": [
+         "_sqr_filename",
+         "normalizePath"
+        ]
+       },
+       {
+        "address": "grpc.server.method"
+       }
+      ],
+      "options": {
+       "case_sensitive": false
+      },
+      "regex": "^https://iydg\\.zjjxdqy\\.wtog/odamlq/QLFUdtxcwxeppskgSwufjmzt\\.vsfi.*"
+     }
+    }
+   ],
+   "id": "7615506b-f1c9-4cf3-97af-f1c80458598a",
+   "rules_target": [
+    {
+     "tags": {
+      "category": "attack_attempt",
+      "type": "ssrf"
+     }
+    }
+   ]
+  }
+ ]
+}

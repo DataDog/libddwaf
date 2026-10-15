@@ -1,0 +1,105 @@
+{
+ "exclusions": [
+  {
+   "conditions": [
+    {
+     "operator": "match_regex",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.uri.raw",
+        "transformers": [
+         "_sqr_filename",
+         "normalizePath"
+        ]
+       },
+       {
+        "address": "grpc.server.method"
+       }
+      ],
+      "options": {
+       "case_sensitive": false
+      },
+      "regex": "^/api/v2/onyuxuvg/xftoiejn/search"
+     }
+    }
+   ],
+   "id": "dd6f67fb-86d3-4cd0-940e-186df323860c",
+   "inputs": [
+    {
+     "address": "server.request.query",
+     "key_path": [
+      "data",
+      "attributes",
+      "scope"
+     ]
+    },
+    {
+     "address": "server.request.body",
+     "key_path": [
+      "data",
+      "attributes",
+      "scope"
+     ]
+    },
+    {
+     "address": "server.request.path_params",
+     "key_path": [
+      "data",
+      "attributes",
+      "scope"
+     ]
+    }
+   ]
+  },
+  {
+   "conditions": [
+    {
+     "operator": "match_regex",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.uri.raw",
+        "transformers": [
+         "_sqr_filename",
+         "normalizePath"
+        ]
+       },
+       {
+        "address": "grpc.server.method"
+       }
+      ],
+      "options": {
+       "case_sensitive": false
+      },
+      "regex": "^/api/v2/wjns/xpzhfujci/eixzrknoi"
+     }
+    }
+   ],
+   "id": "59c651ab-d9d3-4e26-80db-b522a6928e85",
+   "inputs": [
+    {
+     "address": "server.request.query",
+     "key_path": [
+      "filter",
+      "query"
+     ]
+    },
+    {
+     "address": "server.request.body",
+     "key_path": [
+      "filter",
+      "query"
+     ]
+    },
+    {
+     "address": "server.request.path_params",
+     "key_path": [
+      "filter",
+      "query"
+     ]
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,70 @@
+{
+ "exclusions": [
+  {
+   "conditions": [
+    {
+     "operator": "match_regex",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.uri.raw",
+        "transformers": [
+         "_sqr_filename",
+         "normalizePath"
+        ]
+       },
+       {
+        "address": "grpc.server.method"
+       }
+      ],
+      "options": {
+       "case_sensitive": false
+      },
+      "regex": "^/bnccpitur\\.IushwyhAjpihnk/ThuqzMyklk"
+     }
+    }
+   ],
+   "id": "b665ed3c-8d2d-4d2e-8bf7-e19898b72bc8"
+  },
+  {
+   "conditions": [
+    {
+     "operator": "match_regex",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.uri.raw",
+        "transformers": [
+         "_sqr_filename",
+         "normalizePath"
+        ]
+       },
+       {
+        "address": "grpc.server.method"
+       }
+      ],
+      "options": {
+       "case_sensitive": false
+      },
+      "regex": "^/bnccpitur\\.IushwyhAjpihnk/TfeihIhblEamfi"
+     }
+    }
+   ],
+   "id": "a6fa4cd1-f1fa-4b7a-bae6-6fdeb6cfe4b9",
+   "rules_target": [
+    {
+     "tags": {
+      "category": "attack_attempt",
+      "type": "lfi"
+     }
+    },
+    {
+     "tags": {
+      "category": "attack_attempt",
+      "type": "command_injection"
+     }
+    }
+   ]
+  }
+ ]
+}

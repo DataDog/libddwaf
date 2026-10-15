@@ -1,4 +1,6 @@
 file(GLOB_RECURSE LIBDDWAF_BENCHMARK_SOURCE *.cpp)
+# benchmark/realistic is a separate benchmark (ddwaf_realistic_bench)
+list(FILTER LIBDDWAF_BENCHMARK_SOURCE EXCLUDE REGEX "/realistic/")
 
 add_executable(waf_benchmark ${LIBDDWAF_BENCHMARK_SOURCE})
 target_compile_options(waf_benchmark PRIVATE $<$<BOOL:${LIBDDWAF_ENABLE_LTO}>:-flto>)

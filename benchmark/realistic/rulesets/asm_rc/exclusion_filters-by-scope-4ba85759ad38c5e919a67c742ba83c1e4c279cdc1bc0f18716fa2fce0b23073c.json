@@ -1,0 +1,289 @@
+{
+ "exclusions": [
+  {
+   "conditions": [
+    {
+     "operator": "match_regex",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.uri.raw",
+        "transformers": [
+         "_sqr_filename",
+         "normalizePath"
+        ]
+       },
+       {
+        "address": "grpc.server.method"
+       }
+      ],
+      "options": {
+       "case_sensitive": false
+      },
+      "regex": "/api/v1/weeurbeq.*"
+     }
+    }
+   ],
+   "id": "af2ceba9-14ac-49e4-8ec9-764baaf8ccbb",
+   "inputs": [
+    {
+     "address": "server.request.query",
+     "key_path": [
+      "graph_def"
+     ]
+    },
+    {
+     "address": "server.request.body",
+     "key_path": [
+      "graph_def"
+     ]
+    },
+    {
+     "address": "server.request.path_params",
+     "key_path": [
+      "graph_def"
+     ]
+    }
+   ]
+  },
+  {
+   "conditions": [
+    {
+     "operator": "match_regex",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.uri.raw",
+        "transformers": [
+         "_sqr_filename",
+         "normalizePath"
+        ]
+       },
+       {
+        "address": "grpc.server.method"
+       }
+      ],
+      "options": {
+       "case_sensitive": false
+      },
+      "regex": "^/vzlztxn/search.*"
+     }
+    }
+   ],
+   "id": "f30a307c-20e5-4d53-bbb6-bcc2108fbb3a",
+   "inputs": [
+    {
+     "address": "server.request.query",
+     "key_path": [
+      "counts"
+     ]
+    },
+    {
+     "address": "server.request.body",
+     "key_path": [
+      "counts"
+     ]
+    },
+    {
+     "address": "server.request.path_params",
+     "key_path": [
+      "counts"
+     ]
+    }
+   ],
+   "rules_target": [
+    {
+     "tags": {
+      "category": "attack_attempt",
+      "type": "php_code_injection"
+     }
+    }
+   ]
+  },
+  {
+   "conditions": [
+    {
+     "operator": "match_regex",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.uri.raw",
+        "transformers": [
+         "_sqr_filename",
+         "normalizePath"
+        ]
+       },
+       {
+        "address": "grpc.server.method"
+       }
+      ],
+      "options": {
+       "case_sensitive": false
+      },
+      "regex": "^/vzlztxn/search"
+     }
+    }
+   ],
+   "id": "37fd8c85-979b-42be-88c3-7c7f838d52a3",
+   "inputs": [
+    {
+     "address": "server.request.query",
+     "key_path": [
+      "text"
+     ]
+    },
+    {
+     "address": "server.request.body",
+     "key_path": [
+      "text"
+     ]
+    },
+    {
+     "address": "server.request.path_params",
+     "key_path": [
+      "text"
+     ]
+    }
+   ],
+   "rules_target": [
+    {
+     "tags": {
+      "category": "attack_attempt",
+      "type": "sql_injection"
+     }
+    }
+   ]
+  },
+  {
+   "conditions": [
+    {
+     "operator": "match_regex",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.uri.raw",
+        "transformers": [
+         "_sqr_filename",
+         "normalizePath"
+        ]
+       },
+       {
+        "address": "grpc.server.method"
+       }
+      ],
+      "options": {
+       "case_sensitive": false
+      },
+      "regex": "^/vzlztxn/fxtgdmwkdk_epkdu"
+     }
+    }
+   ],
+   "id": "b11b13c0-b6b4-40f2-a210-9039a0979f16",
+   "inputs": [
+    {
+     "address": "server.request.query",
+     "key_path": [
+      "q"
+     ]
+    },
+    {
+     "address": "server.request.body",
+     "key_path": [
+      "q"
+     ]
+    },
+    {
+     "address": "server.request.path_params",
+     "key_path": [
+      "q"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "0ad62a29-fe28-422a-846d-fd3430842750",
+   "inputs": [
+    {
+     "address": "server.request.query",
+     "key_path": [
+      "query"
+     ]
+    },
+    {
+     "address": "server.request.body",
+     "key_path": [
+      "query"
+     ]
+    },
+    {
+     "address": "server.request.path_params",
+     "key_path": [
+      "query"
+     ]
+    }
+   ],
+   "rules_target": [
+    {
+     "tags": {
+      "category": "attack_attempt",
+      "type": "sql_injection"
+     }
+    }
+   ]
+  },
+  {
+   "conditions": [
+    {
+     "operator": "match_regex",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.uri.raw",
+        "transformers": [
+         "_sqr_filename",
+         "normalizePath"
+        ]
+       },
+       {
+        "address": "grpc.server.method"
+       }
+      ],
+      "options": {
+       "case_sensitive": false
+      },
+      "regex": "^/api/v1/vjm"
+     }
+    }
+   ],
+   "id": "53f3c97b-9f4c-42a1-9acc-395907a217c6",
+   "inputs": [
+    {
+     "address": "server.request.query",
+     "key_path": [
+      "name"
+     ]
+    },
+    {
+     "address": "server.request.body",
+     "key_path": [
+      "name"
+     ]
+    },
+    {
+     "address": "server.request.path_params",
+     "key_path": [
+      "name"
+     ]
+    }
+   ],
+   "rules_target": [
+    {
+     "tags": {
+      "category": "attack_attempt",
+      "type": "js_code_injection"
+     }
+    }
+   ]
+  }
+ ]
+}

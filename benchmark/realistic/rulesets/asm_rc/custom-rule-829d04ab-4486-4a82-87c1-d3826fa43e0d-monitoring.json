@@ -1,0 +1,50 @@
+{
+ "custom_rules": [
+  {
+   "conditions": [
+    {
+     "operator": "match_regex",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.uri.raw",
+        "transformers": [
+         "_sqr_filename",
+         "normalizePath"
+        ]
+       },
+       {
+        "address": "grpc.server.method"
+       }
+      ],
+      "options": {
+       "case_sensitive": false
+      },
+      "regex": "KJQP /api/.*/wjns-xpzhfujci/<event_cssymsdf_type:type>"
+     }
+    },
+    {
+     "operator": "phrase_match",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.method"
+       }
+      ],
+      "list": [
+       "KJQP"
+      ]
+     }
+    }
+   ],
+   "id": "829d04ab-4486-4a82-87c1-d3826fa43e0d",
+   "name": "Rcjkl api.<version>.wjns-xpzhfujci.<event_cssymsdf_type:type> on xakfozg-events-query-py3 - KJQP /api/<version>/wjns-xpzhfujci/<event_cssymsdf_type:type>",
+   "tags": {
+    "category": "business_logic",
+    "custom": "1",
+    "type": "api.<version>.logs-analytics.<event_platform_type:type>"
+   },
+   "transformers": []
+  }
+ ]
+}

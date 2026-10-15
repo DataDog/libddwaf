@@ -1,0 +1,68 @@
+{
+ "custom_rules": [
+  {
+   "conditions": [
+    {
+     "operator": "match_regex",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.uri.raw",
+        "transformers": [
+         "_sqr_filename",
+         "normalizePath"
+        ]
+       },
+       {
+        "address": "grpc.server.method"
+       }
+      ],
+      "options": {
+       "case_sensitive": false
+      },
+      "regex": "^/api/ickvqlakVttbm"
+     }
+    },
+    {
+     "operator": "phrase_match",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.method"
+       }
+      ],
+      "list": [
+       "KJQP"
+      ]
+     }
+    },
+    {
+     "operator": "match_regex",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.body",
+        "key_path": [
+         "email"
+        ]
+       }
+      ],
+      "options": {
+       "case_sensitive": false
+      },
+      "regex": ".*"
+     }
+    }
+   ],
+   "id": "416005d8-c5f8-4f47-b10f-a7ed3facd25e",
+   "name": "Rcjkl users.qguwkoej_biwfw on swfkbqmeen /api/ickvqlakVttbm",
+   "tags": {
+    "category": "business_logic",
+    "custom": "1",
+    "type": "users.password_reset",
+    "usr.email": "user@example.com"
+   },
+   "transformers": []
+  }
+ ]
+}

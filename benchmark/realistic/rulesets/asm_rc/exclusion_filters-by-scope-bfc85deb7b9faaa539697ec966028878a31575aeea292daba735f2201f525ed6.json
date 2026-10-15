@@ -1,0 +1,38 @@
+{
+ "exclusions": [
+  {
+   "conditions": [
+    {
+     "operator": "match_regex",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.uri.raw",
+        "transformers": [
+         "_sqr_filename",
+         "normalizePath"
+        ]
+       },
+       {
+        "address": "grpc.server.method"
+       }
+      ],
+      "options": {
+       "case_sensitive": false
+      },
+      "regex": "^/cjspmrvphgm\\.RPPHyhcpjj/UqoqojrGMNTiedydPnsvmbkuCbst"
+     }
+    }
+   ],
+   "id": "83506623-620f-4943-86cf-07d5e5102391",
+   "rules_target": [
+    {
+     "tags": {
+      "category": "attack_attempt",
+      "type": "sql_injection"
+     }
+    }
+   ]
+  }
+ ]
+}

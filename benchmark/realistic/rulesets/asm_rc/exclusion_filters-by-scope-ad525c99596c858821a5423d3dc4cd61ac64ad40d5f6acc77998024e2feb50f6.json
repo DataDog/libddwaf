@@ -1,0 +1,50 @@
+{
+ "exclusions": [
+  {
+   "conditions": [
+    {
+     "operator": "match_regex",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.uri.raw",
+        "transformers": [
+         "_sqr_filename",
+         "normalizePath"
+        ]
+       },
+       {
+        "address": "grpc.server.method"
+       }
+      ],
+      "options": {
+       "case_sensitive": false
+      },
+      "regex": "^/api/ui/dcl/koqk-search"
+     }
+    }
+   ],
+   "id": "731bcef6-f01a-4191-ab72-b9c956f6f900",
+   "inputs": [
+    {
+     "address": "server.request.query",
+     "key_path": [
+      "query"
+     ]
+    },
+    {
+     "address": "server.request.body",
+     "key_path": [
+      "query"
+     ]
+    },
+    {
+     "address": "server.request.path_params",
+     "key_path": [
+      "query"
+     ]
+    }
+   ]
+  }
+ ]
+}

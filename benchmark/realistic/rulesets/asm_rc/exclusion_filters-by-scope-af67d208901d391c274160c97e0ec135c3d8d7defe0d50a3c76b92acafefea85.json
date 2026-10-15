@@ -1,0 +1,22 @@
+{
+ "exclusions": [
+  {
+   "conditions": [
+    {
+     "operator": "ip_match",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "http.client_ip"
+       }
+      ],
+      "list": [
+       "100.0.0.0/8"
+      ]
+     }
+    }
+   ],
+   "id": "5888c9a5-cd98-458a-b12a-3068b49b3b13"
+  }
+ ]
+}

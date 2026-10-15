@@ -1,0 +1,68 @@
+{
+ "exclusions": [
+  {
+   "conditions": [
+    {
+     "operator": "match_regex",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.uri.raw",
+        "transformers": [
+         "_sqr_filename",
+         "normalizePath"
+        ]
+       },
+       {
+        "address": "grpc.server.method"
+       }
+      ],
+      "options": {
+       "case_sensitive": false
+      },
+      "regex": "^/timwsnnikb\\.Nmalwmykc/Qqfibkea"
+     }
+    }
+   ],
+   "id": "c68e94a8-dd4b-4dda-bb87-80d640d691a5",
+   "rules_target": [
+    {
+     "tags": {
+      "category": "attack_attempt",
+      "type": "xss"
+     }
+    },
+    {
+     "tags": {
+      "category": "attack_attempt",
+      "type": "js_code_injection"
+     }
+    },
+    {
+     "tags": {
+      "category": "attack_attempt",
+      "type": "lfi"
+     }
+    },
+    {
+     "tags": {
+      "category": "attack_attempt",
+      "type": "command_injection"
+     }
+    },
+    {
+     "tags": {
+      "category": "attack_attempt",
+      "type": "sql_injection"
+     }
+    },
+    {
+     "tags": {
+      "category": "attack_attempt",
+      "type": "java_code_injection"
+     }
+    }
+   ]
+  }
+ ]
+}

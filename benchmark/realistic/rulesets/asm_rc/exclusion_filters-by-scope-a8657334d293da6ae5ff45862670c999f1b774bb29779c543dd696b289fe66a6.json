@@ -1,0 +1,50 @@
+{
+ "exclusions": [
+  {
+   "conditions": [
+    {
+     "operator": "match_regex",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.uri.raw",
+        "transformers": [
+         "_sqr_filename",
+         "normalizePath"
+        ]
+       },
+       {
+        "address": "grpc.server.method"
+       }
+      ],
+      "options": {
+       "case_sensitive": false
+      },
+      "regex": "^/timwsnnikb\\.Nmalwmykc/Qqfibkea"
+     }
+    }
+   ],
+   "id": "f9c3c5d6-cc72-4fef-9716-5400f7a24ef7",
+   "rules_target": [
+    {
+     "tags": {
+      "category": "attack_attempt",
+      "type": "java_code_injection"
+     }
+    },
+    {
+     "tags": {
+      "category": "attack_attempt",
+      "type": "lfi"
+     }
+    },
+    {
+     "tags": {
+      "category": "attack_attempt",
+      "type": "xss"
+     }
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,30 @@
+{
+ "exclusions": [
+  {
+   "conditions": [
+    {
+     "operator": "match_regex",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.uri.raw",
+        "transformers": [
+         "_sqr_filename",
+         "normalizePath"
+        ]
+       },
+       {
+        "address": "grpc.server.method"
+       }
+      ],
+      "options": {
+       "case_sensitive": false
+      },
+      "regex": "^/api/v2/ci/jjnkwyas/.*"
+     }
+    }
+   ],
+   "id": "1931d0f4-c521-4500-af34-6c4d8b8b3494"
+  }
+ ]
+}

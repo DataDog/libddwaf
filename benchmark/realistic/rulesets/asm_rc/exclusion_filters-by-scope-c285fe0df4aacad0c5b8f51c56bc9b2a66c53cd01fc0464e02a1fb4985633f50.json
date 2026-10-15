@@ -1,0 +1,30 @@
+{
+ "exclusions": [
+  {
+   "conditions": [
+    {
+     "operator": "match_regex",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.uri.raw",
+        "transformers": [
+         "_sqr_filename",
+         "normalizePath"
+        ]
+       },
+       {
+        "address": "grpc.server.method"
+       }
+      ],
+      "options": {
+       "case_sensitive": false
+      },
+      "regex": "^/timwsnnikb\\.Nmalwmykc/Qqfibkea"
+     }
+    }
+   ],
+   "id": "064a2dac-357c-4f36-b1df-51f320812c2e"
+  }
+ ]
+}

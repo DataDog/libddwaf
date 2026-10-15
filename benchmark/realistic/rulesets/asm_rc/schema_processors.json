@@ -1,0 +1,15 @@
+{
+ "processor_overrides": [
+  {
+   "scanners": {},
+   "target": [
+    {
+     "id": "extract-headers"
+    },
+    {
+     "id": "extract-content"
+    }
+   ]
+  }
+ ]
+}

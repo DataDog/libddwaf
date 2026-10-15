@@ -1,0 +1,51 @@
+{
+ "rules_override": [
+  {
+   "enabled": true,
+   "id": "rasp-930-100",
+   "on_match": [
+    "stack_trace"
+   ],
+   "tags": {
+    "policy_id": "de8e72d3-d1d7-402b-92fa-480d4e7fe418"
+   }
+  },
+  {
+   "enabled": true,
+   "id": "rasp-934-100",
+   "on_match": [
+    "stack_trace"
+   ],
+   "tags": {
+    "policy_id": "de8e72d3-d1d7-402b-92fa-480d4e7fe418"
+   }
+  },
+  {
+   "enabled": true,
+   "id": "rasp-942-100",
+   "on_match": [
+    "stack_trace"
+   ],
+   "tags": {
+    "policy_id": "de8e72d3-d1d7-402b-92fa-480d4e7fe418"
+   }
+  },
+  {
+   "enabled": true,
+   "id": "rasp-932-100",
+   "on_match": [
+    "stack_trace"
+   ],
+   "tags": {
+    "policy_id": "de8e72d3-d1d7-402b-92fa-480d4e7fe418"
+   }
+  },
+  {
+   "enabled": false,
+   "id": "crs-942-100",
+   "tags": {
+    "policy_id": "de8e72d3-d1d7-402b-92fa-480d4e7fe418"
+   }
+  }
+ ]
+}

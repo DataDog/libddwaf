@@ -1,0 +1,50 @@
+{
+ "custom_rules": [
+  {
+   "conditions": [
+    {
+     "operator": "match_regex",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.uri.raw",
+        "transformers": [
+         "_sqr_filename",
+         "normalizePath"
+        ]
+       },
+       {
+        "address": "grpc.server.method"
+       }
+      ],
+      "options": {
+       "case_sensitive": false
+      },
+      "regex": "^/api/v1/ptibsihj_xpzhfujci/lclpcpg/.*/fngpcnlr"
+     }
+    },
+    {
+     "operator": "phrase_match",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.method"
+       }
+      ],
+      "list": [
+       "IHQYW"
+      ]
+     }
+    }
+   ],
+   "id": "dc55b642-87b7-454b-8415-d30a0506347d",
+   "name": "Rcjkl lclpcpg.fngpcnlr.pdblhz - /api/v1/ptibsihj_xpzhfujci/lclpcpg/{}/fngpcnlr",
+   "tags": {
+    "category": "business_logic",
+    "custom": "1",
+    "type": "signals.assignee.update"
+   },
+   "transformers": []
+  }
+ ]
+}

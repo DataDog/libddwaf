@@ -1,0 +1,74 @@
+{
+ "exclusions": [
+  {
+   "conditions": [
+    {
+     "operator": "match_regex",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.uri.raw",
+        "transformers": [
+         "_sqr_filename",
+         "normalizePath"
+        ]
+       },
+       {
+        "address": "grpc.server.method"
+       }
+      ],
+      "options": {
+       "case_sensitive": false
+      },
+      "regex": "^/bqwelypaqba/fugcb/gsofgkv-event"
+     }
+    }
+   ],
+   "id": "0c6d0252-ade7-4fd7-8848-5e629283fb80",
+   "inputs": [
+    {
+     "address": "server.request.query",
+     "key_path": [
+      "*",
+      "text"
+     ]
+    },
+    {
+     "address": "server.request.body",
+     "key_path": [
+      "*",
+      "text"
+     ]
+    },
+    {
+     "address": "server.request.path_params",
+     "key_path": [
+      "*",
+      "text"
+     ]
+    },
+    {
+     "address": "server.request.query",
+     "key_path": [
+      "*",
+      "fallback"
+     ]
+    },
+    {
+     "address": "server.request.body",
+     "key_path": [
+      "*",
+      "fallback"
+     ]
+    },
+    {
+     "address": "server.request.path_params",
+     "key_path": [
+      "*",
+      "fallback"
+     ]
+    }
+   ]
+  }
+ ]
+}

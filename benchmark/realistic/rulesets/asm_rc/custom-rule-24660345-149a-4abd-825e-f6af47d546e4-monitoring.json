@@ -1,0 +1,80 @@
+{
+ "custom_rules": [
+  {
+   "conditions": [
+    {
+     "operator": "match_regex",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.uri.raw",
+        "transformers": [
+         "_sqr_filename",
+         "normalizePath"
+        ]
+       },
+       {
+        "address": "grpc.server.method"
+       }
+      ],
+      "options": {
+       "case_sensitive": false
+      },
+      "regex": "^/api/v2/on-ynrf-ohxfisbrbv-bmummqm/kxldujws-idgiy/ygtsyfb"
+     }
+    },
+    {
+     "operator": "!match_regex",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.headers.no_cookies",
+        "key_path": [
+         "user-agent"
+        ]
+       }
+      ],
+      "options": {
+       "case_sensitive": false
+      },
+      "regex": "^(Go-http-client/\\d+\\.\\d+|axios/\\d+\\.\\d+\\.\\d+)$"
+     }
+    },
+    {
+     "operator": "phrase_match",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.method"
+       }
+      ],
+      "list": [
+       "KJQP"
+      ]
+     }
+    },
+    {
+     "operator": "phrase_match",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.response.status"
+       }
+      ],
+      "list": [
+       "200"
+      ]
+     }
+    }
+   ],
+   "id": "24660345-149a-4abd-825e-f6af47d546e4",
+   "name": "TTMO vnjnsvytje user-agent",
+   "tags": {
+    "category": "business_logic",
+    "custom": "1",
+    "type": "opms.unfamiliar.user.agent"
+   },
+   "transformers": []
+  }
+ ]
+}

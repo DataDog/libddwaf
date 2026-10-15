@@ -1,0 +1,76 @@
+{
+ "exclusions": [
+  {
+   "conditions": [
+    {
+     "operator": "match_regex",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.uri.raw",
+        "transformers": [
+         "_sqr_filename",
+         "normalizePath"
+        ]
+       },
+       {
+        "address": "grpc.server.method"
+       }
+      ],
+      "options": {
+       "case_sensitive": false
+      },
+      "regex": "^/odamlq/ngcvspzm\\.vsfi"
+     }
+    }
+   ],
+   "id": "fad51bf0-5208-47f2-b77b-f83b3157aa87"
+  },
+  {
+   "conditions": [
+    {
+     "operator": "match_regex",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.uri.raw",
+        "transformers": [
+         "_sqr_filename",
+         "normalizePath"
+        ]
+       },
+       {
+        "address": "grpc.server.method"
+       }
+      ],
+      "options": {
+       "case_sensitive": false
+      },
+      "regex": "^/odamlq/bqgytzegXqfjermjlJblwsgyfqg\\.vsfi"
+     }
+    }
+   ],
+   "id": "7ba1e839-1c63-4c25-bb8c-ca378f88c7d7",
+   "inputs": [
+    {
+     "address": "server.request.query",
+     "key_path": [
+      "FIELD_MAC_SCRIPT"
+     ]
+    },
+    {
+     "address": "server.request.body",
+     "key_path": [
+      "FIELD_MAC_SCRIPT"
+     ]
+    },
+    {
+     "address": "server.request.path_params",
+     "key_path": [
+      "FIELD_MAC_SCRIPT"
+     ]
+    }
+   ]
+  }
+ ]
+}

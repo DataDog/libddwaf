@@ -1,0 +1,56 @@
+{
+ "exclusions": [
+  {
+   "conditions": [
+    {
+     "operator": "match_regex",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.uri.raw",
+        "transformers": [
+         "_sqr_filename",
+         "normalizePath"
+        ]
+       },
+       {
+        "address": "grpc.server.method"
+       }
+      ],
+      "options": {
+       "case_sensitive": false
+      },
+      "regex": "^/timwsnnikb\\.Nmalwmykc/Qqfibkea"
+     }
+    }
+   ],
+   "id": "a71d9546-fec9-4e19-af26-1e95001178fe"
+  },
+  {
+   "conditions": [
+    {
+     "operator": "match_regex",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.uri.raw",
+        "transformers": [
+         "_sqr_filename",
+         "normalizePath"
+        ]
+       },
+       {
+        "address": "grpc.server.method"
+       }
+      ],
+      "options": {
+       "case_sensitive": false
+      },
+      "regex": "^/zakszzotp\\.api\\.akeagr\\.v2\\.Hajhctw/AfqkuxIbuhykIamcpxr"
+     }
+    }
+   ],
+   "id": "592b0a61-1ee6-43e4-889b-d76c9298ab0d"
+  }
+ ]
+}

@@ -1,0 +1,50 @@
+{
+ "custom_rules": [
+  {
+   "conditions": [
+    {
+     "operator": "match_regex",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.uri.raw",
+        "transformers": [
+         "_sqr_filename",
+         "normalizePath"
+        ]
+       },
+       {
+        "address": "grpc.server.method"
+       }
+      ],
+      "options": {
+       "case_sensitive": false
+      },
+      "regex": "^/api/v2/bbimua/config/.*"
+     }
+    },
+    {
+     "operator": "exact_match",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.method"
+       }
+      ],
+      "list": [
+       "PWX"
+      ]
+     }
+    }
+   ],
+   "id": "c1586e3c-2856-49bd-b612-f15e74307e02",
+   "name": "Bbimua Bgwqhavtfonpe Ajtsjhkn",
+   "tags": {
+    "category": "business_logic",
+    "custom": "1",
+    "type": "tde.vercel.config"
+   },
+   "transformers": []
+  }
+ ]
+}

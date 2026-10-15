@@ -1,0 +1,50 @@
+{
+ "custom_rules": [
+  {
+   "conditions": [
+    {
+     "operator": "match_regex",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.uri.raw",
+        "transformers": [
+         "_sqr_filename",
+         "normalizePath"
+        ]
+       },
+       {
+        "address": "grpc.server.method"
+       }
+      ],
+      "options": {
+       "case_sensitive": false
+      },
+      "regex": "^/api/v2/nnv/yyqkghieohgap/.*/status"
+     }
+    },
+    {
+     "operator": "phrase_match",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.method"
+       }
+      ],
+      "list": [
+       "DIW"
+      ]
+     }
+    }
+   ],
+   "id": "d4701009-be29-446e-9289-060667d69342",
+   "name": "Rcjkl yyqkghieohgap.status.ectrzj - /api/v2/nnv/yyqkghieohgap/{}/status",
+   "tags": {
+    "category": "business_logic",
+    "custom": "1",
+    "type": "vulnerability.status.update"
+   },
+   "transformers": []
+  }
+ ]
+}

@@ -1,0 +1,124 @@
+{
+ "exclusions": [
+  {
+   "conditions": [
+    {
+     "operator": "match_regex",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.uri.raw",
+        "transformers": [
+         "_sqr_filename",
+         "normalizePath"
+        ]
+       },
+       {
+        "address": "grpc.server.method"
+       }
+      ],
+      "options": {
+       "case_sensitive": false
+      },
+      "regex": "^/hcrsgnsyqvq\\.NelpjfznoXttzvgn/EvgwnfnFvx"
+     }
+    }
+   ],
+   "id": "09fb7579-615c-441a-bb08-8598c8c2bc4a",
+   "rules_target": [
+    {
+     "tags": {
+      "category": "attack_attempt",
+      "type": "sql_injection"
+     }
+    }
+   ]
+  },
+  {
+   "conditions": [
+    {
+     "operator": "match_regex",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.uri.raw",
+        "transformers": [
+         "_sqr_filename",
+         "normalizePath"
+        ]
+       },
+       {
+        "address": "grpc.server.method"
+       }
+      ],
+      "options": {
+       "case_sensitive": false
+      },
+      "regex": "^/bnccpitur\\.BOZDNviewii/XtsurOcmrs"
+     }
+    }
+   ],
+   "id": "3ce6cfdc-ac99-45ef-a7dc-2f038c1c4eb9"
+  },
+  {
+   "conditions": [
+    {
+     "operator": "match_regex",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.uri.raw",
+        "transformers": [
+         "_sqr_filename",
+         "normalizePath"
+        ]
+       },
+       {
+        "address": "grpc.server.method"
+       }
+      ],
+      "options": {
+       "case_sensitive": false
+      },
+      "regex": "^/bnccpitur\\.BOZDNviewii/CqgpzArrpevplPdjwn"
+     }
+    }
+   ],
+   "id": "c846fb74-5bf1-4ca3-91da-d51edde72bb8"
+  },
+  {
+   "conditions": [
+    {
+     "operator": "match_regex",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.uri.raw",
+        "transformers": [
+         "_sqr_filename",
+         "normalizePath"
+        ]
+       },
+       {
+        "address": "grpc.server.method"
+       }
+      ],
+      "options": {
+       "case_sensitive": false
+      },
+      "regex": "^/hcrsgnsyqvq\\.NelpjfznoXttzvgn/UsyouikRbaqcYljiYrr"
+     }
+    }
+   ],
+   "id": "59ee3c26-d07b-475a-9db4-6ad4950c5143",
+   "rules_target": [
+    {
+     "tags": {
+      "category": "attack_attempt",
+      "type": "sql_injection"
+     }
+    }
+   ]
+  }
+ ]
+}

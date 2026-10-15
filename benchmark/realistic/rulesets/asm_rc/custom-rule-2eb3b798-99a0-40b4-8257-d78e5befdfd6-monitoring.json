@@ -1,0 +1,50 @@
+{
+ "custom_rules": [
+  {
+   "conditions": [
+    {
+     "operator": "match_regex",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.uri.raw",
+        "transformers": [
+         "_sqr_filename",
+         "normalizePath"
+        ]
+       },
+       {
+        "address": "grpc.server.method"
+       }
+      ],
+      "options": {
+       "case_sensitive": false
+      },
+      "regex": "^/api/ui/ptibsihj/atrzsf/comment/anqyvg/.*"
+     }
+    },
+    {
+     "operator": "phrase_match",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.method"
+       }
+      ],
+      "list": [
+       "KJQP"
+      ]
+     }
+    }
+   ],
+   "id": "2eb3b798-99a0-40b4-8257-d78e5befdfd6",
+   "name": "Rcjkl jnm.lclpcpg.comment.mgvvzpu on atrzsf-api - /api/ui/ptibsihj/atrzsf/comment/{}/{} (xcojzh)",
+   "tags": {
+    "category": "business_logic",
+    "custom": "1",
+    "type": "signals.comment.created"
+   },
+   "transformers": []
+  }
+ ]
+}

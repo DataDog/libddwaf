@@ -1,0 +1,56 @@
+{
+ "exclusions": [
+  {
+   "conditions": [
+    {
+     "operator": "match_regex",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.uri.raw",
+        "transformers": [
+         "_sqr_filename",
+         "normalizePath"
+        ]
+       },
+       {
+        "address": "grpc.server.method"
+       }
+      ],
+      "options": {
+       "case_sensitive": false
+      },
+      "regex": "^/api/v1/wjns-xpzhfujci/list"
+     }
+    }
+   ],
+   "id": "82b98024-6044-47eb-90bb-cfc793587f1e",
+   "inputs": [
+    {
+     "address": "server.request.query",
+     "key_path": [
+      "list",
+      "search",
+      "query"
+     ]
+    },
+    {
+     "address": "server.request.body",
+     "key_path": [
+      "list",
+      "search",
+      "query"
+     ]
+    },
+    {
+     "address": "server.request.path_params",
+     "key_path": [
+      "list",
+      "search",
+      "query"
+     ]
+    }
+   ]
+  }
+ ]
+}

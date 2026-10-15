@@ -1,0 +1,196 @@
+{
+ "exclusions": [
+  {
+   "conditions": [
+    {
+     "operator": "match_regex",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.uri.raw",
+        "transformers": [
+         "_sqr_filename",
+         "normalizePath"
+        ]
+       },
+       {
+        "address": "grpc.server.method"
+       }
+      ],
+      "options": {
+       "case_sensitive": false
+      },
+      "regex": "^/api/v1/event-cssymsdf/wjns/afbpilpiei/kellxye"
+     }
+    }
+   ],
+   "id": "24ececcf-4ce8-4868-b919-e02dfe460f94",
+   "inputs": [
+    {
+     "address": "server.request.query",
+     "key_path": [
+      "sample"
+     ]
+    },
+    {
+     "address": "server.request.body",
+     "key_path": [
+      "sample"
+     ]
+    },
+    {
+     "address": "server.request.path_params",
+     "key_path": [
+      "sample"
+     ]
+    },
+    {
+     "address": "server.request.query",
+     "key_path": [
+      "processor"
+     ]
+    },
+    {
+     "address": "server.request.body",
+     "key_path": [
+      "processor"
+     ]
+    },
+    {
+     "address": "server.request.path_params",
+     "key_path": [
+      "processor"
+     ]
+    }
+   ]
+  },
+  {
+   "conditions": [
+    {
+     "operator": "match_regex",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.uri.raw",
+        "transformers": [
+         "_sqr_filename",
+         "normalizePath"
+        ]
+       },
+       {
+        "address": "grpc.server.method"
+       }
+      ],
+      "options": {
+       "case_sensitive": false
+      },
+      "regex": "^/api/v2/nzzseo-isai-bqwelypaqba/cwpsss-gqmgx-auhqc"
+     }
+    }
+   ],
+   "id": "1ebf2263-36a4-4791-b7d5-b9509c0d7209",
+   "inputs": [
+    {
+     "address": "server.request.query",
+     "key_path": [
+      "stack"
+     ]
+    },
+    {
+     "address": "server.request.body",
+     "key_path": [
+      "stack"
+     ]
+    },
+    {
+     "address": "server.request.path_params",
+     "key_path": [
+      "stack"
+     ]
+    },
+    {
+     "address": "server.request.query",
+     "key_path": [
+      "tags"
+     ]
+    },
+    {
+     "address": "server.request.body",
+     "key_path": [
+      "tags"
+     ]
+    },
+    {
+     "address": "server.request.path_params",
+     "key_path": [
+      "tags"
+     ]
+    },
+    {
+     "address": "server.request.query",
+     "key_path": [
+      "referer"
+     ]
+    },
+    {
+     "address": "server.request.body",
+     "key_path": [
+      "referer"
+     ]
+    },
+    {
+     "address": "server.request.path_params",
+     "key_path": [
+      "referer"
+     ]
+    }
+   ]
+  },
+  {
+   "conditions": [
+    {
+     "operator": "match_regex",
+     "parameters": {
+      "inputs": [
+       {
+        "address": "server.request.uri.raw",
+        "transformers": [
+         "_sqr_filename",
+         "normalizePath"
+        ]
+       },
+       {
+        "address": "grpc.server.method"
+       }
+      ],
+      "options": {
+       "case_sensitive": false
+      },
+      "regex": "^/jyjh/timceott"
+     }
+    }
+   ],
+   "id": "2e9087dc-a18e-47fb-b883-440264a923f2",
+   "inputs": [
+    {
+     "address": "server.request.query",
+     "key_path": [
+      "widget"
+     ]
+    },
+    {
+     "address": "server.request.body",
+     "key_path": [
+      "widget"
+     ]
+    },
+    {
+     "address": "server.request.path_params",
+     "key_path": [
+      "widget"
+     ]
+    }
+   ]
+  }
+ ]
+}
