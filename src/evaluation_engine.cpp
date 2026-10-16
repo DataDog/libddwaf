@@ -4,9 +4,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2025 Datadog, Inc.
 
+#include <atomic>
 #include <cstddef>
 #include <iterator>
 #include <memory>
+#include <optional>
 #include <string_view>
 #include <type_traits>
 #include <utility>
@@ -14,18 +16,23 @@
 #include <vector>
 
 #include "attribute_collector.hpp"
+#include "cache_array.hpp"
 #include "clock.hpp"
+#include "context_allocator.hpp"
 #include "evaluation_engine.hpp"
 #include "exception.hpp"
 #include "exclusion/common.hpp"
 #include "exclusion/input_filter.hpp"
 #include "exclusion/rule_filter.hpp"
+#include "expression.hpp"
 #include "log.hpp"
+#include "memory_resource.hpp"
 #include "module.hpp"
 #include "object.hpp"
 #include "object_store.hpp"
 #include "processor/base.hpp"
 #include "rule.hpp"
+#include "ruleset.hpp"
 #include "serializer.hpp"
 #include "target_address.hpp"
 #include "utils.hpp"
@@ -73,10 +80,82 @@ void collect_attributes(const object_store &store, const std::vector<rule_result
     }
 }
 
+// A copy of an evaluation cache made by make_cache_writable, with an arena of
+// its own, released along with the copy once neither the engine nor any
+// subcontext uses it. Allocating it from the arena of the context instead
+// would retain every superseded copy until the context is destroyed, as the
+// arena never frees memory, i.e. a full copy per evaluation of a context
+// performed while a subcontext is alive.
+//
+// The engine may later grow the containers of the copy with the memory
+// resource of the context, which outlives the copy; the memory they release
+// goes to whichever arena is current, where it's ignored.
+class cache_copy {
+public:
+    // A copy of the cache of the recommended ruleset takes about 40 KiB
+    static constexpr std::size_t arena_initial_size = 32768;
+
+    explicit cache_copy(const evaluation_cache &source) : arena_(arena_initial_size)
+    {
+        const memory::memory_resource_guard guard(&arena_);
+        cache_.emplace(source);
+    }
+
+    ~cache_copy()
+    {
+        const memory::memory_resource_guard guard(&arena_);
+        cache_.reset();
+    }
+
+    cache_copy(const cache_copy &) = delete;
+    cache_copy(cache_copy &&) = delete;
+    cache_copy &operator=(const cache_copy &) = delete;
+    cache_copy &operator=(cache_copy &&) = delete;
+
+    evaluation_cache &cache() { return *cache_; }
+
+private:
+    memory::monotonic_buffer_resource arena_;
+    std::optional<evaluation_cache> cache_;
+};
+
 } // namespace
+
+evaluation_cache::evaluation_cache(const ruleset &rs)
+    : preprocessors(rs.preprocessors->size()), postprocessors(rs.postprocessors->size()),
+      rule_filters(rs.rule_filters->size()), input_filters(rs.input_filters->size())
+{
+    for (std::size_t i = 0; i < rs.rule_modules.size(); ++i) {
+        rs.rule_modules[i].init_cache(rule_modules[i]);
+    }
+}
+
+evaluation_cache evaluation_cache::derive(const evaluation_cache &upstream)
+{
+    evaluation_cache cache;
+    // Processors and input filters are evaluated, and their caches written,
+    // every time, and so are rule filters until they match; whereas only the
+    // rules referencing the targets of the subcontext are, see
+    // rule_module_cache::pending.
+    cache.preprocessors = cache_array<processor_cache>::derive(
+        upstream.preprocessors, upstream.preprocessors.size());
+    cache.postprocessors = cache_array<processor_cache>::derive(
+        upstream.postprocessors, upstream.postprocessors.size());
+    cache.rule_filters = cache_array<rule_filter::cache_type>::derive(
+        upstream.rule_filters, upstream.rule_filters.size());
+    cache.input_filters = cache_array<input_filter::cache_type>::derive(
+        upstream.input_filters, upstream.input_filters.size());
+    for (std::size_t i = 0; i < cache.rule_modules.size(); ++i) {
+        cache.rule_modules[i] = rule_module_cache::derive(upstream.rule_modules[i]);
+    }
+    cache.exclusions = exclusion_policy::derive(upstream.exclusions);
+    return cache;
+}
 
 std::pair<bool, owned_object> evaluation_engine::eval(timer &deadline)
 {
+    make_cache_writable();
+
     result_serializer serializer(ruleset_->obfuscator.get(), *ruleset_->actions, output_alloc_);
 
     // Generate result object once relevant checks have been made
@@ -161,110 +240,107 @@ std::pair<bool, owned_object> evaluation_engine::eval(timer &deadline)
 void evaluation_engine::eval_preprocessors(timer &deadline)
 {
     DDWAF_DEBUG("Evaluating preprocessors");
+    make_cache_writable();
 
-    for (const auto &preproc : *ruleset_->preprocessors) {
+    const auto &preprocessors = *ruleset_->preprocessors;
+    for (std::size_t i = 0; i < preprocessors.size(); ++i) {
         if (deadline.expired()) {
             DDWAF_INFO("Ran out of time while evaluating preprocessors");
             throw timeout_exception();
         }
 
-        auto it = cache_.processors.find(preproc.get());
-        if (it == cache_.processors.end()) {
-            auto [new_it, res] = cache_.processors.emplace(preproc.get(), processor_cache{});
-            it = new_it;
-        }
-
-        preproc->eval(store_, collector_, it->second, output_alloc_, deadline);
+        preprocessors[i]->eval(
+            store_, collector_, cache_->preprocessors.get_writable(i), output_alloc_, deadline);
     }
 }
 
 void evaluation_engine::eval_postprocessors(timer &deadline)
 {
     DDWAF_DEBUG("Evaluating postprocessors");
+    make_cache_writable();
 
-    for (const auto &postproc : *ruleset_->postprocessors) {
+    const auto &postprocessors = *ruleset_->postprocessors;
+    for (std::size_t i = 0; i < postprocessors.size(); ++i) {
         if (deadline.expired()) {
             DDWAF_INFO("Ran out of time while evaluating postprocessors");
             throw timeout_exception();
         }
 
-        auto it = cache_.processors.find(postproc.get());
-        if (it == cache_.processors.end()) {
-            auto [new_it, res] = cache_.processors.emplace(postproc.get(), processor_cache{});
-            it = new_it;
-        }
-
-        postproc->eval(store_, collector_, it->second, output_alloc_, deadline);
+        postprocessors[i]->eval(
+            store_, collector_, cache_->postprocessors.get_writable(i), output_alloc_, deadline);
     }
 }
 
 exclusion_policy &evaluation_engine::eval_filters(timer &deadline)
 {
+    make_cache_writable();
+    auto &cache = *cache_;
+
     DDWAF_DEBUG("Evaluating rule filters");
 
-    for (const auto &filter : *ruleset_->rule_filters) {
+    const auto &rule_filters = *ruleset_->rule_filters;
+    for (std::size_t i = 0; i < rule_filters.size(); ++i) {
         if (deadline.expired()) {
             DDWAF_INFO("Ran out of time while evaluating rule filters");
             throw timeout_exception();
         }
 
-        auto it = cache_.rule_filters.find(&filter);
-        if (it == cache_.rule_filters.end()) {
-            auto [new_it, res] = cache_.rule_filters.emplace(&filter, rule_filter::cache_type{});
-            it = new_it;
+        // A rule filter which has already matched doesn't match again, as
+        // checked by rule_filter::match, which can be determined without
+        // copying a cache inherited from a context.
+        if (expression::get_result(std::as_const(cache.rule_filters).get(i))) {
+            continue;
         }
 
-        rule_filter::cache_type &cache = it->second;
-        auto exclusion = filter.match(store_, cache, *ruleset_->exclusion_matchers, deadline);
+        const auto &filter = rule_filters[i];
+        auto exclusion = filter.match(
+            store_, cache.rule_filters.get_writable(i), *ruleset_->exclusion_matchers, deadline);
         if (exclusion.has_value()) {
             for (const auto &rule : exclusion->rules) {
-                cache_.exclusions.add_rule_exclusion(rule, exclusion->mode, exclusion->action);
+                cache.exclusions.add_rule_exclusion(rule, exclusion->mode, exclusion->action);
             }
         }
     }
 
     DDWAF_DEBUG("Evaluating input filters");
 
-    for (const auto &filter : *ruleset_->input_filters) {
+    const auto &input_filters = *ruleset_->input_filters;
+    for (std::size_t i = 0; i < input_filters.size(); ++i) {
         if (deadline.expired()) {
             DDWAF_INFO("Ran out of time while evaluating input filters");
             throw timeout_exception();
         }
 
-        auto it = cache_.input_filters.find(&filter);
-        if (it == cache_.input_filters.end()) {
-            auto [new_it, res] = cache_.input_filters.emplace(&filter, input_filter::cache_type{});
-            it = new_it;
-        }
-
-        input_filter::cache_type &cache = it->second;
-        auto exclusion = filter.match(store_, cache, *ruleset_->exclusion_matchers, deadline);
+        const auto &filter = input_filters[i];
+        auto exclusion = filter.match(
+            store_, cache.input_filters.get_writable(i), *ruleset_->exclusion_matchers, deadline);
         if (exclusion.has_value()) {
             for (const auto &rule : exclusion->rules) {
-                cache_.exclusions.add_input_exclusion(rule, exclusion->objects);
+                cache.exclusions.add_input_exclusion(rule, exclusion->objects);
             }
         }
     }
 
-    return cache_.exclusions;
+    return cache.exclusions;
 }
 
 rule_verdict evaluation_engine::eval_rules(
     const exclusion_policy &policy, std::vector<rule_result> &results, timer &deadline)
 {
+    make_cache_writable();
     // When called from eval, the updated targets have already been flagged
     // before evaluating filters, this is only relevant when the rules are
     // evaluated directly.
     flag_updated_rules();
     // Rules without conditions match every time they're evaluated
     for (const auto &[module, word, mask] : ruleset_->rule_targets->unconditional_rules()) {
-        cache_.rule_modules[module].pending[word] |= mask;
+        cache_->rule_modules[module].pending[word] |= mask;
     }
 
     auto verdict = rule_verdict::none;
     for (std::size_t i = 0; i < ruleset_->rule_modules.size(); ++i) {
         const auto &mod = ruleset_->rule_modules[i];
-        auto &cache = cache_.rule_modules[i];
+        auto &cache = cache_->rule_modules[i];
 
         verdict = mod.eval(results, store_, cache, policy, *ruleset_->rule_matchers, deadline);
         if (verdict == rule_module::verdict_type::block) {
@@ -272,6 +348,22 @@ rule_verdict evaluation_engine::eval_rules(
         }
     }
     return verdict;
+}
+
+void evaluation_engine::make_cache_writable()
+{
+    if (cache_.use_count() == 1) {
+        // Synchronise with the release of a shared cache by a subcontext,
+        // possibly on another thread, before modifying it.
+        std::atomic_thread_fence(std::memory_order_acquire);
+        return;
+    }
+
+    // Subcontexts keep the current cache, while the engine continues with a
+    // copy, see cache_copy.
+    auto copy = std::allocate_shared<cache_copy>(std::allocator<cache_copy>{}, *cache_);
+    auto &cache = copy->cache();
+    cache_ = std::shared_ptr<evaluation_cache>(std::move(copy), &cache);
 }
 
 bool evaluation_engine::flag_updated_rules()
@@ -284,7 +376,7 @@ bool evaluation_engine::flag_updated_rules()
         }
 
         for (const auto &[module, word, mask] : rules) {
-            cache_.rule_modules[module].pending[word] |= mask;
+            cache_->rule_modules[module].pending[word] |= mask;
         }
 
         new_rule_targets = new_rule_targets || store_.is_new_target(target);

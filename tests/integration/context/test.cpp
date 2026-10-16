@@ -611,6 +611,88 @@ TEST(TestContextIntegration, SubcontextRemainsFunctionalAfterContextDestruction)
     ddwaf_destroy(handle);
 }
 
+TEST(TestContextIntegration, ContextEvaluatedDuringSubcontextLifetime)
+{
+    auto *alloc = ddwaf_get_default_allocator();
+    auto rule = read_file<ddwaf_object>("processor3.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_destroy(&rule, alloc);
+
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
+    ASSERT_NE(context, nullptr);
+
+    {
+        ddwaf_object persistent;
+        ddwaf_object_set_map(&persistent, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&persistent, STRL("param2"), alloc), STRL("harmless"), alloc);
+
+        ddwaf_object ret;
+        EXPECT_EQ(ddwaf_context_eval(context, &persistent, alloc, &ret, LONG_TIME), DDWAF_OK);
+        ddwaf_object_destroy(&ret, alloc);
+    }
+
+    // The subcontext inherits the state of the context at the time of its
+    // creation, so neither the match on the context afterwards, nor the
+    // context's destruction, affects it.
+    ddwaf_subcontext subctx = ddwaf_subcontext_init(context);
+    ASSERT_NE(subctx, nullptr);
+
+    {
+        ddwaf_object param1;
+        ddwaf_object_set_map(&param1, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&param1, STRL("param1"), alloc), STRL("Sqreen"), alloc);
+
+        ddwaf_object ret;
+        EXPECT_EQ(ddwaf_context_eval(context, &param1, alloc, &ret, LONG_TIME), DDWAF_MATCH);
+        ddwaf_object_destroy(&ret, alloc);
+    }
+
+    {
+        // The match on the context isn't visible to a new subcontext either
+        ddwaf_subcontext other = ddwaf_subcontext_init(context);
+        ASSERT_NE(other, nullptr);
+
+        ddwaf_object param1;
+        ddwaf_object_set_map(&param1, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&param1, STRL("param1"), alloc), STRL("Sqreen"), alloc);
+
+        ddwaf_object ret;
+        EXPECT_EQ(ddwaf_subcontext_eval(other, &param1, alloc, &ret, LONG_TIME), DDWAF_OK);
+        ddwaf_object_destroy(&ret, alloc);
+        ddwaf_subcontext_destroy(other);
+    }
+
+    ddwaf_context_destroy(context);
+
+    ddwaf_object param1;
+    ddwaf_object_set_map(&param1, 1, alloc);
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(&param1, STRL("param1"), alloc), STRL("Sqreen"), alloc);
+
+    ddwaf_object ret;
+    EXPECT_EQ(ddwaf_subcontext_eval(subctx, &param1, alloc, &ret, LONG_TIME), DDWAF_MATCH);
+    EXPECT_EVENTS(ret, {.id = "1",
+                           .name = "rule1",
+                           .tags = {{"type", "flow1"}, {"category", "category1"}},
+                           .matches = {{.op = "match_regex",
+                               .op_value = "Sqreen",
+                               .highlight = "Sqreen"sv,
+                               .args = {{
+                                   .value = "Sqreen"sv,
+                                   .address = "param1",
+                               }}}}});
+
+    ddwaf_object_destroy(&ret, alloc);
+    ddwaf_subcontext_destroy(subctx);
+    ddwaf_destroy(handle);
+}
+
 TEST(TestContextIntegration, SubcontextAndContextMatches)
 {
     auto *alloc = ddwaf_get_default_allocator();

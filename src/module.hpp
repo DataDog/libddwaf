@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "cache_array.hpp"
 #include "clock.hpp"
 #include "context_allocator.hpp"
 #include "exclusion/common.hpp"
@@ -30,8 +31,10 @@ struct rule_module_cache {
     // Number of rules represented by each word of the pending bitset
     static constexpr std::size_t pending_word_bits = 64;
 
-    memory::vector<core_rule::cache_type> rules;
-    memory::unordered_map<std::string_view, rule_collection_cache> collections;
+    // One cache per rule, in module order
+    cache_array<core_rule::cache_type> rules;
+    // One per collection slot, i.e. per distinct collection name
+    memory::vector<rule_collection_cache> collections;
     // Bitset with one bit per rule, in module order, flagging the rules which
     // need to be evaluated: initially all of them, then only those referencing
     // a target updated since their last evaluation. Evaluating a rule again on
@@ -40,6 +43,18 @@ struct rule_module_cache {
     // its rule completes, so a rule interrupted by a timeout, or left behind
     // by an earlier match or block, remains pending.
     memory::vector<uint64_t> pending;
+
+    // Returns a cache which inherits the state of the upstream one without
+    // modifying it, i.e. that of a subcontext over the cache of its context.
+    // The rule caches are copied on write (see cache_array), the rest, which
+    // is small, is copied right away. The upstream cache must neither be
+    // modified nor destroyed during the lifetime of the derived one.
+    static rule_module_cache derive(const rule_module_cache &upstream)
+    {
+        return {.rules = cache_array<core_rule::cache_type>::derive(upstream.rules),
+            .collections = upstream.collections,
+            .pending = upstream.pending};
+    }
 };
 
 class rule_module {
@@ -61,20 +76,18 @@ public:
     rule_module &operator=(const rule_module &) = default;
     rule_module &operator=(rule_module &&) noexcept = default;
 
+    // Initialises the (owned) cache of a context, in which every rule must be
+    // evaluated at least once.
     void init_cache(cache_type &cache) const
     {
         cache.rules.resize(rules_.size());
-        cache.collections.reserve(collections_.size());
+        cache.collections.assign(collection_slots_, {});
 
-        // Every rule of a new cache must be evaluated at least once, whereas a
-        // cache inherited from a context (i.e. by a subcontext) is left as is.
         constexpr auto word_bits = cache_type::pending_word_bits;
         const auto words = (rules_.size() + word_bits - 1) / word_bits;
-        if (cache.pending.size() != words) {
-            cache.pending.assign(words, ~uint64_t{0});
-            if (const auto remainder = rules_.size() % word_bits; remainder != 0) {
-                cache.pending.back() = (uint64_t{1} << remainder) - 1;
-            }
+        cache.pending.assign(words, ~uint64_t{0});
+        if (const auto remainder = rules_.size() % word_bits; remainder != 0) {
+            cache.pending.back() = (uint64_t{1} << remainder) - 1;
         }
     }
 
@@ -101,16 +114,34 @@ protected:
         verdict_type type;
         std::size_t begin;
         std::size_t end;
+        // Position of the collection's state in the cache, shared by all the
+        // collections with the same name
+        std::size_t slot{0};
     };
 
     explicit rule_module(std::vector<const core_rule *> &&rules,
         std::vector<rule_collection> &&collections,
         expiration_policy policy = expiration_policy::expiring)
         : rules_(std::move(rules)), collections_(std::move(collections)), policy_(policy)
-    {}
+    {
+        for (std::size_t i = 0; i < collections_.size(); ++i) {
+            auto &collection = collections_[i];
+            collection.slot = collection_slots_;
+            for (std::size_t j = 0; j < i; ++j) {
+                if (collections_[j].name == collection.name) {
+                    collection.slot = collections_[j].slot;
+                    break;
+                }
+            }
+            if (collection.slot == collection_slots_) {
+                ++collection_slots_;
+            }
+        }
+    }
 
     std::vector<const core_rule *> rules_;
     std::vector<rule_collection> collections_;
+    std::size_t collection_slots_{0};
     expiration_policy policy_{expiration_policy::expiring};
 
     friend class rule_module_builder;

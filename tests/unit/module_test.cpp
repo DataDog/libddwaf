@@ -1783,10 +1783,62 @@ TEST(TestModuleUngrouped, InitCacheFlagsAllRules)
     EXPECT_EQ(results.size(), 0);
     EXPECT_EQ(cache.pending, (memory::vector<uint64_t>{0, 0}));
 
-    // A copy of the cache, as inherited by a subcontext, keeps its state
-    auto inherited = cache;
-    mod.init_cache(inherited);
+    // A cache derived from it, as by a subcontext, inherits its state
+    auto inherited = rule_module_cache::derive(cache);
     EXPECT_EQ(inherited.pending, (memory::vector<uint64_t>{0, 0}));
+}
+
+TEST(TestModuleUngrouped, DerivedCacheDoesNotModifyUpstream)
+{
+    std::vector<std::shared_ptr<core_rule>> rules;
+    for (const auto *ip : {"192.168.0.1", "192.168.0.2", "192.168.0.2"}) {
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
+        builder.add_target("http.client_ip");
+        builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{ip});
+
+        std::unordered_map<std::string, std::string> tags{{"type", "type"}, {"category", "category"}};
+        rules.emplace_back(std::make_shared<core_rule>(
+            "id" + std::to_string(rules.size()), "name", std::move(tags), builder.build()));
+    }
+
+    rule_module_builder mod_builder{base_rule_precedence, null_grouping_key};
+    for (const auto &rule : rules) { mod_builder.insert(rule.get()); }
+    auto mod = mod_builder.build();
+
+    rule_module_cache cache;
+    mod.init_cache(cache);
+
+    object_store store;
+    store.insert_and_apply(object_builder_da::map({{"http.client_ip", "192.168.0.1"}}));
+
+    std::vector<rule_result> results;
+    ddwaf::timer deadline = endless_timer();
+    mod.eval(results, store, cache, {}, {}, deadline);
+    ASSERT_EQ(results.size(), 1);
+    EXPECT_TRUE(contains(results, "id0"));
+
+    for (int i = 0; i < 2; ++i) {
+        auto derived = rule_module_cache::derive(cache);
+        flag_all_rules(derived);
+
+        auto sub_store = object_store::from_upstream_store(store);
+        sub_store.insert_and_apply(object_builder_da::map({{"http.client_ip", "192.168.0.2"}}));
+
+        // The rule which matched with the upstream cache doesn't match again
+        results.clear();
+        mod.eval(results, sub_store, derived, {}, {}, deadline);
+        EXPECT_EQ(results.size(), 2);
+        EXPECT_TRUE(contains(results, "id1"));
+        EXPECT_TRUE(contains(results, "id2"));
+        EXPECT_TRUE(std::as_const(derived.rules).get(1).result);
+
+        // The upstream cache is unchanged
+        EXPECT_TRUE(std::as_const(cache.rules).get(0).result);
+        EXPECT_FALSE(std::as_const(cache.rules).get(1).result);
+        EXPECT_FALSE(std::as_const(cache.rules).get(2).result);
+    }
 }
 
 TEST(TestModuleUngrouped, OnlyPendingRulesAreEvaluated)

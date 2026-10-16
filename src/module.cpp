@@ -15,9 +15,11 @@
 #include <utility>
 #include <vector>
 
+#include "cache_array.hpp"
 #include "clock.hpp"
 #include "exception.hpp"
 #include "exclusion/common.hpp"
+#include "expression.hpp"
 #include "log.hpp"
 #include "matcher/base.hpp"
 #include "object_store.hpp"
@@ -57,8 +59,8 @@ void clear_pending(std::span<uint64_t> pending, std::size_t pos)
 }
 
 std::pair<verdict_type, std::optional<rule_result>> eval_rule(const core_rule &rule,
-    const object_store &store, core_rule::cache_type &cache, const exclusion_policy &policy,
-    const matcher_mapper &dynamic_matchers, ddwaf::timer &deadline)
+    const object_store &store, cache_array<core_rule::cache_type> &caches, std::size_t index,
+    const exclusion_policy &policy, const matcher_mapper &dynamic_matchers, ddwaf::timer &deadline)
 {
     const auto &id = rule.get_id();
 
@@ -93,8 +95,13 @@ std::pair<verdict_type, std::optional<rule_result>> eval_rule(const core_rule &r
     }
 
     try {
-        auto [verdict, outcome] =
-            rule.match(store, cache, exclusion.objects, dynamic_matchers, deadline);
+        // A rule which has already matched doesn't match again, as checked by
+        // core_rule::match, which can be determined without copying a cache
+        // inherited from a context.
+        auto [verdict, outcome] = expression::get_result(std::as_const(caches).get(index))
+                                      ? std::pair{verdict_type::none, std::optional<rule_result>{}}
+                                      : rule.match(store, caches.get_writable(index),
+                                            exclusion.objects, dynamic_matchers, deadline);
 
         if (outcome.has_value()) {
             outcome->action_override = action_override;
@@ -128,7 +135,7 @@ verdict_type rule_module::eval_with_collections(std::vector<rule_result> &result
     verdict_type final_verdict = verdict_type::none;
     bool deadline_checked = false;
     for (const auto &collection : collections_) {
-        auto &collection_cache = cache.collections[collection.name];
+        auto &collection_cache = cache.collections[collection.slot];
         if (collection_cache.type >= collection.type) {
             continue;
         }
@@ -150,7 +157,7 @@ verdict_type rule_module::eval_with_collections(std::vector<rule_result> &result
         for (; i < collection.end; i = next_pending(cache.pending, i + 1, collection.end)) {
             const auto &rule = *rules_[i];
             auto [verdict, outcome] =
-                eval_rule(rule, store, cache.rules[i], exclusion, dynamic_matchers, deadline);
+                eval_rule(rule, store, cache.rules, i, exclusion, dynamic_matchers, deadline);
             clear_pending(cache.pending, i);
             if (outcome.has_value()) {
                 collection_cache.type = verdict;
@@ -189,10 +196,8 @@ verdict_type rule_module::eval(std::vector<rule_result> &results, object_store &
         for (auto i = next_pending(cache.pending, 0, rules_.size()); i < rules_.size();
              i = next_pending(cache.pending, i + 1, rules_.size())) {
             const auto &rule = *rules_[i];
-            auto &rule_cache = cache.rules[i];
-
             auto [verdict, outcome] =
-                eval_rule(rule, store, rule_cache, exclusion, dynamic_matchers, apt_deadline);
+                eval_rule(rule, store, cache.rules, i, exclusion, dynamic_matchers, apt_deadline);
             clear_pending(cache.pending, i);
             if (outcome.has_value()) {
                 results.emplace_back(std::move(*outcome));

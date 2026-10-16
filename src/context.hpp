@@ -37,6 +37,7 @@ public:
 
         {
             const memory::memory_resource_guard guard(ctx_mr_.get());
+            ctx_cache_.reset();
             ctx_store_.reset();
         }
     }
@@ -120,12 +121,13 @@ protected:
     explicit subcontext(evaluation_engine &ctx_engine, std::shared_ptr<object_store> ctx_store,
         std::shared_ptr<memory::monotonic_buffer_resource> ctx_mr)
         : mr_(std::make_unique<memory::monotonic_buffer_resource>()),
-          ctx_store_(std::move(ctx_store)), ctx_mr_(std::move(ctx_mr))
+          ctx_store_(std::move(ctx_store)), ctx_cache_(ctx_engine.share_cache()),
+          ctx_mr_(std::move(ctx_mr))
     {
         const memory::memory_resource_guard guard(mr_.get());
         store_ = std::make_unique<object_store>(object_store::from_upstream_store(*ctx_store_));
         engine_ = std::make_unique<evaluation_engine>(
-            evaluation_engine::subcontext_engine(ctx_engine, *store_));
+            evaluation_engine::subcontext_engine(ctx_engine, *store_, *ctx_cache_));
     }
 
     std::unique_ptr<object_store> store_;
@@ -139,6 +141,10 @@ protected:
     // Shared context store to preserve the lifetime of user-provided objects, the
     // memory resource is required to be able to free the context store
     std::shared_ptr<object_store> ctx_store_;
+    // Shared context cache, from which the cache of the subcontext derives,
+    // released with the context's memory resource (see
+    // evaluation_engine::share_cache)
+    std::shared_ptr<const evaluation_cache> ctx_cache_;
     std::shared_ptr<memory::monotonic_buffer_resource> ctx_mr_;
 
     friend class context;

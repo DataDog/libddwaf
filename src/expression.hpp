@@ -56,7 +56,7 @@ public:
         return matches;
     }
 
-    static bool get_result(cache_type &cache) { return cache.result; }
+    static bool get_result(const cache_type &cache) { return cache.result; }
 
     [[nodiscard]] bool empty() const { return conditions_.empty(); }
     [[nodiscard]] std::size_t size() const { return conditions_.size(); }

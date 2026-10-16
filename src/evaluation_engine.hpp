@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "attribute_collector.hpp"
+#include "cache_array.hpp"
 #include "clock.hpp"
 #include "context_allocator.hpp"
 #include "exclusion/common.hpp"
@@ -32,13 +33,33 @@
 
 namespace ddwaf {
 
+// The state of the evaluation of a context or subcontext, with one cache per
+// processor, filter and rule, in ruleset order.
+//
+// The cache of a subcontext derives from that of its context: it reads the
+// context's cache and only copies the entries it modifies, so that creating
+// and destroying a subcontext doesn't depend on the size of the ruleset. The
+// context's cache must therefore remain unchanged during the lifetime of its
+// subcontexts, see evaluation_engine::make_cache_writable.
 struct evaluation_cache {
-    memory::unordered_map<base_processor *, processor_cache> processors;
-    memory::unordered_map<const rule_filter *, rule_filter::cache_type> rule_filters;
-    memory::unordered_map<const input_filter *, input_filter::cache_type> input_filters;
+    cache_array<processor_cache> preprocessors;
+    cache_array<processor_cache> postprocessors;
+    cache_array<rule_filter::cache_type> rule_filters;
+    cache_array<input_filter::cache_type> input_filters;
     std::array<rule_module_cache, rule_module_count> rule_modules;
 
     exclusion_policy exclusions;
+
+    // Initial cache of a context
+    explicit evaluation_cache(const ruleset &rs);
+
+    // Cache inheriting the state of the upstream one, i.e. that of a
+    // subcontext over the cache of its context. The upstream cache must
+    // neither be modified nor destroyed during the lifetime of the new one.
+    static evaluation_cache derive(const evaluation_cache &upstream);
+
+protected:
+    evaluation_cache() = default;
 };
 
 class evaluation_engine {
@@ -94,18 +115,33 @@ public:
     bool insert_and_apply(map_view data) noexcept { return store_.insert_and_apply(data); }
     std::pair<bool, owned_object> eval(timer &deadline);
 
+    // The cache, like the rest of the engine, is allocated with the memory
+    // resource of the context or subcontext.
     static evaluation_engine context_engine(std::shared_ptr<ruleset> ruleset, object_store &store,
         nonnull_ptr<memory::memory_resource> output_alloc = memory::get_default_resource())
     {
-        return evaluation_engine{
-            std::move(ruleset), store, {}, attribute_collector{output_alloc}, output_alloc};
+        auto cache = std::allocate_shared<evaluation_cache>(
+            memory::context_allocator<evaluation_cache>{}, *ruleset);
+        return evaluation_engine{std::move(ruleset), store, std::move(cache),
+            attribute_collector{output_alloc}, output_alloc};
     }
 
-    static evaluation_engine subcontext_engine(evaluation_engine &engine, object_store &store)
+    // The cache of the subcontext engine derives from the context cache, which
+    // must have been obtained through share_cache and must be kept alive
+    // during the lifetime of the subcontext engine.
+    static evaluation_engine subcontext_engine(
+        evaluation_engine &engine, object_store &store, const evaluation_cache &ctx_cache)
     {
-        return evaluation_engine{engine.ruleset_, store, engine.cache_,
+        auto cache = std::allocate_shared<evaluation_cache>(
+            memory::context_allocator<evaluation_cache>{}, evaluation_cache::derive(ctx_cache));
+        return evaluation_engine{engine.ruleset_, store, std::move(cache),
             attribute_collector::from_upstream_collector(engine.collector_), engine.output_alloc_};
     }
+
+    // Shares the cache, e.g. with a subcontext: while the returned pointer is
+    // alive, the engine no longer modifies this cache but a copy of it. The
+    // pointer must be released with the memory resource of this engine.
+    [[nodiscard]] std::shared_ptr<const evaluation_cache> share_cache() const { return cache_; }
 
     // Internals exposed for testing
     void eval_preprocessors(timer &deadline);
@@ -118,20 +154,15 @@ public:
 
 protected:
     explicit evaluation_engine(std::shared_ptr<ruleset> ruleset, object_store &store,
-        evaluation_cache cache, attribute_collector &&collector,
+        std::shared_ptr<evaluation_cache> cache, attribute_collector &&collector,
         nonnull_ptr<memory::memory_resource> output_alloc)
         : output_alloc_(output_alloc), ruleset_(std::move(ruleset)), store_(store),
           collector_(std::move(collector)), cache_(std::move(cache))
-    {
-        cache_.processors.reserve(
-            ruleset_->preprocessors->size() + ruleset_->postprocessors->size());
-        cache_.rule_filters.reserve(ruleset_->rule_filters->size());
-        cache_.input_filters.reserve(ruleset_->input_filters->size());
+    {}
 
-        for (std::size_t i = 0; i < ruleset_->rule_modules.size(); ++i) {
-            ruleset_->rule_modules[i].init_cache(cache_.rule_modules[i]);
-        }
-    }
+    // Replaces the cache with a copy if it's shared (see share_cache), so that
+    // it can be modified. Must be called before modifying the cache.
+    void make_cache_writable();
 
     // Flags as pending the rules referencing any of the targets updated since
     // the last call and returns whether any of those is a rule target new to
@@ -160,8 +191,8 @@ protected:
     input_batch_queue input_batches_;
     attribute_collector collector_;
 
-    // Caches
-    evaluation_cache cache_;
+    // Caches, never null, see make_cache_writable
+    std::shared_ptr<evaluation_cache> cache_;
 };
 
 } // namespace ddwaf

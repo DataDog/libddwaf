@@ -2428,4 +2428,144 @@ TEST(TestEvaluationEngine, UnconditionalRuleIsEvaluatedEveryTime)
     }
 }
 
+TEST(TestEvaluationEngine, SubcontextDoesNotModifyContextCache)
+{
+    test::ruleset_builder rbuilder;
+    rbuilder.insert_base_rule(
+        core_rule{"id", "id", make_tags("type1"), make_exact_match_expression("usr.id", "admin")});
+    rbuilder.insert_base_rule(core_rule{"other", "other", make_tags("type2"),
+        make_exact_match_expression("server.request.query", "admin")});
+
+    ddwaf::timer deadline{2s};
+    context ctx{rbuilder.build()};
+
+    {
+        auto root = object_builder_da::map({{"server.request.query", "value"}});
+        ctx.insert_and_apply(std::move(root));
+
+        std::vector<rule_result> results;
+        ctx.eval_rules({}, results, deadline);
+        EXPECT_EQ(results.size(), 0);
+    }
+
+    for (int i = 0; i < 2; ++i) {
+        // Each subcontext starts from the state of the context
+        auto sctx = ctx.create_subcontext();
+        auto root = object_builder_da::map({{"usr.id", "admin"}});
+        sctx.insert_and_apply(std::move(root));
+
+        std::vector<rule_result> results;
+        sctx.eval_rules({}, results, deadline);
+        ASSERT_EQ(results.size(), 1);
+        ASSERT_TRUE(results[0].event.has_value());
+        EXPECT_STRV(results[0].event->rule.id, "id");
+    }
+
+    {
+        auto root = object_builder_da::map({{"usr.id", "admin"}});
+        ctx.insert_and_apply(std::move(root));
+
+        std::vector<rule_result> results;
+        ctx.eval_rules({}, results, deadline);
+        ASSERT_EQ(results.size(), 1);
+        ASSERT_TRUE(results[0].event.has_value());
+        EXPECT_STRV(results[0].event->rule.id, "id");
+    }
+}
+
+TEST(TestEvaluationEngine, ContextEvaluatedDuringSubcontextLifetime)
+{
+    test::ruleset_builder rbuilder;
+    rbuilder.insert_base_rule(
+        core_rule{"id", "id", make_tags("type1"), make_exact_match_expression("usr.id", "admin")});
+    rbuilder.insert_base_rule(core_rule{"other", "other", make_tags("type2"),
+        make_exact_match_expression("server.request.query", "admin")});
+
+    context ctx{rbuilder.build()};
+
+    {
+        auto root = object_builder_da::map({{"server.request.query", "value"}});
+        EXPECT_TRUE(ctx.insert_batch(std::move(root)));
+
+        timer deadline{std::chrono::microseconds(LONG_TIME)};
+        auto [code, res] = ctx.eval(deadline);
+        EXPECT_EQ(code, DDWAF_OK);
+    }
+
+    auto first = ctx.create_subcontext();
+    auto second = ctx.create_subcontext();
+
+    {
+        // The context's evaluation doesn't affect the subcontexts
+        auto root = object_builder_da::map({{"usr.id", "admin"}});
+        EXPECT_TRUE(ctx.insert_batch(std::move(root)));
+
+        timer deadline{std::chrono::microseconds(LONG_TIME)};
+        auto [code, res] = ctx.eval(deadline);
+        EXPECT_EQ(code, DDWAF_MATCH);
+    }
+
+    for (auto *sctx : {&first, &second}) {
+        auto root = object_builder_da::map({{"usr.id", "admin"}});
+        EXPECT_TRUE(sctx->insert_batch(std::move(root)));
+
+        timer deadline{std::chrono::microseconds(LONG_TIME)};
+        auto [code, res] = sctx->eval(deadline);
+        EXPECT_EQ(code, DDWAF_MATCH);
+    }
+
+    {
+        // Nor do the subcontexts affect the context
+        auto root = object_builder_da::map({{"server.request.query", "admin"}});
+        EXPECT_TRUE(ctx.insert_batch(std::move(root)));
+
+        timer deadline{std::chrono::microseconds(LONG_TIME)};
+        auto [code, res] = ctx.eval(deadline);
+        EXPECT_EQ(code, DDWAF_MATCH);
+        auto events = object_view{res}.find("events");
+        ASSERT_EQ(events.size(), 1);
+    }
+}
+
+TEST(TestEvaluationEngine, FilterEvaluatedOnceItsTargetsAreUpdated)
+{
+    test::ruleset_builder rbuilder;
+    auto *rule = rbuilder.insert_base_rule(
+        core_rule{"id", "id", make_tags("type1"), make_exact_match_expression("usr.id", "admin")});
+    rbuilder.insert_filter(
+        rule_filter{"1", make_exact_match_expression("http.client_ip", "192.168.0.1"),
+            std::set<const core_rule *>{rule}});
+
+    ddwaf::timer deadline{2s};
+    context ctx{rbuilder.build()};
+
+    {
+        auto root = object_builder_da::map({{"http.client_ip", "192.168.0.2"}});
+        ctx.insert_and_apply(std::move(root));
+        EXPECT_TRUE(ctx.eval_filters(deadline).empty());
+    }
+
+    {
+        auto root = object_builder_da::map({{"usr.id", "user"}});
+        ctx.insert_and_apply(std::move(root));
+        EXPECT_TRUE(ctx.eval_filters(deadline).empty());
+    }
+
+    {
+        auto sctx = ctx.create_subcontext();
+        auto root = object_builder_da::map({{"http.client_ip", "192.168.0.1"}});
+        sctx.insert_and_apply(std::move(root));
+        EXPECT_TRUE(sctx.eval_filters(deadline).contains(rule));
+    }
+
+    // The subcontext's exclusions don't affect the context
+    EXPECT_TRUE(ctx.eval_filters(deadline).empty());
+
+    {
+        auto root = object_builder_da::map({{"http.client_ip", "192.168.0.1"}});
+        ctx.insert_and_apply(std::move(root));
+        EXPECT_TRUE(ctx.eval_filters(deadline).contains(rule));
+    }
+}
+
 } // namespace
