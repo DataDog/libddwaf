@@ -15,6 +15,7 @@
 #include "exclusion/rule_filter.hpp"
 #include "indexer.hpp"
 #include "matcher/base.hpp"
+#include "matcher/literal_scanner.hpp"
 #include "obfuscator.hpp"
 #include "processor/base.hpp"
 #include "rule.hpp"
@@ -50,6 +51,7 @@ protected:
     indexer<const core_rule> rule_index_;
     // Derived from the final rules, so only regenerated when they change
     std::shared_ptr<const rule_target_index> rule_targets_;
+    std::shared_ptr<const matcher::literal_scanner> rule_literal_scanner_;
 
     // Filters
     std::shared_ptr<const std::vector<rule_filter>> rule_filters_;

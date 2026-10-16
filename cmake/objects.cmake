@@ -3,6 +3,7 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/interface.cpp
     ${libddwaf_SOURCE_DIR}/src/evaluation_engine.cpp
     ${libddwaf_SOURCE_DIR}/src/context_allocator.cpp
+    ${libddwaf_SOURCE_DIR}/src/thread_exit.cpp
     ${libddwaf_SOURCE_DIR}/src/serializer.cpp
     ${libddwaf_SOURCE_DIR}/src/object_store.cpp
     ${libddwaf_SOURCE_DIR}/src/target_address.cpp
@@ -72,6 +73,9 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/checksum/luhn_checksum.cpp
     ${libddwaf_SOURCE_DIR}/src/matcher/phrase_match.cpp
     ${libddwaf_SOURCE_DIR}/src/matcher/regex_match.cpp
+    ${libddwaf_SOURCE_DIR}/src/matcher/regex_prefilter.cpp
+    ${libddwaf_SOURCE_DIR}/src/matcher/literal_scanner.cpp
+    ${libddwaf_SOURCE_DIR}/src/matcher/prefilter_cache.cpp
     ${libddwaf_SOURCE_DIR}/src/matcher/regex_match_with_checksum.cpp
     ${libddwaf_SOURCE_DIR}/src/matcher/is_sqli.cpp
     ${libddwaf_SOURCE_DIR}/src/matcher/is_xss.cpp

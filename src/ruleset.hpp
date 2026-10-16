@@ -21,6 +21,7 @@
 #include "exclusion/input_filter.hpp"
 #include "exclusion/rule_filter.hpp"
 #include "matcher/base.hpp"
+#include "matcher/literal_scanner.hpp"
 #include "module.hpp"
 #include "module_category.hpp"
 #include "obfuscator.hpp"
@@ -189,6 +190,9 @@ struct ruleset {
 
     std::shared_ptr<const std::vector<core_rule>> base_rules;
     std::shared_ptr<const std::vector<core_rule>> user_rules;
+    // Searches for the literals required by the regular expressions of the
+    // rules, see regex_prefilter
+    std::shared_ptr<const matcher::literal_scanner> rule_literal_scanner;
 
     std::shared_ptr<const matcher_mapper> rule_matchers;
     std::shared_ptr<const matcher_mapper> exclusion_matchers;

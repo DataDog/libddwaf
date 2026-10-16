@@ -4,8 +4,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include <atomic>
 #include <cstddef>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -13,6 +15,7 @@
 #include "configuration/common/parser_exception.hpp"
 #include "dynamic_string.hpp"
 #include "matcher/regex_match.hpp"
+#include "matcher/regex_prefilter.hpp"
 #include "re2.h"
 
 namespace ddwaf::matcher {
@@ -32,6 +35,20 @@ regex_match::regex_match(const std::string &regex_str, std::size_t minLength, bo
     if (!regex->ok()) {
         throw parsing_error("invalid regular expression: " + regex->error_arg());
     }
+}
+
+const regex_prefilter *regex_match::build_prefilter() const
+{
+    // Prefilters are only built when rulesets are built, while get_prefilter
+    // may be called concurrently by evaluations of other rulesets
+    if (!prefilter_built_.load(std::memory_order_acquire)) {
+        const std::scoped_lock lock{prefilter_mutex_};
+        if (!prefilter_built_.load(std::memory_order_relaxed)) {
+            prefilter_ = regex_prefilter::from_regex(*regex);
+            prefilter_built_.store(true, std::memory_order_release);
+        }
+    }
+    return prefilter_.get();
 }
 
 std::pair<bool, dynamic_string> regex_match::match_impl(std::string_view pattern) const

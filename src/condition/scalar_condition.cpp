@@ -12,12 +12,15 @@
 
 #include "clock.hpp"
 #include "condition/base.hpp"
+#include "cow_string.hpp"
 #include "dynamic_string.hpp"
 #include "exception.hpp"
 #include "exclusion/common.hpp"
 #include "iterator.hpp"
 #include "log.hpp"
 #include "matcher/base.hpp"
+#include "matcher/prefilter_cache.hpp"
+#include "matcher/regex_prefilter.hpp"
 #include "object.hpp"
 #include "object_store.hpp"
 #include "scalar_condition.hpp"
@@ -30,16 +33,34 @@ namespace ddwaf {
 
 namespace {
 
+// The prefilter of the matcher, with the cache of literal scans of the current
+// evaluation, if both are available
+struct prefilter_ref {
+    const matcher::regex_prefilter *prefilter{nullptr};
+    matcher::prefilter_cache *cache{nullptr};
+};
+
 template <typename Iterator>
 std::optional<condition_match> eval_object(Iterator &it, std::string_view address,
-    const matcher::base &matcher, const std::span<const transformer_id> &transformers)
+    const matcher::base &matcher, const std::span<const transformer_id> &transformers,
+    prefilter_ref prefilter)
 {
     // The iterator is guaranteed to be valid at this point, which means the
     // object pointer should not be nullptr
     const object_view src = *it;
     if (src.is_string()) {
+        std::optional<cow_string> transformed;
+        bool transformed_valid = false;
+        if (prefilter.cache != nullptr && prefilter.prefilter != nullptr &&
+            !prefilter.cache->may_match(
+                *prefilter.prefilter, src, transformers, transformed, transformed_valid)) {
+            return {};
+        }
+
         if (!transformers.empty()) {
-            auto transformed = transformer::manager::transform(src, transformers);
+            if (!transformed_valid) {
+                transformed = transformer::manager::transform(src, transformers);
+            }
             if (transformed) {
                 auto transformed_sv = static_cast<std::string_view>(transformed.value());
                 auto [res, highlight] = matcher.match(transformed_sv);
@@ -71,7 +92,7 @@ std::optional<condition_match> eval_object(Iterator &it, std::string_view addres
 template <typename Iterator>
 std::optional<condition_match> eval_target(Iterator &it, std::string_view address,
     const matcher::base &matcher, const std::span<const transformer_id> &transformers,
-    ddwaf::timer &deadline)
+    prefilter_ref prefilter, ddwaf::timer &deadline)
 {
     for (; it; ++it) {
         if (deadline.expired()) {
@@ -82,7 +103,7 @@ std::optional<condition_match> eval_target(Iterator &it, std::string_view addres
             continue;
         }
 
-        auto match = eval_object(it, address, matcher, transformers);
+        auto match = eval_object(it, address, matcher, transformers, prefilter);
         if (match) {
             // If this target matched, we can stop processing
             return match;
@@ -90,6 +111,18 @@ std::optional<condition_match> eval_target(Iterator &it, std::string_view addres
     }
 
     return {};
+}
+
+prefilter_ref resolve_prefilter(const matcher::base &matcher)
+{
+    prefilter_ref prefilter{.prefilter = matcher.get_prefilter()};
+    if (prefilter.prefilter != nullptr) {
+        prefilter.cache = matcher::prefilter_cache::current();
+        if (prefilter.cache != nullptr && !prefilter.cache->supports(*prefilter.prefilter)) {
+            prefilter.cache = nullptr;
+        }
+    }
+    return prefilter;
 }
 
 const matcher::base *get_matcher(const std::unique_ptr<matcher::base> &matcher,
@@ -122,6 +155,9 @@ bool scalar_condition::eval(condition_cache &cache, const object_store &store,
         cache.targets.assign(targets_.size(), {});
     }
 
+    // Only resolved once there is something to evaluate
+    std::optional<prefilter_ref> prefilter;
+
     for (unsigned i = 0; i < targets_.size(); ++i) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
@@ -135,14 +171,20 @@ bool scalar_condition::eval(condition_cache &cache, const object_store &store,
 
         cache.targets[i] = object;
 
+        if (!prefilter.has_value()) {
+            prefilter = resolve_prefilter(*matcher);
+        }
+
         std::optional<condition_match> match;
         // TODO: iterators could be cached to avoid reinitialisation
         if (target.source == data_source::keys) {
             key_iterator it(object, target.key_path, objects_excluded);
-            match = eval_target(it, target.name, *matcher, target.transformers, deadline);
+            match =
+                eval_target(it, target.name, *matcher, target.transformers, *prefilter, deadline);
         } else {
             value_iterator it(object, target.key_path, objects_excluded);
-            match = eval_target(it, target.name, *matcher, target.transformers, deadline);
+            match =
+                eval_target(it, target.name, *matcher, target.transformers, *prefilter, deadline);
         }
 
         if (match.has_value()) {

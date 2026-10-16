@@ -53,6 +53,16 @@ public:
         for (const auto &target : targets_) { targets.emplace_back(target.index); }
     }
 
+    void build_prefilters(std::vector<const matcher::regex_prefilter *> &prefilters) const override
+    {
+        if (matcher_) {
+            const auto *prefilter = matcher_->build_prefilter();
+            if (prefilter != nullptr) {
+                prefilters.emplace_back(prefilter);
+            }
+        }
+    }
+
     static constexpr auto arguments()
     {
         return std::array<parameter_specification, 1>{

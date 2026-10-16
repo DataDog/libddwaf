@@ -91,6 +91,12 @@ public:
 
     // Appends the targets of the condition, i.e. the indices of its addresses
     virtual void get_targets(std::vector<target_index> &targets) const = 0;
+
+    // Builds and collects the prefilters of the matchers of this condition,
+    // see regex_prefilter and literal_scanner
+    virtual void build_prefilters(
+        std::vector<const matcher::regex_prefilter *> & /*prefilters*/) const
+    {}
 };
 
 } // namespace ddwaf

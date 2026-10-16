@@ -23,6 +23,8 @@
 #include "indexer.hpp"
 #include "log.hpp"
 #include "matcher/base.hpp"
+#include "matcher/literal_scanner.hpp"
+#include "matcher/regex_prefilter.hpp"
 #include "processor/base.hpp"
 #include "rule.hpp"
 #include "ruleset.hpp"
@@ -141,6 +143,14 @@ std::shared_ptr<ruleset> ruleset_builder::build(
         for (const auto &rule : *final_user_rules_) { rule_index_.emplace(&rule); }
     }
 
+    if (!rule_literal_scanner_ ||
+        contains(current_changes, base_rule_update | custom_rule_update)) {
+        std::vector<const matcher::regex_prefilter *> prefilters;
+        for (const auto &rule : *final_base_rules_) { rule.build_prefilters(prefilters); }
+        for (const auto &rule : *final_user_rules_) { rule.build_prefilters(prefilters); }
+        rule_literal_scanner_ = matcher::literal_scanner::build(prefilters);
+    }
+
     // Generate rule filters targetting all final rules
     if (!rule_filters_ || contains(current_changes, filters_update)) {
         // First generate rule filters
@@ -254,6 +264,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(
     auto rs = std::make_shared<ruleset>();
     rs->insert_rules(final_base_rules_, final_user_rules_, rule_targets_);
     rule_targets_ = rs->rule_targets;
+    rs->rule_literal_scanner = rule_literal_scanner_;
     rs->insert_filters(rule_filters_);
     rs->insert_filters(input_filters_);
     rs->insert_preprocessors(preprocessors_);

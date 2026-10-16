@@ -6,8 +6,10 @@
 
 #pragma once
 
+#include <atomic>
 #include <cstddef>
 #include <memory>
+#include <mutex>
 #include <re2/re2.h>
 #include <string>
 #include <string_view>
@@ -15,6 +17,7 @@
 
 #include "dynamic_string.hpp"
 #include "matcher/base.hpp"
+#include "matcher/regex_prefilter.hpp"
 #include "object_type.hpp"
 
 namespace ddwaf::matcher {
@@ -27,9 +30,15 @@ public:
     regex_match(const std::string &regex_str, std::size_t minLength, bool case_sensitive);
     ~regex_match() override = default;
     regex_match(const regex_match &) = delete;
-    regex_match(regex_match &&) noexcept = default;
+    regex_match(regex_match &&other) noexcept = delete;
     regex_match &operator=(const regex_match &) = delete;
-    regex_match &operator=(regex_match &&) noexcept = default;
+    regex_match &operator=(regex_match &&other) noexcept = delete;
+
+    [[nodiscard]] const regex_prefilter *get_prefilter() const override
+    {
+        return prefilter_built_.load(std::memory_order_acquire) ? prefilter_.get() : nullptr;
+    }
+    const regex_prefilter *build_prefilter() const override;
 
 protected:
     [[nodiscard]] std::string_view to_string_impl() const { return regex->pattern(); }
@@ -42,6 +51,10 @@ protected:
 
     std::unique_ptr<re2::RE2> regex{nullptr};
     std::size_t min_length;
+    // Set once by build_prefilter, and published by prefilter_built_
+    mutable std::unique_ptr<regex_prefilter> prefilter_;
+    mutable std::atomic<bool> prefilter_built_{false};
+    mutable std::mutex prefilter_mutex_;
 
     friend class base_impl<regex_match>;
 };

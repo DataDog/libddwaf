@@ -165,6 +165,11 @@ public:
     // A rule without conditions matches every time it's evaluated
     [[nodiscard]] bool has_conditions() const { return !expr_->empty(); }
 
+    void build_prefilters(std::vector<const matcher::regex_prefilter *> &prefilters) const
+    {
+        expr_->build_prefilters(prefilters);
+    }
+
     void get_addresses(std::unordered_map<target_index, std::string> &addresses) const
     {
         expr_->get_addresses(addresses);

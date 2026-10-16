@@ -49,6 +49,11 @@ public:
         for (const auto &cond : conditions_) { cond->get_targets(targets); }
     }
 
+    void build_prefilters(std::vector<const matcher::regex_prefilter *> &prefilters) const
+    {
+        for (const auto &cond : conditions_) { cond->build_prefilters(prefilters); }
+    }
+
     static std::vector<condition_match> get_matches(cache_type &cache)
     {
         std::vector<condition_match> matches;

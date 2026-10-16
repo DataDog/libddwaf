@@ -26,6 +26,7 @@
 #include "exclusion/rule_filter.hpp"
 #include "expression.hpp"
 #include "log.hpp"
+#include "matcher/prefilter_cache.hpp"
 #include "memory_resource.hpp"
 #include "module.hpp"
 #include "object.hpp"
@@ -157,6 +158,10 @@ evaluation_cache evaluation_cache::derive(const evaluation_cache &upstream)
 std::pair<bool, owned_object> evaluation_engine::eval(timer &deadline)
 {
     make_cache_writable();
+
+    // Literal scans of the evaluated strings can be shared by all the
+    // regular expressions of the rules during this evaluation
+    const matcher::prefilter_scope prefilters{ruleset_->rule_literal_scanner.get()};
 
     result_serializer serializer(ruleset_->obfuscator.get(), *ruleset_->actions, output_alloc_);
 

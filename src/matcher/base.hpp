@@ -20,6 +20,8 @@
 namespace ddwaf {
 namespace matcher {
 
+class regex_prefilter;
+
 class base {
 public:
     base() = default;
@@ -45,6 +47,13 @@ public:
 
     [[nodiscard]] virtual std::pair<bool, dynamic_string> match(std::string_view str) const = 0;
     [[nodiscard]] virtual std::pair<bool, dynamic_string> match(object_view obj) const = 0;
+
+    // A necessary condition for a string to match (see regex_prefilter), if
+    // the matcher supports one and build_prefilter has been called
+    [[nodiscard]] virtual const regex_prefilter *get_prefilter() const { return nullptr; }
+    // Builds the prefilter, once, if the matcher supports one. This is only
+    // done for the matchers of rules, which can use it.
+    virtual const regex_prefilter *build_prefilter() const { return nullptr; }
 };
 
 template <typename T> class base_impl : public base {
