@@ -26,6 +26,7 @@
 #include "exclusion/input_filter.hpp"
 #include "exclusion/rule_filter.hpp"
 #include "expression.hpp"
+#include "internal_resource.hpp"
 #include "log.hpp"
 #include "matcher/prefilter_cache.hpp"
 #include "module.hpp"
@@ -404,7 +405,7 @@ void evaluation_engine::make_cache_writable()
 
     // Subcontexts keep the current cache, while the engine continues with a
     // copy, see cache_copy.
-    auto copy = std::allocate_shared<cache_copy>(std::allocator<cache_copy>{}, *cache_);
+    auto copy = std::allocate_shared<cache_copy>(memory::internal_allocator<cache_copy>{}, *cache_);
     auto &cache = copy->cache();
     cache_ = std::shared_ptr<evaluation_cache>(std::move(copy), &cache);
 }

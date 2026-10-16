@@ -24,9 +24,11 @@
 #include "attribute_collector.hpp"
 #include "clock.hpp"
 #include "condition/base.hpp"
+#include "context_allocator.hpp"
 #include "dynamic_string.hpp"
 #include "exception.hpp"
 #include "expression.hpp"
+#include "internal_resource.hpp"
 #include "log.hpp"
 #include "memory_resource.hpp"
 #include "object.hpp"
@@ -57,13 +59,15 @@ struct resolved_argument_count {
     std::size_t optional{0};
 };
 
+// Processor caches belong to a context or subcontext (and are copied into each
+// subcontext), so their containers are allocated from its arena.
 struct processor_cache {
     expression::cache_type expr_cache;
-    std::unordered_set<target_index> generated;
-    std::vector<resolved_argument_count> evaluated;
+    memory::unordered_set<target_index> generated;
+    memory::vector<resolved_argument_count> evaluated;
 
     struct {
-        std::vector<std::optional<dynamic_string>> fragment_fields;
+        memory::vector<std::optional<dynamic_string>> fragment_fields;
     } fingerprint;
 };
 
@@ -182,8 +186,8 @@ public:
             }
 
             // If the result is to be evaluated, the contents must be allocated using
-            // the default allocator and cloned using the user-provided one.
-            auto suitable_alloc = evaluate_ ? memory::get_default_resource() : alloc;
+            // the internal allocator and cloned using the user-provided one.
+            auto suitable_alloc = evaluate_ ? memory::get_internal_resource() : alloc;
 
             auto object = std::apply(
                 [&](auto &&...args) {

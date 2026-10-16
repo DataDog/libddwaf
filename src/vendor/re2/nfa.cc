@@ -120,7 +120,7 @@ class NFA {
   const char* btext_;         // beginning of text (for FormatSubmatch)
   const char* etext_;         // end of text (for endmatch_)
   Threadq q0_, q1_;           // pre-allocated for Search.
-  PODArray<AddState> stack_;  // pre-allocated for AddToThreadq
+  ScratchPODArray<AddState> stack_;  // pre-allocated for AddToThreadq
   std::deque<Thread> arena_;  // thread arena
   Thread* freelist_;          // thread freelist
   const char** match_;        // best match so far
@@ -144,7 +144,7 @@ NFA::NFA(Prog* prog) {
   int nstack = 2*prog_->inst_count(kInstCapture) +
                prog_->inst_count(kInstEmptyWidth) +
                prog_->inst_count(kInstNop) + 1;  // + 1 for start inst
-  stack_ = PODArray<AddState>(nstack);
+  stack_ = ScratchPODArray<AddState>(nstack);
   freelist_ = NULL;
   match_ = NULL;
   matched_ = false;

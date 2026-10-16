@@ -356,10 +356,9 @@ std::string_view find_shell_command(std::string_view executable, object_view exe
     return {};
 }
 
-std::optional<shi_result> cmdi_impl(object_view exec_args,
-    std::vector<shell_token> &resource_tokens, object_view params,
-    std::span<const transformer_id> transformers, const object_set_ref &objects_excluded,
-    ddwaf::timer &deadline)
+std::optional<shi_result> cmdi_impl(object_view exec_args, shell_token_vector &resource_tokens,
+    object_view params, std::span<const transformer_id> transformers,
+    const object_set_ref &objects_excluded, ddwaf::timer &deadline)
 {
     const std::string_view executable =
         trim_whitespaces(exec_args.at_value(0).as_or_default<std::string_view>({}));
@@ -441,7 +440,7 @@ bool cmdi_detector::eval_impl(const unary_argument<object_view> &resource,
         return {};
     }
 
-    std::vector<shell_token> resource_tokens;
+    shell_token_vector resource_tokens;
     for (const auto &param : params) {
         auto res = cmdi_impl(resource.value, resource_tokens, param.value, param.transformers,
             objects_excluded, deadline);

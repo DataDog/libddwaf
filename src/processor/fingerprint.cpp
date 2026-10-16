@@ -20,9 +20,11 @@
 
 #include "argument_retriever.hpp"
 #include "clock.hpp"
+#include "context_allocator.hpp"
 #include "cow_string.hpp"
 #include "dynamic_string.hpp"
 #include "exception.hpp"
+#include "internal_resource.hpp"
 #include "log.hpp"
 #include "memory_resource.hpp"
 #include "object.hpp"
@@ -35,6 +37,12 @@
 
 namespace ddwaf {
 namespace {
+
+// Fingerprint fields and their intermediate values are transient, internal
+// allocations.
+template <typename T> using internal_vector = std::vector<T, memory::internal_allocator<T>>;
+using internal_string =
+    std::basic_string<char, std::char_traits<char>, memory::internal_allocator<char>>;
 
 // Return true if the first argument is less than (i.e. is ordered before) the second
 bool str_casei_cmp(std::string_view left, std::string_view right)
@@ -215,7 +223,7 @@ struct key_hash_field : field_generator<key_hash_field> {
             return {};
         }
 
-        std::vector<std::string_view> keys;
+        internal_vector<std::string_view> keys;
         keys.reserve(value.size());
 
         std::size_t max_string_size = 0;
@@ -244,7 +252,8 @@ struct key_hash_field : field_generator<key_hash_field> {
 };
 
 struct vector_hash_field : field_generator<vector_hash_field> {
-    explicit vector_hash_field(std::vector<std::string> &&input) : value(std::move(input)) {}
+    explicit vector_hash_field(internal_vector<internal_string> &&input) : value(std::move(input))
+    {}
 
     // NOLINTNEXTLINE(readability-make-member-function-const)
     [[nodiscard]] dynamic_string generate()
@@ -263,7 +272,7 @@ struct vector_hash_field : field_generator<vector_hash_field> {
         return hasher.digest<8>();
     }
 
-    std::vector<std::string> value;
+    internal_vector<internal_string> value;
 };
 
 // This particular generator generates multiple fields (hence the fields name)
@@ -280,7 +289,7 @@ struct kv_hash_fields : field_generator<kv_hash_fields, std::pair<std::string, s
             return {};
         }
 
-        std::vector<std::pair<std::string_view, std::string_view>> kv_sorted;
+        internal_vector<std::pair<std::string_view, std::string_view>> kv_sorted;
         kv_sorted.reserve(value.size());
 
         std::size_t max_string_size = 0;
@@ -361,7 +370,8 @@ template <typename... Generators> constexpr std::size_t generate_num_fields()
 }
 
 template <std::size_t N, typename T, typename... Rest>
-std::size_t generate_fragment_field(std::span<std::string, N> fields, T &generator, Rest &&...rest)
+std::size_t generate_fragment_field(
+    std::span<internal_string, N> fields, T &generator, Rest &&...rest)
 {
     std::size_t length = 0;
     auto value = generator();
@@ -390,11 +400,11 @@ owned_object generate_fragment(
     std::string_view header, nonnull_ptr<memory::memory_resource> alloc, Generators... generators)
 {
     constexpr std::size_t num_fields = generate_num_fields<Generators...>();
-    std::array<std::string, num_fields> fields;
+    std::array<internal_string, num_fields> fields;
 
     auto length =
         header.size() + num_fields +
-        generate_fragment_field(std::span<std::string, num_fields>{fields}, generators...);
+        generate_fragment_field(std::span<internal_string, num_fields>{fields}, generators...);
 
     dynamic_string buffer{static_cast<dynamic_string::size_type>(length), alloc};
     buffer.append(header);
@@ -445,8 +455,8 @@ std::size_t generate_fragment_field_cached(
 
 template <typename... Generators>
 owned_object generate_fragment_cached(std::string_view header,
-    nonnull_ptr<memory::memory_resource> alloc, std::vector<std::optional<dynamic_string>> &cache,
-    Generators... generators)
+    nonnull_ptr<memory::memory_resource> alloc,
+    memory::vector<std::optional<dynamic_string>> &cache, Generators... generators)
 {
     constexpr std::size_t num_fields = generate_num_fields<Generators...>();
     if (cache.empty()) {
@@ -541,7 +551,7 @@ owned_object http_header_fingerprint::eval_impl(const unary_argument<map_view> &
     known_header_bitset.resize(standard_headers_length, '0');
 
     std::string_view user_agent;
-    std::vector<std::string> unknown_headers;
+    internal_vector<internal_string> unknown_headers;
     dynamic_string normalized_header;
     for (const auto [key, child] : headers.value) {
         if (deadline.expired()) {

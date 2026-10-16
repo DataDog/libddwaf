@@ -18,6 +18,7 @@
 #include "context_allocator.hpp"
 #include "dynamic_string.hpp"
 #include "exclusion/common.hpp"
+#include "internal_resource.hpp"
 #include "matcher/base.hpp"
 #include "object.hpp"
 #include "object_store.hpp"
@@ -36,8 +37,14 @@ struct condition_match {
         std::vector<std::variant<std::string_view, int64_t>> key_path{};
     };
 
-    std::vector<argument> args;
-    std::vector<dynamic_string> highlights;
+    // Matches are generated during evaluations and copied along with the
+    // condition caches of a context into each of its subcontexts.
+    using argument_vector = std::vector<argument, memory::internal_allocator<argument>>;
+    using highlight_vector =
+        std::vector<dynamic_string, memory::internal_allocator<dynamic_string>>;
+
+    argument_vector args;
+    highlight_vector highlights;
     std::string_view operator_name;
     std::string_view operator_value;
 };

@@ -13,6 +13,7 @@
 #include <unordered_map>
 #include <utility>
 
+#include "context_allocator.hpp"
 #include "memory_resource.hpp"
 #include "object.hpp"
 #include "object_store.hpp"
@@ -129,10 +130,12 @@ protected:
     // string span represents the key path.
     using target_type =
         std::pair<target_index, std::span<const std::variant<std::string, int64_t>>>;
-    std::unordered_map<std::string_view, target_type> pending_;
+    // Both maps belong to the evaluation engine of a context or subcontext and
+    // are allocated from its arena.
+    memory::unordered_map<std::string_view, target_type> pending_;
 
     nonnull_ptr<memory::memory_resource> alloc_;
-    std::unordered_map<std::string_view, owned_object> inserted_;
+    memory::unordered_map<std::string_view, owned_object> inserted_;
 };
 
 } // namespace ddwaf

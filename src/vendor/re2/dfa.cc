@@ -602,7 +602,7 @@ DFA::State* DFA::WorkqToCachedState(Workq* q, Workq* mq, uint32_t flag) {
   // Only ByteRange, EmptyWidth, and Match instructions are useful to keep:
   // those are the only operators with any effect in
   // RunWorkqOnEmptyString or RunWorkqOnByte.
-  PODArray<int> inst(q->size());
+  ScratchPODArray<int> inst(q->size());
   int n = 0;
   uint32_t needflags = 0;  // flags needed by kInstEmptyWidth instructions
   bool sawmatch = false;   // whether queue contains guaranteed kInstMatch

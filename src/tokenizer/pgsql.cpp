@@ -7,12 +7,11 @@
 #include <memory>
 #include <stdexcept>
 #include <string_view>
-#include <unordered_set>
 #include <utility>
-#include <vector>
 
 #include "log.hpp"
 #include "re2.h"
+#include "tokenizer/base.hpp"
 #include "tokenizer/pgsql.hpp"
 #include "tokenizer/sql_base.hpp"
 #include "utils.hpp"
@@ -58,8 +57,7 @@ bool pgsql_tokenizer::initialise_regexes()
     return ret;
 }
 
-pgsql_tokenizer::pgsql_tokenizer(
-    std::string_view str, std::unordered_set<sql_token_type> skip_tokens)
+pgsql_tokenizer::pgsql_tokenizer(std::string_view str, token_type_set<sql_token_type> skip_tokens)
     : sql_tokenizer(str, std::move(skip_tokens))
 {
     static const bool ret = []() {
@@ -270,7 +268,7 @@ void pgsql_tokenizer::tokenize_dollar_string_or_identifier()
     }
 }
 
-std::vector<sql_token> pgsql_tokenizer::tokenize_impl()
+sql_token_vector pgsql_tokenizer::tokenize_impl()
 {
     for (; !eof(); advance()) {
         auto c = peek();

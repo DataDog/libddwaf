@@ -7,9 +7,12 @@
 #pragma once
 
 #include <cstddef>
+#include <functional>
 #include <string_view>
 #include <unordered_set>
 #include <vector>
+
+#include "internal_resource.hpp"
 
 namespace ddwaf {
 
@@ -19,9 +22,17 @@ template <typename T> struct base_token {
     std::size_t index{};
 };
 
+// Tokenizers run on every evaluation of the detectors, so their tokens and
+// sets of token types to skip are internal, transient allocations.
+template <typename T>
+using token_vector = std::vector<base_token<T>, memory::internal_allocator<base_token<T>>>;
+template <typename T>
+using token_type_set =
+    std::unordered_set<T, std::hash<T>, std::equal_to<T>, memory::internal_allocator<T>>;
+
 template <typename T> class base_tokenizer {
 public:
-    explicit base_tokenizer(std::string_view str, std::unordered_set<T> skip_tokens = {})
+    explicit base_tokenizer(std::string_view str, token_type_set<T> skip_tokens = {})
         : buffer_(str), skip_tokens_(std::move(skip_tokens))
     {}
 
@@ -94,8 +105,8 @@ protected:
 
     std::string_view buffer_;
     std::size_t idx_{0};
-    std::unordered_set<T> skip_tokens_{};
-    std::vector<base_token<T>> tokens_{};
+    token_type_set<T> skip_tokens_{};
+    token_vector<T> tokens_{};
 };
 
 } // namespace ddwaf

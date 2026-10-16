@@ -23,6 +23,7 @@
 #include "clock.hpp"
 #include "context_allocator.hpp"
 #include "exclusion/common.hpp"
+#include "internal_resource.hpp"
 #include "object.hpp"
 #include "object_store.hpp"
 #include "target_address.hpp"
@@ -88,6 +89,10 @@ public:
     class traverser {
     public:
         enum class state : uint8_t { not_found, found, intermediate_node };
+        // Traversers are created and copied while objects are matched, so their
+        // nodes are internal, transient allocations.
+        using node_vector =
+            std::vector<const trie_node *, memory::internal_allocator<const trie_node *>>;
 
         explicit traverser(const trie_node *root)
         {
@@ -103,7 +108,7 @@ public:
                 return *this;
             }
 
-            std::vector<const trie_node *> next_nodes;
+            node_vector next_nodes;
             next_nodes.reserve(cur_nodes_.size());
 
             for (const auto *cur_node : cur_nodes_) {
@@ -135,7 +140,7 @@ public:
                 return *this;
             }
 
-            std::vector<const trie_node *> next_nodes;
+            node_vector next_nodes;
             next_nodes.reserve(cur_nodes_.size());
 
             for (const auto *cur_node : cur_nodes_) {
@@ -166,8 +171,8 @@ public:
         }
 
     private:
-        explicit traverser(std::vector<const trie_node *> &&nodes) : cur_nodes_(std::move(nodes)) {}
-        std::vector<const trie_node *> cur_nodes_;
+        explicit traverser(node_vector &&nodes) : cur_nodes_(std::move(nodes)) {}
+        node_vector cur_nodes_;
     };
 
     template <typename StringType>

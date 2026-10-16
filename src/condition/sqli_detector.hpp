@@ -45,19 +45,19 @@ namespace internal {
 std::string strip_literals(std::string_view statement, std::span<sql_token> tokens);
 
 std::pair<std::span<sql_token>, std::size_t> get_consecutive_tokens(
-    std::vector<sql_token> &resource_tokens, std::size_t begin, std::size_t end);
+    sql_token_vector &resource_tokens, std::size_t begin, std::size_t end);
 
 bool contains_harmful_tokens(std::span<sql_token> tokens);
 
 bool has_order_by_structure(std::span<sql_token> tokens);
-bool is_benign_order_by_clause(const std::vector<sql_token> &resource_tokens,
+bool is_benign_order_by_clause(const sql_token_vector &resource_tokens,
     std::span<sql_token> param_tokens, std::size_t param_tokens_begin);
 
-bool is_where_tautology(const std::vector<sql_token> &resource_tokens,
-    std::span<sql_token> param_tokens, std::size_t param_tokens_begin);
+bool is_where_tautology(const sql_token_vector &resource_tokens, std::span<sql_token> param_tokens,
+    std::size_t param_tokens_begin);
 
-bool is_query_comment(const std::vector<sql_token> &resource_tokens,
-    std::span<sql_token> param_tokens, std::size_t param_index, std::size_t param_tokens_begin);
+bool is_query_comment(const sql_token_vector &resource_tokens, std::span<sql_token> param_tokens,
+    std::size_t param_index, std::size_t param_tokens_begin);
 
 bool is_query_comment(
     std::string_view resource, std::span<sql_token> param_tokens, std::size_t param_end);

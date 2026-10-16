@@ -13,6 +13,7 @@
 #include <utility>
 
 #include "dynamic_string.hpp"
+#include "internal_resource.hpp"
 #include "memory_resource.hpp"
 #include "pointer.hpp"
 
@@ -113,7 +114,7 @@ public:
     // Replaces the internal buffer, ownership is transferred
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
     void replace_buffer(char *str, size_type length, size_type capacity,
-        nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
+        nonnull_ptr<memory::memory_resource> alloc = memory::get_internal_resource())
     {
         [[likely]] if (capacity_ > 0) {
             alloc_->deallocate(buffer_, capacity_, alignof(char));
@@ -172,7 +173,7 @@ protected:
         }
     }
 
-    nonnull_ptr<memory::memory_resource> alloc_{memory::get_default_resource()};
+    nonnull_ptr<memory::memory_resource> alloc_{memory::get_internal_resource()};
 
     char *buffer_;
     size_type length_;

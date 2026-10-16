@@ -14,7 +14,6 @@
 
 #include "clock.hpp"
 #include "condition/base.hpp"
-#include "dynamic_string.hpp"
 #include "exception.hpp"
 #include "exclusion/common.hpp"
 #include "iterator.hpp"
@@ -183,7 +182,7 @@ bool negated_scalar_condition::eval(condition_cache &cache, const object_store &
             if (target_object.is_array() && target_object.size() == 1) {
                 target_object = target_object.at_value(0);
             }
-            std::vector<dynamic_string> highlights;
+            condition_match::highlight_vector highlights;
 
             // TODO fix conversion to dynamic_string
             auto resolved = target_object.convert<std::string>();

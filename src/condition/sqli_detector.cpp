@@ -146,8 +146,7 @@ bool is_query_comment(std::string_view resource, std::span<sql_token> param_toke
     return false;
 }
 
-bool is_where_tautology(const std::vector<sql_token> &resource_tokens,
-    std::span<sql_token> param_tokens,
+bool is_where_tautology(const sql_token_vector &resource_tokens, std::span<sql_token> param_tokens,
     std::size_t param_tokens_begin /* first index of param_tokens in resource_tokens */)
 {
     /* We want to consider as malicious the injections of 3 tokens (4 tokens
@@ -372,7 +371,7 @@ bool has_order_by_structure(std::span<sql_token> tokens)
     return true;
 }
 
-bool is_benign_order_by_clause(const std::vector<sql_token> &resource_tokens,
+bool is_benign_order_by_clause(const sql_token_vector &resource_tokens,
     std::span<sql_token> param_tokens, std::size_t param_tokens_begin)
 {
     if (param_tokens_begin < 2) {
@@ -409,7 +408,7 @@ bool contains_harmful_tokens(std::span<sql_token> tokens)
 }
 
 std::pair<std::span<sql_token>, std::size_t> get_consecutive_tokens(
-    std::vector<sql_token> &resource_tokens, std::size_t begin, std::size_t end)
+    sql_token_vector &resource_tokens, std::size_t begin, std::size_t end)
 {
     std::size_t index_begin = std::numeric_limits<std::size_t>::max();
     std::size_t index_end = 0;
@@ -439,7 +438,7 @@ std::pair<std::span<sql_token>, std::size_t> get_consecutive_tokens(
 
 namespace {
 
-template <typename T> std::vector<sql_token> tokenize_helper(std::string_view statement)
+template <typename T> sql_token_vector tokenize_helper(std::string_view statement)
 {
     // We don't need the semantical value provided by the parenthesis and
     // they could also be used to evade the heuristics, so we strip them
@@ -447,7 +446,7 @@ template <typename T> std::vector<sql_token> tokenize_helper(std::string_view st
     return tokenizer.tokenize();
 }
 
-std::vector<sql_token> tokenize(std::string_view statement, sql_dialect dialect)
+sql_token_vector tokenize(std::string_view statement, sql_dialect dialect)
 {
     try {
         switch (dialect) {
@@ -467,7 +466,7 @@ std::vector<sql_token> tokenize(std::string_view statement, sql_dialect dialect)
     return {};
 }
 
-sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resource_tokens,
+sqli_result sqli_impl(std::string_view resource, sql_token_vector &resource_tokens,
     substring_filter &resource_filter, object_view params,
     std::span<const transformer_id> transformers, sql_dialect dialect,
     const object_set_ref &objects_excluded, ddwaf::timer &deadline)
@@ -530,7 +529,7 @@ sqli_detector::sqli_detector(std::vector<condition_parameter> args)
 {
     auto dialect = sql_dialect_from_type(db_type.value);
 
-    std::vector<sql_token> resource_tokens;
+    sql_token_vector resource_tokens;
     substring_filter resource_filter{sql.value};
 
     for (const auto &param : params) {

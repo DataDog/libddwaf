@@ -16,6 +16,7 @@
 #include <string>
 #include <string_view>
 
+#include "internal_resource.hpp"
 #include "memory_resource.hpp"
 #include "pointer.hpp"
 
@@ -33,14 +34,14 @@ public:
     dynamic_string() = default;
 
     explicit dynamic_string(size_type capacity,
-        nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
+        nonnull_ptr<memory::memory_resource> alloc = memory::get_internal_resource())
         : alloc_(alloc)
     {
         ensure_spare_capacity(capacity);
     }
 
     dynamic_string(const char *str, size_type size,
-        nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
+        nonnull_ptr<memory::memory_resource> alloc = memory::get_internal_resource())
         : alloc_(alloc)
     {
         ensure_spare_capacity(size);
@@ -52,7 +53,7 @@ public:
 
     // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
     dynamic_string(std::string_view str,
-        nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
+        nonnull_ptr<memory::memory_resource> alloc = memory::get_internal_resource())
         : dynamic_string(str.data(), str.size(), alloc)
     {}
 
@@ -67,7 +68,7 @@ public:
     template <typename T>
     // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
     dynamic_string(
-        T str, nonnull_ptr<memory::memory_resource> alloc = memory::get_default_resource())
+        T str, nonnull_ptr<memory::memory_resource> alloc = memory::get_internal_resource())
         requires std::is_convertible_v<T, std::string_view>
         : dynamic_string(std::string_view{str}, alloc)
     {}
@@ -210,7 +211,7 @@ protected:
         }
     }
 
-    nonnull_ptr<memory::memory_resource> alloc_{memory::get_default_resource()};
+    nonnull_ptr<memory::memory_resource> alloc_{memory::get_internal_resource()};
 
     char *buffer_{nullptr};
     // Size explicitly excludes the null character, while capacity includes it

@@ -7,7 +7,6 @@
 #include <memory>
 #include <stdexcept>
 #include <string_view>
-#include <unordered_set>
 #include <utility>
 
 #include "re2.h"
@@ -187,8 +186,7 @@ template <typename T> bool sql_tokenizer<T>::initialise_regexes()
 }
 
 template <typename T>
-sql_tokenizer<T>::sql_tokenizer(
-    std::string_view str, std::unordered_set<sql_token_type> skip_tokens)
+sql_tokenizer<T>::sql_tokenizer(std::string_view str, token_type_set<sql_token_type> skip_tokens)
     : base_tokenizer(str, std::move(skip_tokens))
 {
     if (!initialise_regexes()) {

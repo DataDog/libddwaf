@@ -9,7 +9,6 @@
 #include <ostream>
 #include <stdexcept>
 #include <string_view>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -70,7 +69,7 @@ bool is_field_char(char c)
 // Characters used to represent a space
 bool is_space_char(char c) { return c == ' ' || c == '\t'; }
 
-void find_executables_and_strip_whitespaces(std::vector<shell_token> &tokens)
+void find_executables_and_strip_whitespaces(shell_token_vector &tokens)
 {
     // The scope within the command, this helps identify high level constructs
     // which end up evaluating as part of a command, e.g. an executable
@@ -294,8 +293,7 @@ bool shell_tokenizer::initialise_regexes()
     return ret;
 }
 
-shell_tokenizer::shell_tokenizer(
-    std::string_view str, std::unordered_set<shell_token_type> skip_tokens)
+shell_tokenizer::shell_tokenizer(std::string_view str, token_type_set<shell_token_type> skip_tokens)
     : base_tokenizer(str, std::move(skip_tokens))
 {
     shell_scope_stack_.reserve(8);
@@ -477,7 +475,7 @@ void shell_tokenizer::tokenize_redirection_or_field()
     }
 }
 
-std::vector<shell_token> shell_tokenizer::tokenize()
+shell_token_vector shell_tokenizer::tokenize()
 {
     // The string is evaluated based on the current scope, if we're in the global
     // scope, i.e. the top-level command, the string just needs to tokenized,

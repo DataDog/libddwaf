@@ -43,7 +43,7 @@ struct shell_argument_array {
 
 template <typename ResourceType, typename IteratorType = kv_iterator>
 std::optional<shi_result> find_shi_from_params(const ResourceType &resource,
-    std::vector<shell_token> &resource_tokens, object_view params,
+    shell_token_vector &resource_tokens, object_view params,
     std::span<const transformer_id> transformers, const object_set_ref &objects_excluded,
     ddwaf::timer &deadline, substring_filter *resource_filter = nullptr)
 {

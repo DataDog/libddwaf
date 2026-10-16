@@ -57,15 +57,16 @@ enum class shell_token_type : uint8_t {
 };
 
 using shell_token = base_token<shell_token_type>;
+using shell_token_vector = token_vector<shell_token_type>;
 
 std::ostream &operator<<(std::ostream &os, shell_token_type type);
 
 class shell_tokenizer : protected base_tokenizer<shell_token_type> {
 public:
     explicit shell_tokenizer(
-        std::string_view str, std::unordered_set<shell_token_type> skip_tokens = {});
+        std::string_view str, token_type_set<shell_token_type> skip_tokens = {});
 
-    std::vector<shell_token> tokenize();
+    shell_token_vector tokenize();
 
     static bool initialise_regexes();
 

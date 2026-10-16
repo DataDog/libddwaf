@@ -6,12 +6,11 @@
 #include <memory>
 #include <stdexcept>
 #include <string_view>
-#include <unordered_set>
 #include <utility>
-#include <vector>
 
 #include "log.hpp"
 #include "re2.h"
+#include "tokenizer/base.hpp"
 #include "tokenizer/generic_sql.hpp"
 #include "tokenizer/sql_base.hpp"
 #include "utils.hpp"
@@ -43,7 +42,7 @@ bool generic_sql_tokenizer::initialise_regexes()
 }
 
 generic_sql_tokenizer::generic_sql_tokenizer(
-    std::string_view str, std::unordered_set<sql_token_type> skip_tokens)
+    std::string_view str, token_type_set<sql_token_type> skip_tokens)
     : sql_tokenizer(str, std::move(skip_tokens))
 {
     if (!initialise_regexes()) {
@@ -142,7 +141,7 @@ void generic_sql_tokenizer::tokenize_eol_comment_or_operator_or_number()
     add_token(sql_token_type::binary_operator);
 }
 
-std::vector<sql_token> generic_sql_tokenizer::tokenize_impl()
+sql_token_vector generic_sql_tokenizer::tokenize_impl()
 {
     for (; !eof(); advance()) {
         auto c = peek();

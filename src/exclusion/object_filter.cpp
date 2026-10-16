@@ -3,6 +3,7 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
+#include <deque>
 #include <stack>
 #include <string_view>
 #include <tuple>
@@ -12,6 +13,7 @@
 #include "exception.hpp"
 #include "exclusion/common.hpp"
 #include "exclusion/object_filter.hpp"
+#include "internal_resource.hpp"
 #include "log.hpp"
 #include "object.hpp"
 #include "object_store.hpp"
@@ -43,7 +45,9 @@ void iterate_object(const path_trie::traverser &filter, object_view object,
         return;
     }
 
-    std::stack<std::tuple<object_view, unsigned, path_trie::traverser>> path_stack;
+    using stack_entry = std::tuple<object_view, unsigned, path_trie::traverser>;
+    std::stack<stack_entry, std::deque<stack_entry, memory::internal_allocator<stack_entry>>>
+        path_stack;
     path_stack.emplace(object, 0, filter);
 
     while (!path_stack.empty()) {

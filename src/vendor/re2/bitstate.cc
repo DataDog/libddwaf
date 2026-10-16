@@ -64,9 +64,9 @@ class BitState {
 
   // Search state
   static constexpr int kVisitedBits = 64;
-  PODArray<uint64_t> visited_;  // bitmap: (list ID, char*) pairs visited
-  PODArray<const char*> cap_;   // capture registers
-  PODArray<Job> job_;           // stack of text positions to explore
+  ScratchPODArray<uint64_t> visited_;  // bitmap: (list ID, char*) pairs visited
+  ScratchPODArray<const char*> cap_;   // capture registers
+  ScratchPODArray<Job> job_;           // stack of text positions to explore
   int njob_;                    // stack size
 
   BitState(const BitState&) = delete;
@@ -98,7 +98,7 @@ bool BitState::ShouldVisit(int id, const char* p) {
 
 // Grow the stack.
 void BitState::GrowStack() {
-  PODArray<Job> tmp(2*job_.size());
+  ScratchPODArray<Job> tmp(2*job_.size());
   memmove(tmp.data(), job_.data(), njob_*sizeof job_[0]);
   job_ = std::move(tmp);
 }
@@ -308,17 +308,17 @@ bool BitState::Search(std::string_view text, std::string_view context,
   // Allocate scratch space.
   int nvisited = prog_->list_count() * static_cast<int>(text.size()+1);
   nvisited = (nvisited + kVisitedBits-1) / kVisitedBits;
-  visited_ = PODArray<uint64_t>(nvisited);
+  visited_ = ScratchPODArray<uint64_t>(nvisited);
   memset(visited_.data(), 0, nvisited*sizeof visited_[0]);
 
   int ncap = 2*nsubmatch;
   if (ncap < 2)
     ncap = 2;
-  cap_ = PODArray<const char*>(ncap);
+  cap_ = ScratchPODArray<const char*>(ncap);
   memset(cap_.data(), 0, ncap*sizeof cap_[0]);
 
   // When sizeof(Job) == 16, we start with a nice round 1KiB. :)
-  job_ = PODArray<Job>(64);
+  job_ = ScratchPODArray<Job>(64);
 
   // Anchored search must start at text.begin().
   if (anchored_) {

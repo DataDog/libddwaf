@@ -6,12 +6,11 @@
 #include <memory>
 #include <stdexcept>
 #include <string_view>
-#include <unordered_set>
 #include <utility>
-#include <vector>
 
 #include "log.hpp"
 #include "re2.h"
+#include "tokenizer/base.hpp"
 #include "tokenizer/sql_base.hpp"
 #include "tokenizer/sqlite.hpp"
 #include "utils.hpp"
@@ -44,8 +43,7 @@ bool sqlite_tokenizer::initialise_regexes()
     return ret;
 }
 
-sqlite_tokenizer::sqlite_tokenizer(
-    std::string_view str, std::unordered_set<sql_token_type> skip_tokens)
+sqlite_tokenizer::sqlite_tokenizer(std::string_view str, token_type_set<sql_token_type> skip_tokens)
     : sql_tokenizer(str, std::move(skip_tokens))
 {
     if (!initialise_regexes()) {
@@ -150,7 +148,7 @@ void sqlite_tokenizer::tokenize_eol_comment_or_operator_or_number()
     add_token(sql_token_type::binary_operator);
 }
 
-std::vector<sql_token> sqlite_tokenizer::tokenize_impl()
+sql_token_vector sqlite_tokenizer::tokenize_impl()
 {
     for (; !eof(); advance()) {
         auto c = peek();

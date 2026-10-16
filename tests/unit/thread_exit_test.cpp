@@ -10,6 +10,7 @@
 #include <thread>
 
 #include "arena_resource.hpp"
+#include "internal_resource.hpp"
 #include "thread_exit.hpp"
 
 #include "common/gtest_utils.hpp"
@@ -126,6 +127,29 @@ TEST(TestThreadExit, ArenaBlockCacheFreedWhenFirstUsedInKeyDestructor)
         void *block = memory::arena_block_cache::acquire(size);
         memory::arena_block_cache::release(block, size);
         EXPECT_EQ(memory::arena_block_cache::cached_blocks(), 1);
+    }),
+        0);
+
+    cached_blocks_after_exit = -1;
+    std::thread([key] { pthread_setspecific(key, &key); }).join();
+    EXPECT_EQ(cached_blocks_after_exit, 0);
+
+    pthread_key_delete(key);
+}
+
+// See ArenaBlockCacheFreedWhenFirstUsedInKeyDestructor
+TEST(TestThreadExit, InternalBlockCacheFreedWhenFirstUsedInKeyDestructor)
+{
+    pthread_key_t key;
+    ASSERT_EQ(pthread_key_create(&key, [](void * /*value*/) {
+        EXPECT_TRUE(thread_exit::register_callback([]() noexcept {
+            cached_blocks_after_exit =
+                static_cast<int>(memory::internal_block_cache::cached_blocks());
+        }));
+
+        void *block = memory::internal_block_cache::allocate(64);
+        memory::internal_block_cache::deallocate(block, 64);
+        EXPECT_EQ(memory::internal_block_cache::cached_blocks(), 1);
     }),
         0);
 

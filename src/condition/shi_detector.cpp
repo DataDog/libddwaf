@@ -35,7 +35,7 @@ bool shi_detector::eval_string(const unary_argument<object_view> &resource,
 
     auto resource_sv = resource.value.as<std::string_view>();
 
-    std::vector<shell_token> resource_tokens;
+    shell_token_vector resource_tokens;
     substring_filter resource_filter{resource_sv};
     for (const auto &param : params) {
         auto res = find_shi_from_params(resource_sv, resource_tokens, param.value,
@@ -74,7 +74,7 @@ bool shi_detector::eval_array(const unary_argument<object_view> &resource,
         return {};
     }
 
-    std::vector<shell_token> resource_tokens;
+    shell_token_vector resource_tokens;
     // The arguments are searched within their concatenation
     substring_filter resource_filter{arguments.resource};
     for (const auto &param : params) {

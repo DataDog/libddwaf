@@ -17,12 +17,12 @@ namespace ddwaf {
 class sqlite_tokenizer : public sql_tokenizer<sqlite_tokenizer> {
 public:
     explicit sqlite_tokenizer(
-        std::string_view str, std::unordered_set<sql_token_type> skip_tokens = {});
+        std::string_view str, token_type_set<sql_token_type> skip_tokens = {});
 
     static bool initialise_regexes();
 
 protected:
-    std::vector<sql_token> tokenize_impl();
+    sql_token_vector tokenize_impl();
 
     void tokenize_keyword_operator_or_identifier();
     void tokenize_inline_comment_or_operator();

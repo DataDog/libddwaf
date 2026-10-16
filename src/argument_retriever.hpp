@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "exclusion/common.hpp"
+#include "internal_resource.hpp"
 #include "object.hpp"
 #include "object_store.hpp"
 #include "traits.hpp"
@@ -49,8 +50,11 @@ template <typename T> using optional_argument = std::optional<unary_argument<T>>
 template <typename T, typename = void> struct is_optional_argument : std::false_type {};
 template <typename T> struct is_optional_argument<optional_argument<T>> : std::true_type {};
 
-// A type of argument with multiple address(target) mappings
-template <typename T> using variadic_argument = std::vector<unary_argument<T>>;
+// A type of argument with multiple address(target) mappings, retrieved anew on
+// every evaluation
+template <typename T>
+using variadic_argument =
+    std::vector<unary_argument<T>, memory::internal_allocator<unary_argument<T>>>;
 
 template <typename T, typename = void> struct is_variadic_argument : std::false_type {};
 template <typename T> struct is_variadic_argument<variadic_argument<T>> : std::true_type {};

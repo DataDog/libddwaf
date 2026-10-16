@@ -49,6 +49,7 @@ enum class sql_token_type : uint8_t {
 };
 
 using sql_token = base_token<sql_token_type>;
+using sql_token_vector = token_vector<sql_token_type>;
 
 sql_dialect sql_dialect_from_type(std::string_view type);
 std::string_view sql_dialect_to_string(sql_dialect dialect);
@@ -66,10 +67,9 @@ std::ostream &operator<<(std::ostream &os, sql_token_type type);
 
 template <typename T> class sql_tokenizer : protected base_tokenizer<sql_token_type> {
 public:
-    explicit sql_tokenizer(
-        std::string_view str, std::unordered_set<sql_token_type> skip_tokens = {});
+    explicit sql_tokenizer(std::string_view str, token_type_set<sql_token_type> skip_tokens = {});
 
-    std::vector<sql_token> tokenize() { return static_cast<T *>(this)->tokenize_impl(); }
+    sql_token_vector tokenize() { return static_cast<T *>(this)->tokenize_impl(); }
 
     static bool initialise_regexes();
 

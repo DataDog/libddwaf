@@ -6,7 +6,9 @@
 
 #pragma once
 
+#include <cstddef>
 #include <memory>
+#include <optional>
 #include <utility>
 #include <vector>
 
@@ -15,6 +17,7 @@
 #include "context_allocator.hpp"
 #include "evaluation_engine.hpp"
 #include "exclusion/common.hpp"
+#include "internal_resource.hpp"
 #include "memory_resource.hpp"
 #include "object.hpp"
 #include "object_store.hpp"
@@ -35,6 +38,18 @@ inline constexpr std::size_t subcontext_arena_initial_size = 32768;
 
 class subcontext {
 public:
+    // Contexts and subcontexts are allocated by the interface (ddwaf_context_init
+    // and ddwaf_subcontext_init) on every request; their memory comes from the
+    // internal block cache rather than from the system allocator.
+    static void *operator new(std::size_t size)
+    {
+        return memory::internal_block_cache::allocate(size);
+    }
+    static void operator delete(void *ptr, std::size_t size) noexcept
+    {
+        memory::internal_block_cache::deallocate(ptr, size);
+    }
+
     ~subcontext()
     {
         {
@@ -133,13 +148,14 @@ protected:
           ctx_mr_(std::move(ctx_mr))
     {
         const memory::memory_resource_guard guard(&mr_);
-        store_ = std::make_unique<object_store>(object_store::from_upstream_store(*ctx_store_));
-        engine_ = std::make_unique<evaluation_engine>(
-            evaluation_engine::subcontext_engine(ctx_engine, *store_, *ctx_cache_));
+        store_.emplace(object_store::from_upstream_store(*ctx_store_));
+        engine_.emplace(evaluation_engine::subcontext_engine(ctx_engine, *store_, *ctx_cache_));
     }
 
-    std::unique_ptr<object_store> store_;
-    std::unique_ptr<evaluation_engine> engine_;
+    // Constructed in place to save two allocations per subcontext; destroyed
+    // explicitly, with the arena installed, by the destructor.
+    std::optional<object_store> store_;
+    std::optional<evaluation_engine> engine_;
 
     // This memory resource is primarily used for non-subcontext allocations within the context
     // itself, such as for caching purposes of finite elements. This has the advantage of
@@ -160,15 +176,28 @@ protected:
 
 class context {
 public:
+    // See subcontext::operator new
+    static void *operator new(std::size_t size)
+    {
+        return memory::internal_block_cache::allocate(size);
+    }
+    static void operator delete(void *ptr, std::size_t size) noexcept
+    {
+        memory::internal_block_cache::deallocate(ptr, size);
+    }
+
     explicit context(std::shared_ptr<ruleset> ruleset,
         nonnull_ptr<memory::memory_resource> output_alloc = memory::get_default_resource())
-        : mr_(std::make_shared<memory::arena_resource>(context_arena_initial_size))
+        : mr_(std::allocate_shared<memory::arena_resource>(
+              memory::internal_allocator<memory::arena_resource>{}, context_arena_initial_size))
     {
         const memory::memory_resource_guard guard(mr_.get());
-        // The ruleset, and so its lookup, outlives the store, as it's kept
-        // alive by the engine (of the context and of each subcontext).
-        store_ = std::make_shared<object_store>(ruleset->target_names.get());
-        engine_ = std::make_unique<evaluation_engine>(
+        // Shared with the subcontexts, which may outlive the context. The
+        // ruleset, and so its lookup, outlives the store, as it's kept alive
+        // by the engine (of the context and of each subcontext).
+        store_ = std::allocate_shared<object_store>(
+            memory::internal_allocator<object_store>{}, ruleset->target_names.get());
+        engine_.emplace(
             evaluation_engine::context_engine(std::move(ruleset), *store_, output_alloc));
     }
 
@@ -260,7 +289,7 @@ public:
 protected:
     std::shared_ptr<object_store> store_;
 
-    std::unique_ptr<evaluation_engine> engine_;
+    std::optional<evaluation_engine> engine_;
     // This memory resource is primarily used for non-subcontext allocations within the context
     // itself, such as for caching purposes of finite elements. This has the advantage of
     // improving the context destruction and memory deallocation performance.

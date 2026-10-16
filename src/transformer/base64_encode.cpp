@@ -9,7 +9,7 @@
 #include <limits>
 
 #include "cow_string.hpp"
-#include "memory_resource.hpp" // IWYU pragma: keep
+#include "internal_resource.hpp"
 #include "transformer/base64_encode.hpp"
 
 namespace ddwaf::transformer {
@@ -23,8 +23,7 @@ bool base64_encode::transform_impl(cow_string &str)
     // We need to allocate a buffer to contain the base64 encoded string
     const cow_string::size_type encoded_length = (str.length() + 2) / 3 * 4;
 
-    // NOLINTNEXTLINE(misc-include-cleaner)
-    auto *alloc = memory::get_default_resource();
+    auto *alloc = memory::get_internal_resource();
     auto *new_string = static_cast<char *>(alloc->allocate(encoded_length, alignof(char)));
 
     // We don't have a good way to make this test fail in the CI, thus crapping on the coverage

@@ -7,12 +7,11 @@
 #include <memory>
 #include <stdexcept>
 #include <string_view>
-#include <unordered_set>
 #include <utility>
-#include <vector>
 
 #include "log.hpp"
 #include "re2.h"
+#include "tokenizer/base.hpp"
 #include "tokenizer/mysql.hpp"
 #include "tokenizer/sql_base.hpp"
 #include "utils.hpp"
@@ -112,8 +111,7 @@ bool mysql_tokenizer::initialise_regexes()
     return ret;
 }
 
-mysql_tokenizer::mysql_tokenizer(
-    std::string_view str, std::unordered_set<sql_token_type> skip_tokens)
+mysql_tokenizer::mysql_tokenizer(std::string_view str, token_type_set<sql_token_type> skip_tokens)
     : sql_tokenizer(str, std::move(skip_tokens))
 {
     if (!initialise_regexes()) {
@@ -297,7 +295,7 @@ void mysql_tokenizer::tokenize_eol_comment_or_operator_or_number()
     add_token(sql_token_type::binary_operator);
 }
 
-std::vector<sql_token> mysql_tokenizer::tokenize_impl()
+sql_token_vector mysql_tokenizer::tokenize_impl()
 {
     for (; !eof(); advance()) {
         auto c = peek();
