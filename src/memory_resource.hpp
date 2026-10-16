@@ -24,6 +24,10 @@ const auto set_default_resource = std::pmr::set_default_resource;
 // The null memory resource is used as the default onef or the static thread
 // local memory resource. Only exposed for testing purposes.
 class null_memory_resource final : public memory_resource {
+public:
+    constexpr null_memory_resource() noexcept = default;
+
+private:
     void *do_allocate(size_t /*bytes*/, size_t /*alignment*/) override { throw std::bad_alloc(); }
     void do_deallocate(void * /*p*/, size_t /*bytes*/, size_t /*alignment*/) noexcept override {}
     [[nodiscard]] bool do_is_equal(const memory_resource &other) const noexcept override
@@ -32,10 +36,11 @@ class null_memory_resource final : public memory_resource {
     }
 };
 
-inline memory_resource *get_default_null_resource()
-{
-    static null_memory_resource resource;
-    return &resource;
-}
+// Constant-initialised, so that it needs no guard on access and is usable
+// before (and after) any dynamic initialisation.
+// NOLINTNEXTLINE(fuchsia-statically-constructed-objects)
+inline constinit null_memory_resource default_null_resource{};
+
+inline memory_resource *get_default_null_resource() { return &default_null_resource; }
 
 } // namespace ddwaf::memory

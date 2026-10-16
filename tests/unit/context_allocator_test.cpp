@@ -115,4 +115,29 @@ TEST_F(TestContextAllocator, MultipleThreads)
     }
 }
 
+TEST(TestContextAllocatorDefaults, ConstantInitialisedDefaults)
+{
+    // Both defaults are constant-initialised null resources: usable on any
+    // thread without prior set-up, distinct from each other, and failing on
+    // allocation.
+    std::thread([]() {
+        auto *local = memory::get_local_memory_resource();
+        auto *null = memory::get_default_null_resource();
+        ASSERT_NE(local, nullptr);
+        ASSERT_NE(null, nullptr);
+        EXPECT_NE(local, null);
+        EXPECT_FALSE(local->is_equal(*null));
+        EXPECT_TRUE(null->is_equal(*memory::get_default_null_resource()));
+        EXPECT_THROW(local->allocate(1), std::bad_alloc);
+        EXPECT_THROW(null->allocate(1), std::bad_alloc);
+
+        {
+            // A null resource leaves the default in place
+            memory::memory_resource_guard guard{nullptr};
+            EXPECT_EQ(memory::get_local_memory_resource(), local);
+        }
+        EXPECT_EQ(memory::get_local_memory_resource(), local);
+    }).join();
+}
+
 } // namespace

@@ -18,7 +18,11 @@
 #include "memory_resource.hpp"
 
 namespace ddwaf::memory {
-extern thread_local memory_resource *local_memory_resource;
+// Declared constinit so that accesses compile to plain TLS loads and stores:
+// without it, an extern thread_local may have a dynamic initialiser in another
+// translation unit, and every access would go through the TLS wrapper
+// function (and its __tls_init check).
+extern constinit thread_local memory_resource *local_memory_resource;
 
 inline memory_resource *get_local_memory_resource() { return local_memory_resource; }
 
