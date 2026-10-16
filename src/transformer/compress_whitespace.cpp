@@ -7,15 +7,26 @@
 #include <cstddef>
 
 #include "cow_string.hpp"
+#include "transformer/byte_scan.hpp"
 #include "transformer/compress_whitespace.hpp"
 
 namespace ddwaf::transformer {
 
+namespace {
+
+struct is_double_space {
+    template <typename T> static auto match(T c, T next)
+    { return byte_scan::eq(c, ' ') & byte_scan::eq(next, ' '); }
+    static bool match_last(char /*c*/) { return false; }
+};
+
+} // namespace
+
 bool compress_whitespace::transform_impl(cow_string &str)
 {
-    // First loop looking for the first two consecutives space char
-    std::size_t read = 1;
-    for (; read < str.length() && (str.at(read) != ' ' || str.at(read - 1) != ' '); ++read) {}
+    // First look for the first two consecutives space char, read is the
+    // position of the second one
+    std::size_t read = byte_scan::find_first_pair<is_double_space>(str.data(), str.length()) + 1;
 
     //  If we're checking whether we need to do change, finding such a chain mean we need to
     //  do so (we return true if we need to update)

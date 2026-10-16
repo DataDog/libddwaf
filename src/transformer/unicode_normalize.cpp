@@ -8,17 +8,37 @@
 #include <string_view>
 
 #include "cow_string.hpp"
+#include "transformer/byte_scan.hpp"
 #include "transformer/unicode_normalize.hpp"
 #include "utf8.hpp"
 
 using namespace ddwaf::utf8;
 
 namespace ddwaf::transformer {
+
+namespace {
+
+struct is_non_ascii {
+    template <typename T> static auto match(T c)
+    { return byte_scan::in_range(c, static_cast<char>(0x80), static_cast<char>(0xFF)); }
+};
+
+} // namespace
+
 bool unicode_normalize::needs_transform(std::string_view str)
 {
     uint32_t codepoint;
     uint64_t position = 0;
-    while ((codepoint = fetch_next_codepoint(str.data(), position, str.length())) != UTF8_EOF) {
+    while (true) {
+        // ASCII characters are single-byte code points which never need
+        // normalization, so the next code point to check starts at the next
+        // non-ASCII byte
+        position = byte_scan::find_first<is_non_ascii>(str.data(), str.length(), position);
+        codepoint = fetch_next_codepoint(str.data(), position, str.length());
+        if (codepoint == UTF8_EOF) {
+            break;
+        }
+
         // Ignore invalid glyphs or Zero-Width joiners (which we allow for emojis)
         if (codepoint == UTF8_INVALID || codepoint < 0x80) {
             continue;

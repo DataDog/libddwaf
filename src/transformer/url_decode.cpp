@@ -7,6 +7,7 @@
 #include <cstdint>
 
 #include "cow_string.hpp"
+#include "transformer/byte_scan.hpp"
 #include "transformer/url_decode.hpp"
 #include "utf8.hpp"
 #include "utils.hpp"
@@ -14,6 +15,11 @@
 namespace ddwaf::transformer {
 
 namespace {
+
+struct is_plus_or_percent {
+    template <typename T> static auto match(T c)
+    { return byte_scan::eq(c, '+') | byte_scan::eq(c, '%'); }
+};
 
 // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 /*
@@ -24,19 +30,25 @@ bool url_decode_common(cow_string &str, bool read_iis)
 {
     std::size_t read = 0;
     // Fast forward to a space or an hex encode char
-    for (; read < str.length() && str.at(read) != '+'; ++read) {
+    while ((read = byte_scan::find_first<is_plus_or_percent>(str.data(), str.length(), read)) <
+           str.length()) {
+        if (str.at(read) == '+') {
+            break;
+        }
+
         // Is there an hex encoded char?
-        if (read + 2 < str.length() && str.at(read) == '%' && ddwaf::isxdigit(str.at(read + 1)) &&
+        if (read + 2 < str.length() && ddwaf::isxdigit(str.at(read + 1)) &&
             ddwaf::isxdigit(str.at(read + 2))) {
             break;
         }
 
-        if (read_iis && read + 5 < str.length() && str.at(read) == '%' &&
-            (str.at(read + 1) | 0x20) == 'u' && ddwaf::isxdigit(str.at(read + 2)) &&
-            ddwaf::isxdigit(str.at(read + 3)) && ddwaf::isxdigit(str.at(read + 4)) &&
-            ddwaf::isxdigit(str.at(read + 5))) {
+        if (read_iis && read + 5 < str.length() && (str.at(read + 1) | 0x20) == 'u' &&
+            ddwaf::isxdigit(str.at(read + 2)) && ddwaf::isxdigit(str.at(read + 3)) &&
+            ddwaf::isxdigit(str.at(read + 4)) && ddwaf::isxdigit(str.at(read + 5))) {
             break;
         }
+
+        ++read;
     }
 
     if (read >= str.length()) {

@@ -7,15 +7,23 @@
 #include <cstddef>
 
 #include "cow_string.hpp"
+#include "transformer/byte_scan.hpp"
 #include "transformer/remove_nulls.hpp"
 
 namespace ddwaf::transformer {
 
+namespace {
+
+struct is_null {
+    template <typename T> static auto match(T c) { return byte_scan::eq(c, '\0'); }
+};
+
+} // namespace
+
 bool remove_nulls::transform_impl(cow_string &str)
 {
-    // First loop looking for the first null char
-    std::size_t read = 0;
-    for (; read < str.length() && str.at(read) != '\0'; ++read) {}
+    // First look for the first null char
+    std::size_t read = byte_scan::find_first<is_null>(str.data(), str.length());
 
     //  If we're checking whether we need to do change, finding such a char mean we need to
     //  do so (we return true if we need to update)

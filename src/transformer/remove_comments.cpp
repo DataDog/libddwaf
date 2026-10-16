@@ -8,9 +8,23 @@
 #include <utility>
 
 #include "cow_string.hpp"
+#include "transformer/byte_scan.hpp"
 #include "transformer/remove_comments.hpp"
 
 namespace ddwaf::transformer {
+
+namespace {
+
+// The characters that can start a comment
+struct is_comment_start {
+    template <typename T> static auto match(T c)
+    {
+        return byte_scan::eq(c, '<') | byte_scan::eq(c, '-') | byte_scan::eq(c, '#') |
+               byte_scan::eq(c, '/');
+    }
+};
+
+} // namespace
 
 bool remove_comments::transform_impl(cow_string &str)
 {
@@ -23,6 +37,18 @@ bool remove_comments::transform_impl(cow_string &str)
     while (read < str.length()) {
         type = comment_type::unknown;
         while (read < str.length()) {
+            if (!comment_found) {
+                // Nothing has been removed yet, so the characters before the
+                // next possible comment stay where they are
+                const std::size_t next =
+                    byte_scan::find_first<is_comment_start>(str.data(), str.length(), read);
+                write += next - read;
+                read = next;
+                if (read == str.length()) {
+                    break;
+                }
+            }
+
             if (str.at(read) == '<' && read + 3 < str.length() && str.at(read + 1) == '!' &&
                 str.at(read + 2) == '-' && str.at(read + 3) == '-') {
                 read += 4;

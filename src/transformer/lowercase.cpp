@@ -4,110 +4,59 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
-// NOLINTBEGIN(misc-include-cleaner)
-
-#include "utils.hpp"
 #include <cstddef>
 #include <string_view>
-#if defined(__SSE2__) && defined(LIBDDWAF_VECTORIZED_TRANSFORMERS)
-#  include <immintrin.h>
-#endif
 
 #include "cow_string.hpp"
+#include "transformer/byte_scan.hpp"
 #include "transformer/lowercase.hpp"
+#include "utils.hpp"
 
 namespace ddwaf::transformer {
 
-#if !defined(__SSE2__) || !defined(LIBDDWAF_VECTORIZED_TRANSFORMERS)
-bool lowercase::transform_impl(cow_string &str)
-{
-    std::size_t pos = 0;
+namespace {
 
-    // First loop looking for the first non-lowercase char
-    for (; pos < str.length() && (str.at(pos) < 'A' || str.at(pos) > 'Z'); ++pos) {}
+struct is_upper {
+    template <typename T> static auto match(T c) { return byte_scan::in_range(c, 'A', 'Z'); }
+};
 
-    //  If we're checking whether we need to do change, finding such a char mean we need to
-    //  do so (we return true if we need to update)
-    if (pos == str.length()) {
-        return false;
-    }
+} // namespace
 
-    //  If we're mutating the string, then we have the starting offset
-    for (; pos < str.length(); ++pos) { str[pos] = tolower(str.at(pos)); }
-
-    return true;
-}
-
-#else // defined(__SSE2__) && defined(LIBDDWAF_VECTORIZED_TRANSFORMERS)
 bool lowercase::needs_transform(std::string_view str)
-{
-    if (str.empty()) {
-        return false;
-    }
-
-    const char *input = str.data();
-
-    const __m128i sse_mask_lower_bound = _mm_set1_epi8('A' - 1);
-    const __m128i sse_mask_upper_bound = _mm_set1_epi8('Z' + 1);
-
-    const std::size_t aligned_size = str.size() & ~0xF;
-
-    bool has_uppercase = false;
-    for (std::size_t i = 0; i < aligned_size && !has_uppercase; i += 16) {
-        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-cstyle-cast)
-        const __m128i input_data = _mm_loadu_si128((__m128i *)(input + i));
-
-        const __m128i cmp_upper =
-            _mm_cmpgt_epi8(input_data, sse_mask_lower_bound); // Greater than 'A'
-        const __m128i cmp_lower = _mm_cmpgt_epi8(sse_mask_upper_bound, input_data); // Less than 'Z'
-        const __m128i cmp_result =
-            _mm_and_si128(cmp_upper, cmp_lower); // Combine the two comparison results
-        has_uppercase =
-            _mm_movemask_epi8(_mm_cmpeq_epi8(cmp_result, _mm_setzero_si128())) != 0xFFFF;
-    }
-
-    for (std::size_t i = aligned_size; i < str.size() && !has_uppercase; i++) {
-        has_uppercase = isupper(input[i]);
-    }
-
-    return has_uppercase;
-}
+{ return byte_scan::find_first<is_upper>(str.data(), str.size()) < str.size(); }
 
 bool lowercase::transform_impl(cow_string &str)
 {
-    auto size = str.length();
+    const std::size_t size = str.length();
     char *input = str.modifiable_data();
 
-    const __m128i sse_mask_upper_bound = _mm_set1_epi8('Z' + 1);
-    const __m128i sse_mask_lower_bound = _mm_set1_epi8('A' - 1);
-    const __m128i sse_addition_value = _mm_set1_epi8(0x20); // value to add to convert up to lc
+    std::size_t i = 0;
+#if defined(DDWAF_BYTE_SCAN_VECTOR)
+    using byte_scan::bytes16;
 
-    const std::size_t aligned_size = size & ~0xF;
+    const auto case_bit = bytes16::splat(0x20);
+    const auto to_lower = [&](std::size_t pos) {
+        const auto data = bytes16::load(input + pos);
+        // Uppercase letters only differ from their lowercase counterpart in
+        // the 0x20 bit, which they don't have set
+        (data | (is_upper::match(data) & case_bit)).store(input + pos);
+    };
 
-    for (std::size_t i = 0; i < aligned_size; i += 16) {
-        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-cstyle-cast)
-        const __m128i input_data = _mm_loadu_si128((__m128i *)(input + i));
+    if (size >= bytes16::size) {
+        for (; i + bytes16::size <= size; i += bytes16::size) { to_lower(i); }
 
-        const __m128i cmp_upper = _mm_cmpgt_epi8(input_data, sse_mask_lower_bound); // > 'A' - 1
-        const __m128i cmp_lower = _mm_cmpgt_epi8(sse_mask_upper_bound, input_data); // < 'Z' + 1
-        const __m128i cmp_result = _mm_and_si128(cmp_upper, cmp_lower);
-
-        const __m128i result =
-            // NOLINTNEXTLINE(portability-simd-intrinsics)
-            _mm_add_epi8(input_data, _mm_and_si128(cmp_result, sse_addition_value));
-        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-cstyle-cast)
-        _mm_storeu_si128((__m128i *)(input + i), result);
+        if (i < size) {
+            // The last block overlaps with the previous one, which is fine as
+            // lowercasing is idempotent
+            to_lower(size - bytes16::size);
+        }
+        return true;
     }
+#endif
 
-    for (std::size_t i = aligned_size; i < size; i++) {
-        const char c = input[i];
-        input[i] = tolower(c);
-    }
+    for (; i < size; ++i) { input[i] = ddwaf::tolower(input[i]); }
 
     return true;
 }
-#endif
 
 } // namespace ddwaf::transformer
-
-// NOLINTEND(misc-include-cleaner)

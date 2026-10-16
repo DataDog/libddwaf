@@ -7,9 +7,18 @@
 #include <cstddef>
 
 #include "cow_string.hpp"
+#include "transformer/byte_scan.hpp"
 #include "transformer/normalize_path.hpp"
 
 namespace ddwaf::transformer {
+
+namespace {
+
+struct is_dot {
+    template <typename T> static auto match(T c) { return byte_scan::eq(c, '.'); }
+};
+
+} // namespace
 
 bool normalize_path::transform_impl(cow_string &str)
 {
@@ -22,6 +31,14 @@ bool normalize_path::transform_impl(cow_string &str)
     //  - `/` (and thus skip the `./`)
     //  - `/.` and we thus erase the last directory
     while (read < str.length()) {
+        if (read == write) {
+            // Characters are copied onto themselves until the next dot
+            read = write = byte_scan::find_first<is_dot>(str.data(), str.length(), read);
+            if (read == str.length()) {
+                break;
+            }
+        }
+
         // Everything is cool, writing away
         if (str.at(read) != '.' || (read + 1 != str.length() && str.at(read + 1) != '/')) {
             if (str.copy_char(read++, write++)) {
