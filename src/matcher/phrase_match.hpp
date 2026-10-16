@@ -42,7 +42,7 @@ protected:
     [[nodiscard]] std::pair<bool, dynamic_string> match_impl(std::string_view pattern) const;
 
     bool enforce_word_boundary_{false};
-    std::unique_ptr<ac_t, void (*)(void *)> ac{nullptr, nullptr};
+    std::shared_ptr<ac_t> ac{nullptr};
 
     friend class base_impl<phrase_match>;
 };

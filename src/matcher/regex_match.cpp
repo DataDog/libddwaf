@@ -14,6 +14,7 @@
 
 #include "configuration/common/parser_exception.hpp"
 #include "dynamic_string.hpp"
+#include "matcher/compiled_cache.hpp"
 #include "matcher/regex_match.hpp"
 #include "matcher/regex_prefilter.hpp"
 #include "re2.h"
@@ -23,15 +24,7 @@ namespace ddwaf::matcher {
 regex_match::regex_match(const std::string &regex_str, std::size_t minLength, bool case_sensitive)
     : min_length(minLength)
 {
-    constexpr unsigned regex_max_mem = 512 * 1024;
-
-    re2::RE2::Options options;
-    options.set_max_mem(regex_max_mem);
-    options.set_log_errors(false);
-    options.set_case_sensitive(case_sensitive);
-
-    regex = std::make_unique<re2::RE2>(regex_str, options);
-
+    regex = compile_regex(regex_str, case_sensitive);
     if (!regex->ok()) {
         throw parsing_error("invalid regular expression: " + regex->error_arg());
     }

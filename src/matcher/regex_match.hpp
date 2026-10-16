@@ -49,7 +49,7 @@ protected:
 
     [[nodiscard]] std::pair<bool, dynamic_string> match_impl(std::string_view pattern) const;
 
-    std::unique_ptr<re2::RE2> regex{nullptr};
+    std::shared_ptr<const re2::RE2> regex{nullptr};
     std::size_t min_length;
     // Set once by build_prefilter, and published by prefilter_built_
     mutable std::unique_ptr<regex_prefilter> prefilter_;

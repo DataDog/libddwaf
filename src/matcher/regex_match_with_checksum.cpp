@@ -13,6 +13,7 @@
 #include "checksum/base.hpp"
 #include "configuration/common/parser_exception.hpp"
 #include "dynamic_string.hpp"
+#include "matcher/compiled_cache.hpp"
 #include "matcher/regex_match_with_checksum.hpp"
 #include "re2.h"
 
@@ -22,18 +23,11 @@ regex_match_with_checksum::regex_match_with_checksum(const std::string &regex_st
     std::size_t minLength, bool case_sensitive, std::unique_ptr<base_checksum> &&algo)
     : min_length(minLength), algo_(std::move(algo))
 {
-    constexpr unsigned regex_max_mem = 512 * 1024;
-
     if (!algo_) {
         throw parsing_error("invalid checksum algorithm");
     }
 
-    re2::RE2::Options options;
-    options.set_max_mem(regex_max_mem);
-    options.set_log_errors(false);
-    options.set_case_sensitive(case_sensitive);
-
-    regex = std::make_unique<re2::RE2>(regex_str, options);
+    regex = compile_regex(regex_str, case_sensitive);
     if (!regex->ok()) {
         throw parsing_error("invalid regular expression: " + regex->error_arg());
     }

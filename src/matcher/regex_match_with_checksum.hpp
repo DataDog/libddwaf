@@ -42,7 +42,7 @@ protected:
 
     [[nodiscard]] std::pair<bool, dynamic_string> match_impl(std::string_view pattern) const;
 
-    std::unique_ptr<re2::RE2> regex{nullptr};
+    std::shared_ptr<const re2::RE2> regex{nullptr};
     std::size_t min_length;
 
     std::unique_ptr<base_checksum> algo_;

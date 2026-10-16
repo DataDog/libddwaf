@@ -15,6 +15,7 @@
 
 #include "ac.h"
 #include "dynamic_string.hpp"
+#include "matcher/compiled_cache.hpp"
 #include "matcher/phrase_match.hpp"
 #include "utils.hpp"
 
@@ -38,12 +39,10 @@ phrase_match::phrase_match(
         throw std::invalid_argument("inconsistent pattern and lengths array size");
     }
 
-    ac_t *ac_ = ac_create(pattern.data(), lengths.data(), pattern.size());
-    if (ac_ == nullptr) {
+    ac = compile_phrases(pattern, lengths);
+    if (!ac) {
         throw std::runtime_error("failed to instantiate ac handler");
     }
-
-    ac = std::unique_ptr<ac_t, void (*)(void *)>(ac_, ac_free);
 }
 
 std::pair<bool, dynamic_string> phrase_match::match_impl(std::string_view pattern) const
