@@ -79,16 +79,9 @@ rule_target_index::rule_target_index(const std::array<rule_module, rule_module_c
         return;
     }
 
-    // Keep the load factor at or below 50%, so that probing remains short and
-    // there is always at least one empty slot to end it.
-    const auto capacity = std::bit_ceil(rules_by_target.size() * 2);
-    slots_.resize(capacity);
-    slot_mask_ = capacity - 1;
-
+    ranges_.resize(rules_by_target.rbegin()->first + 1);
     for (const auto &[target, sets] : rules_by_target) {
-        auto &slot = slots_[probe(target)];
-        slot = {.target = target,
-            .begin = static_cast<uint32_t>(rule_sets_.size()),
+        ranges_[target] = {.begin = static_cast<uint32_t>(rule_sets_.size()),
             .end = static_cast<uint32_t>(rule_sets_.size() + sets.size())};
         rule_sets_.insert(rule_sets_.end(), sets.begin(), sets.end());
     }

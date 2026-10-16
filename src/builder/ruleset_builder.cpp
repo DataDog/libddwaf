@@ -28,6 +28,7 @@
 #include "ruleset.hpp"
 #include "ruleset_builder.hpp"
 #include "scanner.hpp"
+#include "target_address.hpp"
 
 namespace ddwaf {
 
@@ -262,6 +263,9 @@ std::shared_ptr<ruleset> ruleset_builder::build(
     rs->scanners = scanners_;
     rs->actions = actions_;
     rs->obfuscator = obfuscator_;
+    // All the components of the ruleset have been parsed, so their addresses
+    // have been registered already.
+    rs->target_names = get_target_lookup();
 
     // An instance is valid if it contains primitives with side-effects, such as
     // rules or postprocessors.

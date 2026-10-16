@@ -43,12 +43,12 @@ public:
     // only if, the target isn't referenced by any rule.
     [[nodiscard]] std::span<const rule_set> find(target_index target) const
     {
-        if (slots_.empty()) {
+        if (target >= ranges_.size()) {
             return {};
         }
 
-        const auto &slot = slots_[probe(target)];
-        return {rule_sets_.data() + slot.begin, rule_sets_.data() + slot.end};
+        const auto &range = ranges_[target];
+        return {rule_sets_.data() + range.begin, rule_sets_.data() + range.end};
     }
 
     // Rules which have to be evaluated every time, as their outcome doesn't
@@ -62,26 +62,14 @@ public:
         const std::array<rule_module, rule_module_count> &modules) const;
 
 protected:
-    // Open addressing table with linear probing, keyed by the target index
-    // (which is already a hash), a slot with begin == end is empty.
-    struct slot {
-        target_index target{0};
+    // The rule sets of a target, indexed by target (which are dense, see
+    // target_index), a target without rules has an empty range.
+    struct range {
         uint32_t begin{0};
         uint32_t end{0};
     };
 
-    // Returns the slot of the target, or the empty slot where it would be inserted
-    [[nodiscard]] std::size_t probe(target_index target) const
-    {
-        auto i = target & slot_mask_;
-        while (slots_[i].begin != slots_[i].end && slots_[i].target != target) {
-            i = (i + 1) & slot_mask_;
-        }
-        return i;
-    }
-
-    std::vector<slot> slots_;
-    std::size_t slot_mask_{0};
+    std::vector<range> ranges_;
     std::vector<rule_set> rule_sets_;
     std::vector<rule_set> unconditional_;
     // Fingerprint of the rules of each module the index was built from

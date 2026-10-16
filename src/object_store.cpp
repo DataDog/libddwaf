@@ -3,6 +3,7 @@
 //
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
+#include <algorithm>
 #include <cstddef>
 #include <string_view>
 
@@ -16,12 +17,6 @@ namespace ddwaf {
 void object_store::apply(map_view batch, bool mark_new)
 {
     const auto size = batch.size();
-    targets_.reserve(targets_.size() + size);
-    updated_targets_.reserve(updated_targets_.size() + size);
-    if (mark_new) {
-        latest_batch_.reserve(latest_batch_.size() + size);
-    }
-
     for (std::size_t i = 0; i < size; ++i) {
         auto [key_obj, value] = batch.at(i);
         if (key_obj.empty()) {
@@ -29,23 +24,39 @@ void object_store::apply(map_view batch, bool mark_new)
         }
 
         auto key = key_obj.as<std::string_view>();
-        register_target(get_target_index(key), key, value, mark_new);
+        const auto target = lookup_ != nullptr ? lookup_->find(key) : get_target_index(key);
+        if (target == target_lookup::npos) {
+            DDWAF_DEBUG("Ignoring target '{}', not used by any component", key);
+            continue;
+        }
+
+        register_target(target, key, value, mark_new);
     }
 }
 
 void object_store::register_target(
     target_index target, std::string_view key, object_view value, bool mark_new)
 {
-    if (targets_.contains(target)) {
+    if (target >= targets_.size()) {
+        // The targets are allocated on first use, sized for every address in
+        // the lookup. Afterwards, only targets registered after the lookup was
+        // created (or any target, without a lookup) can be out of bounds.
+        const std::size_t lookup_size = lookup_ != nullptr ? lookup_->size() : 0;
+        reserve_targets(std::max({target + 1, targets_.size() * 2, lookup_size}));
+    }
+
+    auto &slot = targets_[target];
+    if (slot.has_value()) {
         DDWAF_DEBUG("Replacing target '{}' in object store", key);
     } else {
         DDWAF_DEBUG("Inserting target '{}' into object store", key);
+        ++target_count_;
     }
 
-    targets_[target] = value;
-    updated_targets_.emplace_back(target);
+    slot = value;
+    updated_targets_.insert(target);
     if (mark_new) {
-        latest_batch_.emplace(target);
+        latest_batch_.insert(target);
     }
 }
 

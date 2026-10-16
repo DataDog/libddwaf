@@ -157,7 +157,9 @@ public:
         : mr_(std::make_shared<memory::monotonic_buffer_resource>())
     {
         const memory::memory_resource_guard guard(mr_.get());
-        store_ = std::make_shared<object_store>();
+        // The ruleset, and so its lookup, outlives the store, as it's kept
+        // alive by the engine (of the context and of each subcontext).
+        store_ = std::make_shared<object_store>(ruleset->target_names.get());
         engine_ = std::make_unique<evaluation_engine>(
             evaluation_engine::context_engine(std::move(ruleset), *store_, output_alloc));
     }

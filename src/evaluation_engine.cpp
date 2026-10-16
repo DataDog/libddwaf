@@ -46,7 +46,7 @@ namespace {
 // during the lifecycle of the context.
 void set_context_event_address(object_store &store)
 {
-    static const std::string_view event_addr = "waf.context.event";
+    static const std::string_view event_addr = context_event_address;
     static auto event_addr_idx = get_target_index(event_addr);
 
     if (store.has_target(event_addr_idx)) {
@@ -369,10 +369,10 @@ void evaluation_engine::make_cache_writable()
 bool evaluation_engine::flag_updated_rules()
 {
     bool new_rule_targets = false;
-    for (auto target : store_.updated_targets()) {
+    store_.updated_targets().for_each([&](target_index target) {
         const auto rules = ruleset_->rule_targets->find(target);
         if (rules.empty()) {
-            continue;
+            return;
         }
 
         for (const auto &[module, word, mask] : rules) {
@@ -380,7 +380,7 @@ bool evaluation_engine::flag_updated_rules()
         }
 
         new_rule_targets = new_rule_targets || store_.is_new_target(target);
-    }
+    });
     store_.clear_updated_targets();
     return new_rule_targets;
 }

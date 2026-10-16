@@ -165,6 +165,10 @@ struct ruleset {
     std::array<rule_module, rule_module_count> rule_modules;
     // Rules of each module referencing each of the rule addresses
     std::shared_ptr<const rule_target_index> rule_targets;
+    // Resolves the addresses of the inputs, it contains (at least) every
+    // address the components of the ruleset refer to. When absent, as with
+    // rulesets constructed by tests, the context store registers all inputs.
+    std::shared_ptr<const target_lookup> target_names;
 
     std::unordered_map<target_index, std::string> rule_addresses;
     std::unordered_map<target_index, std::string> filter_addresses;
