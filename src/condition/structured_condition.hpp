@@ -90,6 +90,13 @@ public:
         }
     }
 
+    void get_targets(std::vector<target_index> &targets) const override
+    {
+        for (const auto &arg : arguments_) {
+            for (const auto &target : arg.targets) { targets.emplace_back(target.index); }
+        }
+    }
+
 protected:
     template <size_t I, size_t... Is, typename Args>
     bool resolve_arguments(const object_store &store, const object_set_ref &objects_excluded,

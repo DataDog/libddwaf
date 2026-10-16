@@ -263,6 +263,11 @@ public:
         for (const auto &[index, str] : targets_) { addresses.emplace(index, str); }
     }
 
+    void get_targets(std::vector<target_index> &targets) const
+    {
+        for (const auto &[index, str] : targets_) { targets.emplace_back(index); }
+    }
+
 protected:
     std::unordered_map<target_index, path_trie> target_paths_;
     std::unordered_map<target_index, std::string> targets_;

@@ -13,6 +13,7 @@
 #include <string_view>
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
 
 #include "clock.hpp"
 #include "exclusion/common.hpp"
@@ -53,6 +54,8 @@ public:
     {
         expr_->get_addresses(addresses);
     }
+
+    void get_targets(std::vector<target_index> &targets) const { expr_->get_targets(targets); }
 
     std::string_view get_action() const { return action_; }
 

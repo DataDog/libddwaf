@@ -44,6 +44,11 @@ public:
         for (const auto &cond : conditions_) { cond->get_addresses(addresses); }
     }
 
+    void get_targets(std::vector<target_index> &targets) const
+    {
+        for (const auto &cond : conditions_) { cond->get_targets(targets); }
+    }
+
     static std::vector<condition_match> get_matches(cache_type &cache)
     {
         std::vector<condition_match> matches;

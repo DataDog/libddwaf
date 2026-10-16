@@ -52,6 +52,11 @@ public:
         addresses.emplace(target_.index, target_.name);
     }
 
+    void get_targets(std::vector<target_index> &targets) const override
+    {
+        targets.emplace_back(target_.index);
+    }
+
     static constexpr auto arguments()
     {
         return std::array<parameter_specification, 1>{

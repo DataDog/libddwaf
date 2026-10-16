@@ -101,6 +101,10 @@ public:
 
     virtual void get_addresses(std::unordered_map<target_index, std::string> &addresses) const = 0;
 
+    // Appends the targets the processor depends on, i.e. the indices of its
+    // addresses, excluding those of its outputs
+    virtual void get_targets(std::vector<target_index> &targets) const = 0;
+
     [[nodiscard]] virtual const std::string &get_id() const = 0;
 };
 
@@ -229,6 +233,16 @@ public:
                 for (const auto &target : input.targets) {
                     addresses.emplace(target.index, target.name);
                 }
+            }
+        }
+    }
+
+    void get_targets(std::vector<target_index> &targets) const override
+    {
+        expr_->get_targets(targets);
+        for (const auto &mapping : mappings_) {
+            for (const auto &input : mapping.inputs) {
+                for (const auto &target : input.targets) { targets.emplace_back(target.index); }
             }
         }
     }

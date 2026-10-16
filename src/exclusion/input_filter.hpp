@@ -12,6 +12,7 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <vector>
 
 #include "clock.hpp"
 #include "exclusion/common.hpp"
@@ -54,6 +55,12 @@ public:
     {
         expr_->get_addresses(addresses);
         filter_->get_addresses(addresses);
+    }
+
+    void get_targets(std::vector<target_index> &targets) const
+    {
+        expr_->get_targets(targets);
+        filter_->get_targets(targets);
     }
 
 protected:

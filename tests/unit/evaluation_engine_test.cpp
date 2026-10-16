@@ -2568,4 +2568,228 @@ TEST(TestEvaluationEngine, FilterEvaluatedOnceItsTargetsAreUpdated)
     }
 }
 
+// Counts its evaluations in which its address is available
+class counting_processor : public base_processor {
+public:
+    counting_processor(std::string id, std::string address, std::size_t &count)
+        : id_(std::move(id)), address_(std::move(address)), index_(get_target_index(address_)),
+          count_(count)
+    {}
+
+    void eval(object_store &store, attribute_collector & /*collector*/,
+        processor_cache & /*cache*/, nonnull_ptr<memory::memory_resource> /*alloc*/,
+        ddwaf::timer & /*deadline*/) const override
+    {
+        if (store.has_target(index_)) {
+            ++count_;
+        }
+    }
+
+    void get_addresses(std::unordered_map<target_index, std::string> &addresses) const override
+    {
+        addresses.emplace(index_, address_);
+    }
+
+    void get_targets(std::vector<target_index> &targets) const override
+    {
+        targets.emplace_back(index_);
+    }
+
+    [[nodiscard]] const std::string &get_id() const override { return id_; }
+
+protected:
+    std::string id_;
+    std::string address_;
+    target_index index_;
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
+    std::size_t &count_;
+};
+
+// Returns whether the evaluation produced any result
+bool eval_batch(context &ctx, owned_object batch)
+{
+    EXPECT_TRUE(ctx.insert_batch(std::move(batch)));
+    timer deadline{std::chrono::microseconds(LONG_TIME)};
+    return ctx.eval(deadline).first;
+}
+
+bool eval_batch(subcontext &sctx, owned_object batch)
+{
+    EXPECT_TRUE(sctx.insert_batch(std::move(batch)));
+    timer deadline{std::chrono::microseconds(LONG_TIME)};
+    return sctx.eval(deadline).first;
+}
+
+TEST(TestEvaluationEngine, ProcessorsEvaluatedOnlyWhenTheirTargetsAreUpdated)
+{
+    std::size_t pre_count = 0;
+    std::size_t post_count = 0;
+
+    test::ruleset_builder rbuilder;
+    rbuilder.insert_base_rule(
+        core_rule{"id", "id", make_tags("type1"), make_exact_match_expression("usr.id", "admin")});
+    rbuilder.insert_preprocessor(
+        std::make_unique<counting_processor>("pre", "server.request.query", pre_count));
+    rbuilder.insert_postprocessor(
+        std::make_unique<counting_processor>("post", "server.request.query", post_count));
+
+    context ctx{rbuilder.build()};
+
+    eval_batch(ctx, object_builder_da::map({{"server.request.query", "value"}}));
+    EXPECT_EQ(pre_count, 1);
+    EXPECT_EQ(post_count, 1);
+
+    // The target of the processors hasn't been updated
+    eval_batch(ctx, object_builder_da::map({{"usr.id", "user"}}));
+    EXPECT_EQ(pre_count, 1);
+    EXPECT_EQ(post_count, 1);
+
+    {
+        auto sctx = ctx.create_subcontext();
+        eval_batch(sctx, object_builder_da::map({{"usr.id", "admin"}}));
+        EXPECT_EQ(pre_count, 1);
+        EXPECT_EQ(post_count, 1);
+    }
+
+    {
+        auto sctx = ctx.create_subcontext();
+        eval_batch(sctx, object_builder_da::map({{"server.request.query", "other"}}));
+        EXPECT_EQ(pre_count, 2);
+        EXPECT_EQ(post_count, 2);
+    }
+
+    // The subcontext didn't affect the state of the context
+    eval_batch(ctx, object_builder_da::map({{"usr.id", "other"}}));
+    EXPECT_EQ(pre_count, 2);
+    EXPECT_EQ(post_count, 2);
+
+    eval_batch(ctx, object_builder_da::map({{"server.request.query", "other"}}));
+    EXPECT_EQ(pre_count, 3);
+    EXPECT_EQ(post_count, 3);
+}
+
+TEST(TestEvaluationEngine, PostprocessorEvaluatedOnContextEvent)
+{
+    std::size_t count = 0;
+
+    test::ruleset_builder rbuilder;
+    rbuilder.insert_base_rule(
+        core_rule{"id", "id", make_tags("type1"), make_exact_match_expression("usr.id", "admin")});
+    rbuilder.insert_postprocessor(
+        std::make_unique<counting_processor>("post", "waf.context.event", count));
+
+    context ctx{rbuilder.build()};
+
+    EXPECT_EQ(eval_batch(ctx, object_builder_da::map({{"usr.id", "user"}})), false);
+    EXPECT_EQ(count, 0);
+
+    // The event address is generated after the rules are evaluated
+    EXPECT_EQ(eval_batch(ctx, object_builder_da::map({{"usr.id", "admin"}})), true);
+    EXPECT_EQ(count, 1);
+
+    EXPECT_EQ(eval_batch(ctx, object_builder_da::map({{"usr.id", "other"}})), false);
+    EXPECT_EQ(count, 1);
+}
+
+TEST(TestEvaluationEngine, ProcessorInterruptedByTimeoutIsEvaluatedLater)
+{
+    std::size_t count = 0;
+
+    test::ruleset_builder rbuilder;
+    rbuilder.insert_base_rule(
+        core_rule{"id", "id", make_tags("type1"), make_exact_match_expression("usr.id", "admin")});
+    rbuilder.insert_preprocessor(
+        std::make_unique<counting_processor>("pre", "server.request.query", count));
+
+    context ctx{rbuilder.build()};
+
+    {
+        auto root = object_builder_da::map({{"server.request.query", "value"}});
+        ctx.insert_and_apply(std::move(root));
+
+        ddwaf::timer deadline{0s};
+        EXPECT_THROW(ctx.eval_preprocessors(deadline), ddwaf::timeout_exception);
+        EXPECT_EQ(count, 0);
+    }
+
+    {
+        auto root = object_builder_da::map({{"usr.id", "user"}});
+        ctx.insert_and_apply(std::move(root));
+
+        ddwaf::timer deadline{2s};
+        ctx.eval_preprocessors(deadline);
+        EXPECT_EQ(count, 1);
+
+        ctx.eval_preprocessors(deadline);
+        EXPECT_EQ(count, 1);
+    }
+}
+
+TEST(TestEvaluationEngine, FilterInterruptedByTimeoutIsEvaluatedLater)
+{
+    test::ruleset_builder rbuilder;
+    auto *rule = rbuilder.insert_base_rule(
+        core_rule{"id", "id", make_tags("type1"), make_exact_match_expression("usr.id", "admin")});
+    rbuilder.insert_filter(
+        rule_filter{"1", make_exact_match_expression("http.client_ip", "192.168.0.1"),
+            std::set<const core_rule *>{rule}});
+
+    context ctx{rbuilder.build()};
+
+    {
+        auto root = object_builder_da::map({{"http.client_ip", "192.168.0.1"}});
+        ctx.insert_and_apply(std::move(root));
+
+        ddwaf::timer deadline{0s};
+        EXPECT_THROW(ctx.eval_filters(deadline), ddwaf::timeout_exception);
+    }
+
+    {
+        auto root = object_builder_da::map({{"usr.id", "user"}});
+        ctx.insert_and_apply(std::move(root));
+
+        ddwaf::timer deadline{2s};
+        EXPECT_TRUE(ctx.eval_filters(deadline).contains(rule));
+    }
+}
+
+TEST(TestEvaluationEngine, InputFilterEvaluatedOnlyWhenItsTargetsAreUpdated)
+{
+    test::ruleset_builder rbuilder;
+    auto *rule = rbuilder.insert_base_rule(core_rule{"id", "id", make_tags("type1"),
+        make_exact_match_expression("server.request.query", "admin")});
+
+    auto obj_filter = std::make_shared<object_filter>();
+    obj_filter->insert(get_target_index("server.request.query"), "server.request.query");
+    rbuilder.insert_filter(input_filter{"1",
+        make_exact_match_expression("http.client_ip", "192.168.0.1"),
+        std::set<const core_rule *>{rule}, std::move(obj_filter)});
+
+    context ctx{rbuilder.build()};
+
+    // The filter matches, but the object it excludes is only available later
+    EXPECT_EQ(eval_batch(ctx, object_builder_da::map({{"http.client_ip", "192.168.0.1"}})),
+        false);
+
+    {
+        // The excluded object of the subcontext
+        auto sctx = ctx.create_subcontext();
+        EXPECT_EQ(eval_batch(sctx, object_builder_da::map({{"server.request.query", "admin"}})),
+            false);
+    }
+
+    // As well as that of the context
+    EXPECT_EQ(
+        eval_batch(ctx, object_builder_da::map({{"server.request.query", "admin"}})), false);
+
+    {
+        // An unrelated subcontext inherits the context's exclusions
+        auto sctx = ctx.create_subcontext();
+        EXPECT_EQ(eval_batch(sctx, object_builder_da::map({{"usr.id", "admin"}})), false);
+
+        ddwaf::timer deadline{2s};
+        EXPECT_FALSE(sctx.eval_filters(deadline).empty());
+    }
+}
+
 } // namespace

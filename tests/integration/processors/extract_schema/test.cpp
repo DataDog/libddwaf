@@ -1050,4 +1050,118 @@ TEST(TestExtractSchemaIntegration, ProcessorSubcontextExpression)
     ddwaf_destroy(handle);
 }
 
+namespace preprocessor_chain {
+
+// Two preprocessors, the second consuming the output of the first, and a rule
+// on the output of the second. Processors are evaluated in an order which
+// depends on the implementation, so both listing orders are tested.
+ddwaf_handle init_chain(bool consumer_first)
+{
+    const std::string producer =
+        R"({"id": "producer", "generator": "extract_schema", "parameters": {"mappings":
+        [{"inputs": [{"address": "server.request.body"}], "output": "x.schema1"}]},
+        "evaluate": true, "output": false})";
+    const std::string consumer =
+        R"({"id": "consumer", "generator": "extract_schema", "parameters": {"mappings":
+        [{"inputs": [{"address": "x.schema1"}], "output": "x.schema2"}]},
+        "evaluate": true, "output": false})";
+    const auto processors =
+        consumer_first ? consumer + "," + producer : producer + "," + consumer;
+
+    auto rule = json_to_object(
+        R"({"version": "2.2", "metadata": {"rules_version": "1.8.0"}, "rules": [
+        {"id": "rule1", "name": "rule1", "tags": {"type": "flow1", "category": "category1"},
+        "conditions": [{"operator": "exists", "parameters": {"inputs": [{"address":
+        "x.schema2"}]}}]}], "processors": [)" +
+        processors + "]}");
+    auto *handle = ddwaf_init(&rule, nullptr);
+    ddwaf_object_destroy(&rule, ddwaf_get_default_allocator());
+    return handle;
+}
+
+DDWAF_RET_CODE eval(ddwaf_context context, std::string_view address)
+{
+    auto *alloc = ddwaf_get_default_allocator();
+    ddwaf_object map;
+    ddwaf_object_set_map(&map, 1, alloc);
+    auto *value = ddwaf_object_insert_key(&map, address.data(), address.size(), alloc);
+    ddwaf_object_set_map(value, 1, alloc);
+    ddwaf_object_set_string(ddwaf_object_insert_key(value, STRL("a"), alloc), STRL("b"), alloc);
+
+    ddwaf_object out;
+    auto code = ddwaf_context_eval(context, &map, alloc, &out, LONG_TIME);
+    ddwaf_object_destroy(&out, alloc);
+    return code;
+}
+
+DDWAF_RET_CODE eval(ddwaf_subcontext subcontext, std::string_view address)
+{
+    auto *alloc = ddwaf_get_default_allocator();
+    ddwaf_object map;
+    ddwaf_object_set_map(&map, 1, alloc);
+    auto *value = ddwaf_object_insert_key(&map, address.data(), address.size(), alloc);
+    ddwaf_object_set_map(value, 1, alloc);
+    ddwaf_object_set_string(ddwaf_object_insert_key(value, STRL("a"), alloc), STRL("b"), alloc);
+
+    ddwaf_object out;
+    auto code = ddwaf_subcontext_eval(subcontext, &map, alloc, &out, LONG_TIME);
+    ddwaf_object_destroy(&out, alloc);
+    return code;
+}
+
+} // namespace preprocessor_chain
+
+TEST(TestExtractSchemaIntegration, PreprocessorChainInLaterContextEval)
+{
+    auto *alloc = ddwaf_get_default_allocator();
+    unsigned matches = 0;
+    for (bool consumer_first : {false, true}) {
+        auto *handle = preprocessor_chain::init_chain(consumer_first);
+        ASSERT_NE(handle, nullptr);
+
+        // The first evaluation runs both preprocessors without input, the
+        // second must run the consumer on the output of the producer if the
+        // latter is evaluated first.
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
+        ASSERT_NE(context, nullptr);
+        EXPECT_EQ(preprocessor_chain::eval(context, "unrelated"), DDWAF_OK);
+        if (preprocessor_chain::eval(context, "server.request.body") == DDWAF_MATCH) {
+            ++matches;
+        }
+        ddwaf_context_destroy(context);
+
+        ddwaf_destroy(handle);
+    }
+    // The order of evaluation of the processors depends on the
+    // implementation, but one of the listing orders evaluates the producer
+    // first.
+    EXPECT_GE(matches, 1);
+}
+
+TEST(TestExtractSchemaIntegration, PreprocessorChainInSubcontext)
+{
+    auto *alloc = ddwaf_get_default_allocator();
+    unsigned matches = 0;
+    for (bool consumer_first : {false, true}) {
+        auto *handle = preprocessor_chain::init_chain(consumer_first);
+        ASSERT_NE(handle, nullptr);
+
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
+        ASSERT_NE(context, nullptr);
+        EXPECT_EQ(preprocessor_chain::eval(context, "unrelated"), DDWAF_OK);
+
+        ddwaf_subcontext subcontext = ddwaf_subcontext_init(context);
+        ASSERT_NE(subcontext, nullptr);
+        if (preprocessor_chain::eval(subcontext, "server.request.body") == DDWAF_MATCH) {
+            ++matches;
+        }
+        ddwaf_subcontext_destroy(subcontext);
+
+        ddwaf_context_destroy(context);
+        ddwaf_destroy(handle);
+    }
+    // See PreprocessorChainInLaterContextEval
+    EXPECT_GE(matches, 1);
+}
+
 } // namespace

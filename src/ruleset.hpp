@@ -17,6 +17,7 @@
 
 #include "action_mapper.hpp"
 #include "builder/module_builder.hpp"
+#include "component_target_index.hpp"
 #include "exclusion/input_filter.hpp"
 #include "exclusion/rule_filter.hpp"
 #include "matcher/base.hpp"
@@ -30,6 +31,38 @@
 #include "target_address.hpp"
 
 namespace ddwaf {
+
+namespace detail {
+
+inline const rule_filter &deref_component(const rule_filter &filter) { return filter; }
+inline const input_filter &deref_component(const input_filter &filter) { return filter; }
+inline const base_processor &deref_component(const std::unique_ptr<base_processor> &proc)
+{
+    return *proc;
+}
+
+// Adds the addresses of the components to the given map and indexes the
+// components by target.
+template <typename Components>
+component_target_index index_component_targets(
+    const Components &components, std::unordered_map<target_index, std::string> &all_addresses)
+{
+    std::vector<component_target_index::reference> references;
+    std::vector<target_index> targets;
+    for (std::size_t i = 0; i < components.size(); ++i) {
+        const auto &component = deref_component(components[i]);
+        component.get_addresses(all_addresses);
+
+        targets.clear();
+        component.get_targets(targets);
+        for (const auto target : targets) {
+            references.push_back({.target = target, .component = i});
+        }
+    }
+    return component_target_index{std::move(references)};
+}
+
+} // namespace detail
 
 struct ruleset {
     // The index of the rule targets only depends on the modules, so the index
@@ -58,27 +91,29 @@ struct ruleset {
     void insert_filters(std::shared_ptr<const std::vector<rule_filter>> filters)
     {
         rule_filters = std::move(filters);
-        for (const auto &filter : *rule_filters) { filter.get_addresses(filter_addresses); }
+        rule_filter_targets = detail::index_component_targets(*rule_filters, filter_addresses);
     }
 
     void insert_filters(std::shared_ptr<const std::vector<input_filter>> filters)
     {
         input_filters = std::move(filters);
-        for (const auto &filter : *input_filters) { filter.get_addresses(filter_addresses); }
+        input_filter_targets = detail::index_component_targets(*input_filters, filter_addresses);
     }
 
     void insert_preprocessors(
         std::shared_ptr<const std::vector<std::unique_ptr<base_processor>>> processors)
     {
         preprocessors = std::move(processors);
-        for (const auto &proc : *preprocessors) { proc->get_addresses(preprocessor_addresses); }
+        preprocessor_targets =
+            detail::index_component_targets(*preprocessors, preprocessor_addresses);
     }
 
     void insert_postprocessors(
         std::shared_ptr<const std::vector<std::unique_ptr<base_processor>>> processors)
     {
         postprocessors = std::move(processors);
-        for (const auto &proc : *postprocessors) { proc->get_addresses(postprocessor_addresses); }
+        postprocessor_targets =
+            detail::index_component_targets(*postprocessors, postprocessor_addresses);
     }
 
     [[nodiscard]] const std::vector<const char *> &get_root_addresses()
@@ -169,6 +204,12 @@ struct ruleset {
     // address the components of the ruleset refer to. When absent, as with
     // rulesets constructed by tests, the context store registers all inputs.
     std::shared_ptr<const target_lookup> target_names;
+
+    // Processors and filters referencing each of their addresses, by position
+    component_target_index preprocessor_targets;
+    component_target_index postprocessor_targets;
+    component_target_index rule_filter_targets;
+    component_target_index input_filter_targets;
 
     std::unordered_map<target_index, std::string> rule_addresses;
     std::unordered_map<target_index, std::string> filter_addresses;

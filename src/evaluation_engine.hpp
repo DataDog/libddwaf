@@ -15,6 +15,7 @@
 #include "attribute_collector.hpp"
 #include "cache_array.hpp"
 #include "clock.hpp"
+#include "component_target_index.hpp"
 #include "context_allocator.hpp"
 #include "exclusion/common.hpp"
 #include "exclusion/input_filter.hpp"
@@ -36,6 +37,11 @@ namespace ddwaf {
 // The state of the evaluation of a context or subcontext, with one cache per
 // processor, filter and rule, in ruleset order.
 //
+// Processors, filters and rules are only evaluated when they reference a
+// target updated since their last evaluation, as flagged by their pending
+// bitsets: evaluating them again on the same targets can't produce a
+// different outcome, as their caches skip the objects already evaluated.
+//
 // The cache of a subcontext derives from that of its context: it reads the
 // context's cache and only copies the entries it modifies, so that creating
 // and destroying a subcontext doesn't depend on the size of the ruleset. The
@@ -47,6 +53,14 @@ struct evaluation_cache {
     cache_array<rule_filter::cache_type> rule_filters;
     cache_array<input_filter::cache_type> input_filters;
     std::array<rule_module_cache, rule_module_count> rule_modules;
+
+    // Processors and filters to evaluate, by position, initially all of them.
+    // A bit is cleared once the evaluation of its component completes, so a
+    // component interrupted by a timeout remains pending.
+    component_bitset preprocessors_pending;
+    component_bitset postprocessors_pending;
+    component_bitset rule_filters_pending;
+    component_bitset input_filters_pending;
 
     exclusion_policy exclusions;
 
@@ -144,7 +158,15 @@ public:
     [[nodiscard]] std::shared_ptr<const evaluation_cache> share_cache() const { return cache_; }
 
     // Internals exposed for testing
-    void eval_preprocessors(timer &deadline);
+    void eval_preprocessors(timer &deadline)
+    {
+        bool new_rule_targets = false;
+        eval_preprocessors(deadline, new_rule_targets);
+    }
+    // Sets new_rule_targets if any of the targets updated before or during
+    // the evaluation is a rule target new to the current batch, even if the
+    // evaluation is interrupted by a timeout.
+    void eval_preprocessors(timer &deadline, bool &new_rule_targets);
     void eval_postprocessors(timer &deadline);
     // This function below returns a reference to an internal object,
     // however using them this way helps with testing
@@ -164,10 +186,10 @@ protected:
     // it can be modified. Must be called before modifying the cache.
     void make_cache_writable();
 
-    // Flags as pending the rules referencing any of the targets updated since
-    // the last call and returns whether any of those is a rule target new to
-    // the current batch.
-    bool flag_updated_rules();
+    // Flags as pending the processors, filters and rules referencing any of
+    // the targets updated since the last call and returns whether any of
+    // those is a rule target new to the current batch.
+    bool flag_updated_targets();
 
     bool check_new_filter_targets() const
     {

@@ -8,6 +8,7 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/target_address.cpp
     ${libddwaf_SOURCE_DIR}/src/module.cpp
     ${libddwaf_SOURCE_DIR}/src/rule_target_index.cpp
+    ${libddwaf_SOURCE_DIR}/src/component_target_index.cpp
     ${libddwaf_SOURCE_DIR}/src/expression.cpp
     ${libddwaf_SOURCE_DIR}/src/ruleset_info.cpp
     ${libddwaf_SOURCE_DIR}/src/ip_utils.cpp

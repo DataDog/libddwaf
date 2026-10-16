@@ -48,6 +48,11 @@ public:
         for (const auto &target : targets_) { addresses.emplace(target.index, target.name); }
     }
 
+    void get_targets(std::vector<target_index> &targets) const override
+    {
+        for (const auto &target : targets_) { targets.emplace_back(target.index); }
+    }
+
     static constexpr auto arguments()
     {
         return std::array<parameter_specification, 1>{

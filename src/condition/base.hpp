@@ -88,6 +88,9 @@ public:
         ddwaf::timer &deadline) const = 0;
 
     virtual void get_addresses(std::unordered_map<target_index, std::string> &addresses) const = 0;
+
+    // Appends the targets of the condition, i.e. the indices of its addresses
+    virtual void get_targets(std::vector<target_index> &targets) const = 0;
 };
 
 } // namespace ddwaf
