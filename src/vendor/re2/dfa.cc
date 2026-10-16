@@ -39,6 +39,7 @@
 #include "re2/util/logging.h"
 #include "re2/util/mix.h"
 #include "re2/util/mutex.h"
+#include "re2/util/reader_biased_mutex.h"
 #include "re2/util/strutil.h"
 #include "re2/pod_array.h"
 #include "re2/prog.h"
@@ -172,7 +173,9 @@ class DFA {
 
  private:
   // Make it easier to swap in a scalable reader-writer mutex.
-  using CacheMutex = Mutex;
+  // libddwaf: every search takes the read lock, and a shared rwlock word
+  // bounced between cores when many threads search the same regex.
+  using CacheMutex = ReaderBiasedMutex;
 
   enum {
     // Indices into start_ for unanchored searches.
@@ -1124,21 +1127,21 @@ class DFA::RWLocker {
 
  private:
   CacheMutex* mu_;
+  CacheMutex::ReaderToken* token_;  // valid while !writing_
   bool writing_;
 
   RWLocker(const RWLocker&) = delete;
   RWLocker& operator=(const RWLocker&) = delete;
 };
 
-DFA::RWLocker::RWLocker(CacheMutex* mu) : mu_(mu), writing_(false) {
-  mu_->ReaderLock();
-}
+DFA::RWLocker::RWLocker(CacheMutex* mu)
+    : mu_(mu), token_(mu->ReaderLock()), writing_(false) {}
 
 // This function is marked as NO_THREAD_SAFETY_ANALYSIS because
 // the annotations don't support lock upgrade.
 void DFA::RWLocker::LockForWriting() NO_THREAD_SAFETY_ANALYSIS {
   if (!writing_) {
-    mu_->ReaderUnlock();
+    mu_->ReaderUnlock(token_);
     mu_->WriterLock();
     writing_ = true;
   }
@@ -1146,7 +1149,7 @@ void DFA::RWLocker::LockForWriting() NO_THREAD_SAFETY_ANALYSIS {
 
 DFA::RWLocker::~RWLocker() {
   if (!writing_)
-    mu_->ReaderUnlock();
+    mu_->ReaderUnlock(token_);
   else
     mu_->WriterUnlock();
 }
