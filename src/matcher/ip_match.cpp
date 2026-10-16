@@ -6,7 +6,6 @@
 
 #include <chrono>
 #include <cstdint>
-#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -14,79 +13,35 @@
 
 #include "dynamic_string.hpp"
 #include "indexed_multivector.hpp"
+#include "ip_range_table.hpp"
 #include "ip_utils.hpp"
 #include "matcher/ip_match.hpp"
-#include "radixlib.h"
 
 namespace ddwaf::matcher {
 
-ip_match::ip_match(const std::vector<std::string_view> &ip_list)
-    : rtree_(radix_new(radix_tree_bits), radix_free)
-{
-    if (!rtree_) {
-        throw std::runtime_error("failed to instantiate radix tree");
-    }
-
-    init_tree(ip_list);
-}
+ip_match::ip_match(const std::vector<std::string_view> &ip_list) : table_(build_table(ip_list)) {}
 
 ip_match::ip_match(
     const indexed_multivector<std::string, std::pair<std::string, uint64_t>> &ip_list)
-    : rtree_(radix_new(radix_tree_bits), radix_free)
-{
-    if (!rtree_) {
-        throw std::runtime_error("failed to instantiate radix tree");
-    }
-
-    for (const auto &[str, expiration] : ip_list) {
-        // Parse and populate each IP/network
-        ipaddr ip{};
-        if (ddwaf::parse_cidr(str, ip)) {
-            prefix_t prefix;
-            // NOLINTNEXTLINE(hicpp-no-array-decay,cppcoreguidelines-pro-bounds-array-to-pointer-decay)
-            radix_prefix_init(FAMILY_IPv6, ip.data, ip.mask, &prefix);
-            radix_put_if_absent(rtree_.get(), &prefix, expiration);
-        }
-    }
-}
+    : table_(build_table(ip_list))
+{}
 
 ip_match::ip_match(const std::vector<std::pair<std::string, uint64_t>> &ip_list)
-    : rtree_(radix_new(radix_tree_bits), radix_free)
-{
-    if (!rtree_) {
-        throw std::runtime_error("failed to instantiate radix tree");
-    }
-
-    for (const auto &[str, expiration] : ip_list) {
-        // Parse and populate each IP/network
-        ipaddr ip{};
-        if (ddwaf::parse_cidr(str, ip)) {
-            prefix_t prefix;
-            // NOLINTNEXTLINE(hicpp-no-array-decay,cppcoreguidelines-pro-bounds-array-to-pointer-decay)
-            radix_prefix_init(FAMILY_IPv6, ip.data, ip.mask, &prefix);
-            radix_put_if_absent(rtree_.get(), &prefix, expiration);
-        }
-    }
-}
+    : table_(build_table(ip_list))
+{}
 
 [[nodiscard]] bool ip_match::match_ip(const ipaddr &ip) const
 {
-    // Initialize the radix structure to check if the IP exist
-    prefix_t radix_ip;
-    // NOLINTNEXTLINE(hicpp-no-array-decay,cppcoreguidelines-pro-bounds-array-to-pointer-decay,cppcoreguidelines-pro-type-const-cast)
-    radix_prefix_init(FAMILY_IPv6, const_cast<uint8_t *>(ip.data), radix_tree_bits, &radix_ip);
-
-    // Run the check
-    auto *node = radix_matching_do(rtree_.get(), &radix_ip);
-    if (node == nullptr) {
+    auto expiration = table_.find(ip);
+    if (!expiration.has_value()) {
         return false;
     }
 
-    if (node->expiration > 0) {
+    if (*expiration > 0) {
         const uint64_t now = std::chrono::duration_cast<std::chrono::seconds>(
             std::chrono::system_clock::now().time_since_epoch())
                                  .count();
-        if (node->expiration < now) {
+        if (*expiration < now) {
             return false;
         }
     }
@@ -96,7 +51,7 @@ ip_match::ip_match(const std::vector<std::pair<std::string, uint64_t>> &ip_list)
 
 std::pair<bool, dynamic_string> ip_match::match_impl(std::string_view str) const
 {
-    if (!rtree_ || str.empty() || str.data() == nullptr) {
+    if (table_.empty() || str.empty() || str.data() == nullptr) {
         return {false, {}};
     }
 

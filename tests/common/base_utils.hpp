@@ -9,7 +9,6 @@
 #include "condition/scalar_condition.hpp"
 #include "expression.hpp"
 #include "matcher/base.hpp"
-#include "radixlib.h"
 #include "ruleset.hpp"
 
 // 1s and 1us

@@ -7,76 +7,229 @@
 #include <array>
 #include <cstdint>
 #include <cstring>
+#include <optional>
 #include <string>
 #include <string_view>
 
 #include "ip_utils.hpp"
 
 // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
-#if defined(_WIN32) || defined(__MINGW32__)
-
-#  if defined(__MINGW32__) || defined(_WIN32_WINNT)
-// Mingw is messing with the NT version
-// https://github.com/msys2/MINGW-packages/issues/6191
-#    undef _WIN32_WINNT
-#    define _WIN32_WINNT 0x600
-#  endif
-
-#  include <ws2tcpip.h>
-#else
-#  include <arpa/inet.h>
-#  include <netinet/in.h>
-#  include <sys/socket.h>
-#endif
-
 namespace ddwaf {
 
 namespace {
-template <int af, std::size_t N> bool parse_ip_internal(std::array<char, N> ip, ipaddr &out)
+
+// The address parsers below replace inet_pton, which requires a NUL-terminated
+// copy of the input and is comparatively slow (e.g. it accounted for about a
+// tenth of the time of loading a large IP blocklist). They accept the syntax the
+// Datadog backend sends (rules and exclusion data are validated with Go's
+// netip.ParseAddr and netip.ParsePrefix): dotted-decimal IPv4 addresses without
+// leading zeros, and RFC 4291 IPv6 addresses, possibly ending in an IPv4 part.
+// These are the rules of glibc's and musl's inet_pton, and they apply on every
+// platform: the more lenient inet_pton of macOS and Windows (e.g. leading zeros
+// in IPv4 octets, a %zone suffix) is not reproduced, for request addresses
+// either. A NUL character terminates the address, as it did when the input was
+// copied into a C string.
+
+// Sizes of the C string buffers previously used with inet_pton
+// (INET_ADDRSTRLEN and INET6_ADDRSTRLEN, both including the terminating NUL),
+// which remain the length limits of the textual addresses.
+constexpr std::size_t ipv4_str_size = 16;
+constexpr std::size_t ipv6_str_size = 46;
+
+std::string_view until_nul(std::string_view str)
 {
-    const int ret = inet_pton(af, ip.data(), &out.data);
-    if (ret != 1) {
+    auto nul = str.find('\0');
+    return nul == std::string_view::npos ? str : str.substr(0, nul);
+}
+
+int hex_digit_value(char c)
+{
+    if (c >= '0' && c <= '9') {
+        return c - '0';
+    }
+    if (c >= 'a' && c <= 'f') {
+        return c - 'a' + 10;
+    }
+    if (c >= 'A' && c <= 'F') {
+        return c - 'A' + 10;
+    }
+    return -1;
+}
+
+// Dotted-decimal IPv4 address: exactly four decimal octets in [0, 255], without
+// leading zeros.
+bool pton4(std::string_view src, uint8_t *dst)
+{
+    std::array<uint8_t, 4> octets{};
+    std::size_t count = 0;
+    unsigned value = 0;
+    bool saw_digit = false;
+
+    for (const char c : src) {
+        if (c >= '0' && c <= '9') {
+            if (saw_digit && value == 0) {
+                return false; // leading zero
+            }
+            value = value * 10 + static_cast<unsigned>(c - '0');
+            if (value > 255) {
+                return false;
+            }
+            if (!saw_digit) {
+                if (++count > 4) {
+                    return false;
+                }
+                saw_digit = true;
+            }
+        } else if (c == '.' && saw_digit) {
+            if (count == 4) {
+                return false;
+            }
+            octets[count - 1] = static_cast<uint8_t>(value);
+            value = 0;
+            saw_digit = false;
+        } else {
+            return false;
+        }
+    }
+
+    if (count < 4 || !saw_digit) {
         return false;
     }
+    octets[3] = static_cast<uint8_t>(value);
 
-    if constexpr (af == AF_INET) {
-        out.type = ipaddr::address_family::ipv4;
-        out.mask = 32;
-    } else if constexpr (af == AF_INET6) {
-        out.type = ipaddr::address_family::ipv6;
-        out.mask = 128;
-    }
-
+    memcpy(dst, octets.data(), octets.size());
     return true;
 }
 
-template <std::size_t N> bool parse_ipv6_internal(std::array<char, N> ip, ipaddr &out)
+// IPv6 address (RFC 4291 section 2.2): eight groups of one to four hex digits
+// separated by colons, where one run of zero groups may be replaced by "::"
+// (which must stand for at least one group) and the last two groups may be
+// written as a dotted-decimal IPv4 address.
+bool pton6(std::string_view src, uint8_t *dst)
 {
-    static_assert(N >= INET6_ADDRSTRLEN);
-    return parse_ip_internal<AF_INET6, N>(ip, out);
+    std::array<uint8_t, 16> tmp{};
+    std::size_t tp = 0;
+    std::optional<std::size_t> colonp; // position of "::", if any
+    std::size_t i = 0;
+
+    if (src.empty()) {
+        return false;
+    }
+
+    // A leading colon must be part of "::"
+    if (src[0] == ':') {
+        if (src.size() < 2 || src[1] != ':') {
+            return false;
+        }
+        i = 1;
+    }
+
+    std::size_t curtok = i;
+    std::size_t xdigits_seen = 0;
+    unsigned value = 0;
+    while (i < src.size()) {
+        const char c = src[i++];
+        const int digit = hex_digit_value(c);
+        if (digit >= 0) {
+            if (xdigits_seen == 4) {
+                return false;
+            }
+            value = (value << 4) | static_cast<unsigned>(digit);
+            ++xdigits_seen;
+            continue;
+        }
+
+        if (c == ':') {
+            curtok = i;
+            if (xdigits_seen == 0) {
+                if (colonp.has_value()) {
+                    return false;
+                }
+                colonp = tp;
+                continue;
+            }
+            if (i == src.size() || tp + 2 > tmp.size()) {
+                return false;
+            }
+            tmp[tp++] = static_cast<uint8_t>(value >> 8);
+            tmp[tp++] = static_cast<uint8_t>(value & 0xff);
+            xdigits_seen = 0;
+            value = 0;
+            continue;
+        }
+
+        // An embedded IPv4 address takes the rest of the string
+        if (c == '.' && tp + 4 <= tmp.size() && pton4(src.substr(curtok), &tmp[tp])) {
+            tp += 4;
+            xdigits_seen = 0;
+            break;
+        }
+
+        return false;
+    }
+
+    if (xdigits_seen > 0) {
+        if (tp + 2 > tmp.size()) {
+            return false;
+        }
+        tmp[tp++] = static_cast<uint8_t>(value >> 8);
+        tmp[tp++] = static_cast<uint8_t>(value & 0xff);
+    }
+
+    if (colonp.has_value()) {
+        // "::" must stand for at least one group
+        if (tp == tmp.size()) {
+            return false;
+        }
+        // Move the groups after "::" to the end, and zero the gap
+        const std::size_t tail = tp - *colonp;
+        std::memmove(tmp.data() + (tmp.size() - tail), tmp.data() + *colonp, tail);
+        std::memset(&tmp[*colonp], 0, tmp.size() - tail - *colonp);
+        tp = tmp.size();
+    }
+
+    if (tp != tmp.size()) {
+        return false;
+    }
+
+    memcpy(dst, tmp.data(), tmp.size());
+    return true;
 }
 
-template <std::size_t N> bool parse_ipv4_internal(std::array<char, N> ip, ipaddr &out)
+bool parse_ipv4_internal(std::string_view ip, ipaddr &out)
 {
-    static_assert(N >= INET_ADDRSTRLEN);
-    return parse_ip_internal<AF_INET, N>(ip, out);
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
+    if (!pton4(until_nul(ip), out.data)) {
+        return false;
+    }
+
+    out.type = ipaddr::address_family::ipv4;
+    out.mask = 32;
+    return true;
+}
+
+bool parse_ipv6_internal(std::string_view ip, ipaddr &out)
+{
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
+    if (!pton6(until_nul(ip), out.data)) {
+        return false;
+    }
+
+    out.type = ipaddr::address_family::ipv6;
+    out.mask = 128;
+    return true;
 }
 
 } // namespace
 
 bool parse_ip(std::string_view ip, ipaddr &out)
 {
-    if (ip.size() >= INET6_ADDRSTRLEN) {
+    if (ip.size() >= ipv6_str_size) {
         return false;
     }
 
-    // Assume the string has no '\0'
-    // char ip_cstr[INET6_ADDRSTRLEN] = {0};
-    std::array<char, INET6_ADDRSTRLEN> ip_cstr{0};
-    memcpy(ip_cstr.data(), ip.data(), ip.size());
-
-    if (ip.size() > INET_ADDRSTRLEN || !parse_ipv4_internal(ip_cstr, out)) {
-        return parse_ipv6_internal(ip_cstr, out);
+    if (ip.size() > ipv4_str_size || !parse_ipv4_internal(ip, out)) {
+        return parse_ipv6_internal(ip, out);
     }
 
     return true;
@@ -84,30 +237,20 @@ bool parse_ip(std::string_view ip, ipaddr &out)
 
 bool parse_ipv4(std::string_view ip, ipaddr &out)
 {
-    if (ip.size() >= INET_ADDRSTRLEN) {
+    if (ip.size() >= ipv4_str_size) {
         return false;
     }
 
-    // Assume the string has no '\0'
-    // char ip_cstr[INET_ADDRSTRLEN] = {0};
-    std::array<char, INET_ADDRSTRLEN> ip_cstr{0};
-    memcpy(ip_cstr.data(), ip.data(), ip.size());
-
-    return parse_ipv4_internal(ip_cstr, out);
+    return parse_ipv4_internal(ip, out);
 }
 
 bool parse_ipv6(std::string_view ip, ipaddr &out)
 {
-    if (ip.size() >= INET6_ADDRSTRLEN) {
+    if (ip.size() >= ipv6_str_size) {
         return false;
     }
 
-    // Assume the string has no '\0'
-    // char ip_cstr[INET6_ADDRSTRLEN] = {0};
-    std::array<char, INET6_ADDRSTRLEN> ip_cstr{0};
-    memcpy(ip_cstr.data(), ip.data(), ip.size());
-
-    return parse_ipv6_internal(ip_cstr, out);
+    return parse_ipv6_internal(ip, out);
 }
 
 void ipv4_to_ipv6(ipaddr &out)
@@ -137,7 +280,7 @@ bool parse_cidr(std::string_view str, ipaddr &out)
 {
     auto slash_idx = str.find('/');
     if (slash_idx != std::string_view::npos) {
-        if (slash_idx >= INET6_ADDRSTRLEN) {
+        if (slash_idx >= ipv6_str_size) {
             return false;
         }
 

@@ -15,6 +15,7 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/expression.cpp
     ${libddwaf_SOURCE_DIR}/src/ruleset_info.cpp
     ${libddwaf_SOURCE_DIR}/src/ip_utils.cpp
+    ${libddwaf_SOURCE_DIR}/src/ip_range_table.cpp
     ${libddwaf_SOURCE_DIR}/src/iterator.cpp
     ${libddwaf_SOURCE_DIR}/src/log.cpp
     ${libddwaf_SOURCE_DIR}/src/obfuscator.cpp
@@ -103,7 +104,6 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/transformer/html_entity_decode.cpp
     ${libddwaf_SOURCE_DIR}/src/transformer/js_decode.cpp
     ${libddwaf_SOURCE_DIR}/src/vendor/fmt/format.cc
-    ${libddwaf_SOURCE_DIR}/src/vendor/radixlib/radixlib.c
     ${libddwaf_SOURCE_DIR}/src/vendor/lua-aho-corasick/ac_fast.cxx
     ${libddwaf_SOURCE_DIR}/src/vendor/lua-aho-corasick/ac_slow.cxx
     ${libddwaf_SOURCE_DIR}/src/vendor/lua-aho-corasick/ac.cxx
@@ -137,7 +137,6 @@ set(LIBDDWAF_PRIVATE_INCLUDES
     ${libddwaf_SOURCE_DIR}/src
     ${libddwaf_SOURCE_DIR}/src/vendor
     ${libddwaf_SOURCE_DIR}/src/vendor/libinjection/src/
-    ${libddwaf_SOURCE_DIR}/src/vendor/radixlib/
     ${libddwaf_SOURCE_DIR}/src/vendor/lua-aho-corasick/
     ${libddwaf_SOURCE_DIR}/src/vendor/utf8proc/
     ${libddwaf_SOURCE_DIR}/src/vendor/re2/

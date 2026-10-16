@@ -9,16 +9,15 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
-#include <memory>
-#include <radixlib.h>
-#include <stdexcept>
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
 #include "dynamic_string.hpp"
 #include "indexed_multivector.hpp"
+#include "ip_range_table.hpp"
 #include "ip_utils.hpp"
 #include "matcher/base.hpp"
 #include "object_type.hpp"
@@ -35,15 +34,8 @@ public:
     ip_match() = default;
     explicit ip_match(const std::vector<std::string_view> &ip_list);
     template <std::size_t N>
-    explicit ip_match(const std::array<std::string_view, N> &ip_list)
-        : rtree_(radix_new(radix_tree_bits), radix_free)
-    {
-        if (!rtree_) {
-            throw std::runtime_error("failed to instantiate radix tree");
-        }
-
-        init_tree(ip_list);
-    }
+    explicit ip_match(const std::array<std::string_view, N> &ip_list) : table_(build_table(ip_list))
+    {}
 
     explicit ip_match(
         const indexed_multivector<std::string, std::pair<std::string, uint64_t>> &ip_list);
@@ -65,22 +57,32 @@ protected:
 
     [[nodiscard]] std::pair<bool, dynamic_string> match_impl(std::string_view str) const;
 
-    template <typename T> void init_tree(const T &ip_list)
+    // Builds the table from a list of IPs or CIDR networks, either as plain
+    // strings (which never expire) or as (string, expiration) pairs. Entries
+    // which can't be parsed are ignored.
+    template <typename T> static ip_range_table build_table(const T &ip_list)
     {
-        for (auto str : ip_list) {
-            // Parse and populate each IP/network
+        ip_range_table::builder builder;
+        builder.reserve(ip_list.size());
+        for (const auto &item : ip_list) {
+            std::string_view str;
+            uint64_t expiration = 0;
+            if constexpr (std::is_convertible_v<decltype(item), std::string_view>) {
+                str = item;
+            } else {
+                str = item.first;
+                expiration = item.second;
+            }
+
             ipaddr ip{};
             if (ddwaf::parse_cidr(str, ip)) {
-                prefix_t prefix;
-                // NOLINTNEXTLINE(hicpp-no-array-decay,cppcoreguidelines-pro-bounds-array-to-pointer-decay)
-                radix_prefix_init(FAMILY_IPv6, ip.data, ip.mask, &prefix);
-                radix_put_if_absent(rtree_.get(), &prefix, 0);
+                builder.insert(ip, expiration);
             }
         }
+        return builder.build();
     }
 
-    static constexpr unsigned radix_tree_bits = 128; // IPv6
-    std::unique_ptr<radix_tree_t, decltype(&radix_free)> rtree_{nullptr, nullptr};
+    ip_range_table table_;
 
     friend class base_impl<ip_match>;
 };
