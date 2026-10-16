@@ -51,7 +51,7 @@ std::pair<rule_verdict, std::optional<rule_result>> core_rule::match(const objec
         }};
     }
 
-    return {verdict_, result};
+    return {verdict_, std::move(result)};
 }
 
 } // namespace ddwaf

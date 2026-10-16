@@ -111,7 +111,7 @@ std::pair<verdict_type, std::optional<rule_result>> eval_rule(const core_rule &r
             verdict = verdict_override;
         }
 
-        return {verdict, outcome};
+        return {verdict, std::move(outcome)};
     } catch (const ddwaf::timeout_exception &) {
         DDWAF_INFO("Ran out of time while evaluating rule '{}'", id);
         throw;

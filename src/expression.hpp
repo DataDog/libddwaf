@@ -54,13 +54,17 @@ public:
         for (const auto &cond : conditions_) { cond->build_prefilters(prefilters); }
     }
 
+    // Moves the matches out of the cache, which is only valid once the
+    // expression has matched: from then on the cache records that the
+    // expression is satisfied (get_result) and its matches, while still
+    // present, are not read again.
     static std::vector<condition_match> get_matches(cache_type &cache)
     {
         std::vector<condition_match> matches;
         matches.reserve(cache.conditions.size());
         for (auto &cond_cache : cache.conditions) {
             if (cond_cache.match.has_value()) {
-                matches.emplace_back(cond_cache.match.value());
+                matches.emplace_back(std::move(cond_cache.match.value()));
             }
         }
         return matches;

@@ -6,6 +6,7 @@
 
 #include "common/ddwaf_object_da.hpp"
 #include "common/gtest_utils.hpp"
+#include "exception.hpp"
 #include "matcher/regex_match.hpp"
 #include "memory_resource.hpp"
 #include "processor/extract_schema.hpp"
@@ -456,6 +457,103 @@ TEST(TestExtractSchema, SchemaWithScannerNestedArrayWithKey)
         gen.eval_impl({.address = {}, .key_path = {}, .value = {input}}, cache, alloc, deadline);
     EXPECT_SCHEMA_EQ(output.ref(),
         R"([{"string":[[[[[8,{"category":"IP","type":"PII"}]],{"len":1}]],{"len":1}]}])");
+}
+
+TEST(TestExtractSchema, ArrayWithDuplicateTaggedScalarsFromDifferentScanners)
+{
+    auto *alloc = memory::get_default_resource();
+
+    auto input = object_builder_da::map({{"key",
+        object_builder_da::array({"first", "second", "first", "untagged", "second", "other"})}});
+
+    // Both scanners have the same tags, so their nodes are equal
+    scanner scnr0{"0", {{"type", "PII"}, {"category", "IP"}}, nullptr,
+        std::make_unique<matcher::regex_match>("^first$", 1, true)};
+    scanner scnr1{"1", {{"type", "PII"}, {"category", "IP"}}, nullptr,
+        std::make_unique<matcher::regex_match>("^second$", 1, true)};
+    scanner scnr2{"2", {{"type", "PII"}, {"category", "other"}}, nullptr,
+        std::make_unique<matcher::regex_match>("^other$", 1, true)};
+
+    extract_schema gen{"id", {}, {}, {&scnr0, &scnr1, &scnr2}, false, true};
+
+    ddwaf::timer deadline{2s};
+    processor_cache cache;
+    auto output =
+        gen.eval_impl({.address = {}, .key_path = {}, .value = {input}}, cache, alloc, deadline);
+    EXPECT_SCHEMA_EQ(output.ref(),
+        R"([{"key":[[[8],[8,{"category":"IP","type":"PII"}],[8,{"category":"other","type":"PII"}]],{"len":6}]}])");
+}
+
+TEST(TestExtractSchema, ScannerWithoutTagsEqualsUntaggedScalar)
+{
+    auto *alloc = memory::get_default_resource();
+
+    auto input = object_builder_da::array({"tagless", "string"});
+
+    scanner scnr{"0", {}, nullptr, std::make_unique<matcher::regex_match>("^tagless$", 1, true)};
+
+    extract_schema gen{"id", {}, {}, {&scnr}, false, true};
+
+    ddwaf::timer deadline{2s};
+    processor_cache cache;
+    auto output =
+        gen.eval_impl({.address = {}, .key_path = {}, .value = {input}}, cache, alloc, deadline);
+    EXPECT_SCHEMA_EQ(output.ref(), R"([[[8]],{"len":2}])");
+}
+
+TEST(TestExtractSchema, LargeSchemaSpanningMultipleArenaBlocks)
+{
+    auto *alloc = memory::get_default_resource();
+
+    // 255 records of 10 arrays each, with distinct keys, is enough to need
+    // several arena blocks for the schema tree
+    auto input = owned_object::make_map(0, alloc);
+    for (unsigned i = 0; i < extract_schema::max_record_nodes; ++i) {
+        auto child = input.emplace("key" + std::to_string(i), owned_object::make_map(0, alloc));
+        for (unsigned j = 0; j < extract_schema::max_array_nodes; ++j) {
+            auto array =
+                child.emplace("item" + std::to_string(j), owned_object::make_array(0, alloc));
+            array.emplace_back(owned_object::make_signed(j));
+            array.emplace_back("value");
+        }
+    }
+
+    extract_schema gen{"id", {}, {}, {}, false, true};
+
+    ddwaf::timer deadline{2s};
+    processor_cache cache;
+    auto output =
+        gen.eval_impl({.address = {}, .key_path = {}, .value = {input}}, cache, alloc, deadline);
+
+    const object_view schema{output};
+    ASSERT_TRUE(schema.is_array());
+    auto record = schema.at_value(0);
+    ASSERT_TRUE(record.is_map());
+    EXPECT_EQ(record.size(), extract_schema::max_record_nodes);
+    for (unsigned i = 0; i < record.size(); ++i) {
+        auto child = record.at_value(i).at_value(0);
+        ASSERT_TRUE(child.is_map());
+        EXPECT_EQ(child.size(), extract_schema::max_array_nodes);
+    }
+}
+
+TEST(TestExtractSchema, TimeoutDuringGeneration)
+{
+    auto *alloc = memory::get_default_resource();
+
+    auto input = owned_object::make_map(0, alloc);
+    for (unsigned i = 0; i < extract_schema::max_record_nodes; ++i) {
+        auto child = input.emplace("key" + std::to_string(i), owned_object::make_map(0, alloc));
+        child.emplace("value", owned_object::make_array(0, alloc)).emplace_back("string");
+    }
+
+    extract_schema gen{"id", {}, {}, {}, false, true};
+
+    ddwaf::timer deadline{0s};
+    processor_cache cache;
+    EXPECT_THROW(
+        gen.eval_impl({.address = {}, .key_path = {}, .value = {input}}, cache, alloc, deadline),
+        ddwaf::timeout_exception);
 }
 
 } // namespace

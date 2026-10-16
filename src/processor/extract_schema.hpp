@@ -12,6 +12,7 @@
 #include <set>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -34,19 +35,33 @@ public:
     static constexpr std::size_t max_array_nodes = 10;
     static constexpr std::size_t max_record_nodes = 255;
 
+    // A scanner along with a copy of its tags. Schema nodes refer to the copy
+    // instead of copying the tags on every match; since the copy is made
+    // the same way, it is iterated (and therefore serialised) in the same
+    // order as a per-node copy would be.
+    struct scanner_entry {
+        const scanner *instance;
+        std::unordered_map<std::string, std::string> tags;
+    };
+
     extract_schema(std::string id, std::shared_ptr<expression> expr,
-        std::vector<processor_mapping> mappings, std::set<const scanner *> scanners, bool evaluate,
-        bool output)
+        std::vector<processor_mapping> mappings, const std::set<const scanner *> &scanners,
+        bool evaluate, bool output)
         : structured_processor(
-              std::move(id), std::move(expr), std::move(mappings), evaluate, output),
-          scanners_(std::move(scanners))
-    {}
+              std::move(id), std::move(expr), std::move(mappings), evaluate, output)
+    {
+        scanners_.reserve(scanners.size());
+        for (const auto *scnr : scanners) {
+            scanners_.push_back({.instance = scnr, .tags = scnr->get_tags()});
+        }
+    }
 
     owned_object eval_impl(const unary_argument<object_view> &input, processor_cache &cache,
         nonnull_ptr<memory::memory_resource> alloc, ddwaf::timer &deadline) const;
 
 protected:
-    std::set<const scanner *> scanners_;
+    // In the iteration order of the original set
+    std::vector<scanner_entry> scanners_;
 };
 
 } // namespace ddwaf

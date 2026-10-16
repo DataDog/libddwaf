@@ -6,6 +6,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <string>
 #include <string_view>
 #include <unordered_set>
@@ -17,6 +18,7 @@
 #include "attribute_collector.hpp"
 #include "clock.hpp"
 #include "condition/base.hpp"
+#include "internal_resource.hpp"
 #include "memory_resource.hpp"
 #include "obfuscator.hpp"
 #include "object.hpp"
@@ -106,8 +108,12 @@ struct action_tracker {
     // Block ID
     std::string block_id;
 
-    // This set contains all remaining actions other than the blocking action
-    std::unordered_set<std::string_view> non_blocking_actions;
+    // This set contains all remaining actions other than the blocking action.
+    // The allocator only affects where nodes live, not the iteration order,
+    // which determines the order of the serialised actions.
+    std::unordered_set<std::string_view, std::hash<std::string_view>,
+        std::equal_to<std::string_view>, memory::internal_allocator<std::string_view>>
+        non_blocking_actions;
 
     // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
     const action_mapper &mapper;

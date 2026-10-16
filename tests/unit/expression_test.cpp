@@ -45,6 +45,41 @@ TEST(TestExpression, SimpleMatch)
                                 }}});
 }
 
+TEST(TestExpression, MatchesAreMovedOutOfTheCache)
+{
+    test::expression_builder builder(1);
+    builder.start_condition();
+    builder.add_argument();
+    builder.add_target("server.request.query");
+    builder.end_condition<matcher::regex_match>("^value$", 0, true);
+
+    auto expr = builder.build();
+
+    object_store store;
+    store.insert_and_apply(object_builder_da::map({{"server.request.query", "value"}}));
+
+    ddwaf::timer deadline{2s};
+
+    expression::cache_type cache;
+    EXPECT_TRUE(expr->eval(cache, store, {}, {}, deadline));
+
+    auto matches = ddwaf::expression::get_matches(cache);
+    EXPECT_MATCHES(matches, {.op = "match_regex",
+                                .op_value = "^value$",
+                                .highlight = "value"sv,
+                                .args = {{
+                                    .value = "value"sv,
+                                    .address = "server.request.query",
+                                }}});
+
+    // Once the expression has matched, the cache alone determines the result:
+    // the moved-from matches are neither required nor re-evaluated, even for
+    // new data which would no longer match.
+    store.insert_and_apply(object_builder_da::map({{"server.request.query", "other"}}));
+    EXPECT_TRUE(expression::get_result(cache));
+    EXPECT_TRUE(expr->eval(cache, store, {}, {}, deadline));
+}
+
 TEST(TestExpression, SimpleNegatedMatch)
 {
     test::expression_builder builder(1);

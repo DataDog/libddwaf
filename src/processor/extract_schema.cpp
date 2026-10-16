@@ -8,7 +8,8 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
-#include <set>
+#include <memory_resource>
+#include <span>
 #include <string>
 #include <string_view>
 #include <type_traits>
@@ -17,6 +18,7 @@
 #include <utility>
 #include <variant>
 
+#include "arena_resource.hpp"
 #include "argument_retriever.hpp"
 #include "clock.hpp"
 #include "exception.hpp"
@@ -31,19 +33,27 @@
 namespace ddwaf {
 namespace schema {
 
+// The schema tree is a temporary built and serialised within a single
+// evaluation, so all of its nodes and containers are allocated from an arena
+// local to that evaluation and released at once, without running destructors.
+// Records and arrays are therefore referred to by plain pointers.
 struct node_record;
 struct node_array;
 
-using node_record_ptr = std::unique_ptr<node_record>;
-using node_array_ptr = std::unique_ptr<node_array>;
+using node_record_ptr = node_record *;
+using node_array_ptr = node_array *;
+using node_allocator = std::pmr::polymorphic_allocator<>;
+using scanner_tags = std::unordered_map<std::string, std::string>;
 
 enum class scalar_type : uint8_t { null = 1, boolean = 2, integer = 4, string = 8, real = 16 };
 
 struct node_scalar {
     scalar_type type{scalar_type::null};
-    // NOLINTNEXTLINE(readability-redundant-member-init)
-    std::unordered_map<std::string, std::string> tags{};
+    // Owned by the processor (see extract_schema::scanner_entry)
+    const scanner_tags *tags{nullptr};
     mutable std::size_t hash{0};
+
+    [[nodiscard]] bool has_tags() const { return tags != nullptr && !tags->empty(); }
 };
 
 using base_node = std::variant<std::monostate, node_scalar, node_array_ptr, node_record_ptr>;
@@ -74,16 +84,20 @@ struct node_equal {
 };
 
 struct node_record {
+    explicit node_record(node_allocator alloc) : children(alloc) {}
+
     std::size_t hash{0};
     bool truncated{false};
-    std::unordered_map<std::string_view, base_node> children;
+    std::pmr::unordered_map<std::string_view, base_node> children;
 };
 
 struct node_array {
+    explicit node_array(node_allocator alloc) : children(alloc) {}
+
     std::size_t hash{0};
     bool truncated{false};
     std::size_t length{0};
-    std::unordered_set<base_node, node_hash, node_equal> children;
+    std::pmr::unordered_set<base_node, node_hash, node_equal> children;
 };
 
 std::size_t node_hash::operator()(const base_node &node) const
@@ -97,8 +111,10 @@ std::size_t node_hash::operator()(const node_scalar &node) const
     if (node.hash == 0) {
         using underlying_type = std::underlying_type_t<scalar_type>;
         auto value = std::hash<underlying_type>{}(static_cast<underlying_type>(node.type));
-        for (const auto &[k, v] : node.tags) {
-            value ^= std::hash<std::string_view>{}(k) ^ std::hash<std::string_view>{}(v);
+        if (node.tags != nullptr) {
+            for (const auto &[k, v] : *node.tags) {
+                value ^= std::hash<std::string_view>{}(k) ^ std::hash<std::string_view>{}(v);
+            }
         }
         node.hash = value;
     }
@@ -134,7 +150,15 @@ std::size_t node_hash::operator()(const node_record_ptr &node) const
 
 bool node_equal::operator()(const node_scalar &lhs, const node_scalar &rhs) const
 {
-    return lhs.type == rhs.type && lhs.tags == rhs.tags;
+    if (lhs.type != rhs.type) {
+        return false;
+    }
+
+    if (!lhs.has_tags() || !rhs.has_tags()) {
+        return lhs.has_tags() == rhs.has_tags();
+    }
+
+    return lhs.tags == rhs.tags || *lhs.tags == *rhs.tags;
 }
 
 bool node_equal::operator()(const node_array_ptr &lhs, const node_array_ptr &rhs) const
@@ -198,12 +222,12 @@ owned_object node_serialize::operator()(const std::monostate & /*node*/) const
 
 owned_object node_serialize::operator()(const node_scalar &node) const
 {
-    auto array = owned_object::make_array(node.tags.empty() ? 1 : 2, alloc);
+    auto array = owned_object::make_array(node.has_tags() ? 2 : 1, alloc);
     array.emplace_back(static_cast<std::underlying_type_t<scalar_type>>(node.type));
 
-    if (!node.tags.empty()) {
-        auto meta = array.emplace_back(owned_object::make_map(node.tags.size(), alloc));
-        for (const auto &[key, value] : node.tags) { meta.emplace(key, value); }
+    if (node.has_tags()) {
+        auto meta = array.emplace_back(owned_object::make_map(node.tags->size(), alloc));
+        for (const auto &[key, value] : *node.tags) { meta.emplace(key, value); }
     }
 
     return array;
@@ -256,9 +280,11 @@ owned_object serialize(const base_node &node, nonnull_ptr<memory::memory_resourc
     return std::visit(node_serialize{alloc}, node);
 }
 
+using scanner_span = std::span<const extract_schema::scanner_entry>;
+
 // NOLINTNEXTLINE(misc-no-recursion)
-base_node generate_helper(object_view object, std::string_view key,
-    const std::set<const scanner *> &scanners, std::size_t depth, ddwaf::timer &deadline)
+base_node generate_helper(object_view object, std::string_view key, scanner_span scanners,
+    std::size_t depth, node_allocator node_alloc, ddwaf::timer &deadline)
 {
     if (deadline.expired()) {
         throw ddwaf::timeout_exception();
@@ -274,9 +300,9 @@ base_node generate_helper(object_view object, std::string_view key,
     case object_type::string:
     case object_type::small_string:
     case object_type::literal_string:
-        for (const auto *scanner : scanners) {
-            if (scanner->eval(key, object)) {
-                return node_scalar{.type = scalar_type::string, .tags = scanner->get_tags()};
+        for (const auto &entry : scanners) {
+            if (entry.instance->eval(key, object)) {
+                return node_scalar{.type = scalar_type::string, .tags = &entry.tags};
             }
         }
         return node_scalar{.type = scalar_type::string};
@@ -286,7 +312,7 @@ base_node generate_helper(object_view object, std::string_view key,
     case object_type::map:
     case object_type::large_map: {
         auto length = object.size();
-        node_record_ptr record = std::make_unique<node_record>();
+        node_record_ptr record = node_alloc.new_object<node_record>(node_alloc);
         if (length > extract_schema::max_record_nodes) {
             record->truncated = true;
             length = extract_schema::max_record_nodes;
@@ -299,15 +325,15 @@ base_node generate_helper(object_view object, std::string_view key,
                 continue;
             }
 
-            auto schema = generate_helper(child, key, scanners, depth - 1, deadline);
-            record->children.emplace(key, std::move(schema));
+            auto schema = generate_helper(child, key, scanners, depth - 1, node_alloc, deadline);
+            record->children.emplace(key, schema);
         }
         return record;
     }
     case object_type::array:
     case object_type::large_array: {
         auto length = object.size();
-        node_array_ptr array = std::make_unique<node_array>();
+        node_array_ptr array = node_alloc.new_object<node_array>(node_alloc);
         array->length = length;
         if (length > extract_schema::max_array_nodes) {
             array->truncated = true;
@@ -316,8 +342,8 @@ base_node generate_helper(object_view object, std::string_view key,
         array->children.reserve(length);
         for (std::size_t i = 0; i < length && depth > 1; i++) {
             const auto child = object.at_value(i);
-            auto schema = generate_helper(child, key, scanners, depth - 1, deadline);
-            array->children.emplace(std::move(schema));
+            auto schema = generate_helper(child, key, scanners, depth - 1, node_alloc, deadline);
+            array->children.emplace(schema);
         }
         return array;
     }
@@ -328,12 +354,19 @@ base_node generate_helper(object_view object, std::string_view key,
     return {};
 }
 
-owned_object generate(object_view object, const std::set<const scanner *> &scanners,
+owned_object generate(object_view object, scanner_span scanners,
     nonnull_ptr<memory::memory_resource> alloc, ddwaf::timer &deadline)
 {
-    return serialize(
-        generate_helper(object, {}, scanners, extract_schema::max_container_depth, deadline),
-        alloc);
+    // Only the serialised schema outlives this function; the arena returns
+    // its blocks to the thread's block cache, so most schemas are built
+    // without calling the system allocator.
+    static constexpr std::size_t initial_arena_size = 4096;
+    memory::arena_resource arena{initial_arena_size};
+
+    static_assert(std::is_trivially_destructible_v<base_node>);
+    const auto root = generate_helper(object, {}, scanners, extract_schema::max_container_depth,
+        node_allocator{&arena}, deadline);
+    return serialize(root, alloc);
 }
 
 } // namespace
