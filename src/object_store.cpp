@@ -17,6 +17,7 @@ void object_store::apply(map_view batch, bool mark_new)
 {
     const auto size = batch.size();
     targets_.reserve(targets_.size() + size);
+    updated_targets_.reserve(updated_targets_.size() + size);
     if (mark_new) {
         latest_batch_.reserve(latest_batch_.size() + size);
     }
@@ -42,6 +43,7 @@ void object_store::register_target(
     }
 
     targets_[target] = value;
+    updated_targets_.emplace_back(target);
     if (mark_new) {
         latest_batch_.emplace(target);
     }

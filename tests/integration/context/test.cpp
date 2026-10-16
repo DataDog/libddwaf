@@ -1289,4 +1289,47 @@ TEST(TestContextIntegration, TimeoutBeyondLimit)
     ddwaf_destroy(handle);
 }
 
+// A batch whose only new rule target is used by a non-expiring (network-acl)
+// rule is still interrupted by an expired deadline, as the expiring rules are
+// checked against it even when none of them needs to be evaluated.
+TEST(TestContextIntegration, ExpiredDeadlineWithNonExpiringRuleTargetOnly)
+{
+    auto *alloc = ddwaf_get_default_allocator();
+    auto rule = json_to_object(
+        R"({"version": "2.2", "metadata": {"rules_version": "1.8.0"}, "rules": [
+        {"id": "ip", "name": "ip", "tags": {"type": "ip", "category": "c", "module":
+        "network-acl"}, "conditions": [{"operator": "ip_match", "parameters": {"inputs":
+        [{"address": "http.client_ip"}], "list": ["1.2.3.4"]}}]},
+        {"id": "waf", "name": "waf", "tags": {"type": "t", "category": "c"},
+        "conditions": [{"operator": "match_regex", "parameters": {"inputs": [{"address":
+        "a0"}], "regex": "x1"}}]}]})");
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_destroy(&rule, alloc);
+
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
+    ASSERT_NE(context, nullptr);
+
+    {
+        auto param = json_to_object(R"({"a0": "benign", "http.client_ip": "5.6.7.8"})");
+        ddwaf_object ret;
+        EXPECT_EQ(ddwaf_context_eval(context, &param, alloc, &ret, LONG_TIME), DDWAF_OK);
+        EXPECT_EQ(ddwaf_object_get_unsigned(ddwaf_object_find(&ret, STRL("evaluated"))), 1);
+        EXPECT_FALSE(ddwaf_object_get_bool(ddwaf_object_find(&ret, STRL("timeout"))));
+        ddwaf_object_destroy(&ret, alloc);
+    }
+
+    {
+        auto param = json_to_object(R"({"http.client_ip": "9.9.9.9"})");
+        ddwaf_object ret;
+        EXPECT_EQ(ddwaf_context_eval(context, &param, alloc, &ret, 0), DDWAF_OK);
+        EXPECT_EQ(ddwaf_object_get_unsigned(ddwaf_object_find(&ret, STRL("evaluated"))), 0);
+        EXPECT_TRUE(ddwaf_object_get_bool(ddwaf_object_find(&ret, STRL("timeout"))));
+        ddwaf_object_destroy(&ret, alloc);
+    }
+
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
+
 } // namespace

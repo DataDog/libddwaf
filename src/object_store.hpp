@@ -9,6 +9,7 @@
 #include "context_allocator.hpp"
 #include "object.hpp"
 #include "target_address.hpp"
+#include <span>
 #include <string_view>
 #include <utility>
 
@@ -93,6 +94,14 @@ public:
     [[nodiscard]] bool has_new_targets() const { return !latest_batch_.empty(); }
     [[nodiscard]] bool empty() const { return targets_.empty(); }
 
+    // Targets registered or replaced since the last call to clear_updated_targets,
+    // whether or not they were flagged as new (e.g. flushed batches), in
+    // registration order and possibly with repetitions. Unlike the new-target
+    // set, this is not reset at batch boundaries: it allows the consumer to
+    // find out which targets have changed since it last looked at the store.
+    [[nodiscard]] std::span<const target_index> updated_targets() const { return updated_targets_; }
+    void clear_updated_targets() { updated_targets_.clear(); }
+
     // An object store created from an upstream store assumes that the original
     // store retains ownership and will outlive this store, therefore only the
     // targets are copied.
@@ -100,6 +109,7 @@ public:
     {
         object_store store;
         store.latest_batch_ = upstream.latest_batch_;
+        store.updated_targets_ = upstream.updated_targets_;
         store.targets_ = upstream.targets_;
         return store;
     }
@@ -112,6 +122,7 @@ private:
 
     memory::list<owned_object> input_objects_;
     memory::unordered_set<target_index> latest_batch_;
+    memory::vector<target_index> updated_targets_;
     memory::unordered_map<target_index, object_view> targets_;
 };
 

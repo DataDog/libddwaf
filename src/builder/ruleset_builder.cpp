@@ -117,6 +117,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(
             }
         }
         final_base_rules_ = std::make_shared<const std::vector<core_rule>>(std::move(rules));
+        rule_targets_.reset();
     }
 
     if (!final_user_rules_ || contains(current_changes, custom_rule_update)) {
@@ -130,6 +131,7 @@ std::shared_ptr<ruleset> ruleset_builder::build(
             }
         }
         final_user_rules_ = std::make_shared<const std::vector<core_rule>>(std::move(rules));
+        rule_targets_.reset();
     }
 
     if (contains(current_changes, base_rule_update | custom_rule_update)) {
@@ -249,7 +251,8 @@ std::shared_ptr<ruleset> ruleset_builder::build(
     }
 
     auto rs = std::make_shared<ruleset>();
-    rs->insert_rules(final_base_rules_, final_user_rules_);
+    rs->insert_rules(final_base_rules_, final_user_rules_, rule_targets_);
+    rule_targets_ = rs->rule_targets;
     rs->insert_filters(rule_filters_);
     rs->insert_filters(input_filters_);
     rs->insert_preprocessors(preprocessors_);

@@ -162,6 +162,9 @@ public:
     }
     [[nodiscard]] const std::vector<std::string> &get_actions() const { return actions_; }
 
+    // A rule without conditions matches every time it's evaluated
+    [[nodiscard]] bool has_conditions() const { return !expr_->empty(); }
+
     void get_addresses(std::unordered_map<target_index, std::string> &addresses) const
     {
         expr_->get_addresses(addresses);

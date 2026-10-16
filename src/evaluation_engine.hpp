@@ -133,16 +133,10 @@ protected:
         }
     }
 
-    bool check_new_rule_targets() const
-    {
-        // NOLINTNEXTLINE(readability-use-anyofallof)
-        for (const auto &[target, str] : ruleset_->rule_addresses) {
-            if (store_.is_new_target(target)) {
-                return true;
-            }
-        }
-        return false;
-    }
+    // Flags as pending the rules referencing any of the targets updated since
+    // the last call and returns whether any of those is a rule target new to
+    // the current batch.
+    bool flag_updated_rules();
 
     bool check_new_filter_targets() const
     {

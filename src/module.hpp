@@ -15,6 +15,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <span>
 #include <string_view>
 #include <utility>
 #include <vector>
@@ -26,8 +27,19 @@ struct rule_collection_cache {
 };
 
 struct rule_module_cache {
+    // Number of rules represented by each word of the pending bitset
+    static constexpr std::size_t pending_word_bits = 64;
+
     memory::vector<core_rule::cache_type> rules;
     memory::unordered_map<std::string_view, rule_collection_cache> collections;
+    // Bitset with one bit per rule, in module order, flagging the rules which
+    // need to be evaluated: initially all of them, then only those referencing
+    // a target updated since their last evaluation. Evaluating a rule again on
+    // the same targets can't produce a different outcome, as condition caches
+    // and exclusions only accumulate. A bit is cleared once the evaluation of
+    // its rule completes, so a rule interrupted by a timeout, or left behind
+    // by an earlier match or block, remains pending.
+    memory::vector<uint64_t> pending;
 };
 
 class rule_module {
@@ -53,10 +65,26 @@ public:
     {
         cache.rules.resize(rules_.size());
         cache.collections.reserve(collections_.size());
+
+        // Every rule of a new cache must be evaluated at least once, whereas a
+        // cache inherited from a context (i.e. by a subcontext) is left as is.
+        constexpr auto word_bits = cache_type::pending_word_bits;
+        const auto words = (rules_.size() + word_bits - 1) / word_bits;
+        if (cache.pending.size() != words) {
+            cache.pending.assign(words, ~uint64_t{0});
+            if (const auto remainder = rules_.size() % word_bits; remainder != 0) {
+                cache.pending.back() = (uint64_t{1} << remainder) - 1;
+            }
+        }
     }
 
     [[nodiscard]] bool may_expire() const { return policy_ == expiration_policy::expiring; }
 
+    // Rules in evaluation order, the position of each rule corresponds to its
+    // bit in the pending bitset of the cache
+    [[nodiscard]] std::span<const core_rule *const> get_rules() const { return rules_; }
+
+    // Evaluates the rules flagged in the pending bitset of the cache, in order
     verdict_type eval(std::vector<rule_result> &results, object_store &store, cache_type &cache,
         const exclusion_policy &exclusion, const matcher_mapper &dynamic_matchers,
         ddwaf::timer &deadline) const;

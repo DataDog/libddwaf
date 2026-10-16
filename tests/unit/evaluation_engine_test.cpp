@@ -2189,4 +2189,243 @@ TEST(TestEvaluationEngine, InputFilterMultipleRulesMultipleFiltersMultipleObject
     }
 }
 
+std::shared_ptr<expression> make_exact_match_expression(
+    const std::string &target, const std::string &value)
+{
+    test::expression_builder builder(1);
+    builder.start_condition();
+    builder.add_argument();
+    builder.add_target(target);
+    builder.end_condition<matcher::exact_match>(std::vector<std::string>{value});
+    return builder.build();
+}
+
+std::unordered_map<std::string, std::string> make_tags(
+    const std::string &type, const std::string &module = "waf")
+{
+    return {{"type", type}, {"category", "category"}, {"module", module}};
+}
+
+TEST(TestEvaluationEngine, RuleSkippedByCollectionMatchIsEvaluatedLater)
+{
+    test::ruleset_builder rbuilder;
+
+    // Both rules belong to the same blocking collection, the user rule is
+    // evaluated first.
+    auto *user_rule = rbuilder.insert_user_rule(
+        core_rule{"user", "user", make_tags("type"), make_exact_match_expression("usr.id", "admin"),
+            std::vector<std::string>{"block"}, std::vector<rule_attribute>{},
+            core_rule::source_type::user, core_rule::verdict_type::block});
+    rbuilder.insert_base_rule(core_rule{"base", "base", make_tags("type"),
+        make_exact_match_expression("usr.login", "admin"), std::vector<std::string>{"block"},
+        std::vector<rule_attribute>{}, core_rule::source_type::base,
+        core_rule::verdict_type::block});
+    rbuilder.insert_base_rule(core_rule{"other", "other", make_tags("other"),
+        make_exact_match_expression("server.request.query", "admin")});
+
+    // The verdict of the user rule is downgraded to monitor, so the collection
+    // can still produce a blocking match.
+    exclusion_policy policy;
+    policy.add_rule_exclusion(user_rule, filter_mode::monitor, {});
+
+    ddwaf::timer deadline{2s};
+    context ctx{rbuilder.build()};
+
+    {
+        auto root = object_builder_da::map({{"usr.id", "admin"}, {"usr.login", "admin"}});
+        ctx.insert_and_apply(std::move(root));
+
+        std::vector<rule_result> results;
+        ctx.eval_rules(policy, results, deadline);
+        ASSERT_EQ(results.size(), 1);
+        ASSERT_TRUE(results[0].event.has_value());
+        EXPECT_STRV(results[0].event->rule.id, "user");
+        EXPECT_STRV(results[0].action_override, "monitor");
+    }
+
+    {
+        // The collection stopped at the first match, so the base rule must be
+        // evaluated even though none of its targets has been updated.
+        auto root = object_builder_da::map({{"server.request.query", "value"}});
+        ctx.insert_and_apply(std::move(root));
+
+        std::vector<rule_result> results;
+        ctx.eval_rules(policy, results, deadline);
+        ASSERT_EQ(results.size(), 1);
+        ASSERT_TRUE(results[0].event.has_value());
+        EXPECT_STRV(results[0].event->rule.id, "base");
+        EXPECT_STRV(results[0].action_override, "");
+    }
+}
+
+TEST(TestEvaluationEngine, RuleInterruptedByTimeoutIsEvaluatedLater)
+{
+    test::ruleset_builder rbuilder;
+    rbuilder.insert_base_rule(
+        core_rule{"id", "id", make_tags("type1"), make_exact_match_expression("usr.id", "admin")});
+    rbuilder.insert_base_rule(core_rule{"other", "other", make_tags("type2"),
+        make_exact_match_expression("server.request.query", "admin")});
+
+    context ctx{rbuilder.build()};
+
+    {
+        auto root = object_builder_da::map({{"server.request.query", "value"}});
+        ctx.insert_and_apply(std::move(root));
+
+        ddwaf::timer deadline{2s};
+        std::vector<rule_result> results;
+        ctx.eval_rules({}, results, deadline);
+        EXPECT_EQ(results.size(), 0);
+    }
+
+    {
+        auto root = object_builder_da::map({{"usr.id", "admin"}});
+        ctx.insert_and_apply(std::move(root));
+
+        ddwaf::timer deadline{0s};
+        std::vector<rule_result> results;
+        EXPECT_THROW(ctx.eval_rules({}, results, deadline), ddwaf::timeout_exception);
+    }
+
+    {
+        auto root = object_builder_da::map({{"server.request.query", "other_value"}});
+        ctx.insert_and_apply(std::move(root));
+
+        ddwaf::timer deadline{2s};
+        std::vector<rule_result> results;
+        ctx.eval_rules({}, results, deadline);
+        ASSERT_EQ(results.size(), 1);
+        ASSERT_TRUE(results[0].event.has_value());
+        EXPECT_STRV(results[0].event->rule.id, "id");
+    }
+}
+
+TEST(TestEvaluationEngine, RulesSkippedByBlockingModuleAreEvaluatedLater)
+{
+    test::ruleset_builder rbuilder;
+    rbuilder.insert_base_rule(core_rule{"acl", "acl", make_tags("type", "network-acl"),
+        make_exact_match_expression("http.client_ip", "192.168.0.1"),
+        std::vector<std::string>{"block"}, std::vector<rule_attribute>{},
+        core_rule::source_type::base, core_rule::verdict_type::block});
+    rbuilder.insert_base_rule(
+        core_rule{"waf", "waf", make_tags("type"), make_exact_match_expression("usr.id", "admin")});
+    rbuilder.insert_base_rule(core_rule{"other", "other", make_tags("other"),
+        make_exact_match_expression("server.request.query", "admin")});
+
+    ddwaf::timer deadline{2s};
+    context ctx{rbuilder.build()};
+
+    {
+        auto root =
+            object_builder_da::map({{"http.client_ip", "192.168.0.1"}, {"usr.id", "admin"}});
+        ctx.insert_and_apply(std::move(root));
+
+        std::vector<rule_result> results;
+        ctx.eval_rules({}, results, deadline);
+        ASSERT_EQ(results.size(), 1);
+        ASSERT_TRUE(results[0].event.has_value());
+        EXPECT_STRV(results[0].event->rule.id, "acl");
+    }
+
+    {
+        // A subcontext inherits the rules pending in the context
+        auto sctx = ctx.create_subcontext();
+        auto root = object_builder_da::map({{"server.request.query", "value"}});
+        sctx.insert_and_apply(std::move(root));
+
+        std::vector<rule_result> results;
+        sctx.eval_rules({}, results, deadline);
+        ASSERT_EQ(results.size(), 1);
+        ASSERT_TRUE(results[0].event.has_value());
+        EXPECT_STRV(results[0].event->rule.id, "waf");
+    }
+
+    {
+        // While the subcontext doesn't affect the context
+        auto root = object_builder_da::map({{"server.request.query", "value"}});
+        ctx.insert_and_apply(std::move(root));
+
+        std::vector<rule_result> results;
+        ctx.eval_rules({}, results, deadline);
+        ASSERT_EQ(results.size(), 1);
+        ASSERT_TRUE(results[0].event.has_value());
+        EXPECT_STRV(results[0].event->rule.id, "waf");
+    }
+
+    {
+        auto root = object_builder_da::map({{"server.request.query", "other_value"}});
+        ctx.insert_and_apply(std::move(root));
+
+        std::vector<rule_result> results;
+        ctx.eval_rules({}, results, deadline);
+        EXPECT_EQ(results.size(), 0);
+    }
+}
+
+TEST(TestEvaluationEngine, UpdatedTargetIsEvaluatedAgain)
+{
+    test::ruleset_builder rbuilder;
+    rbuilder.insert_base_rule(
+        core_rule{"id", "id", make_tags("type1"), make_exact_match_expression("usr.id", "admin")});
+    rbuilder.insert_base_rule(core_rule{"other", "other", make_tags("type2"),
+        make_exact_match_expression("server.request.query", "admin")});
+
+    ddwaf::timer deadline{2s};
+    context ctx{rbuilder.build()};
+
+    {
+        auto root = object_builder_da::map({{"usr.id", "user"}});
+        ctx.insert_and_apply(std::move(root));
+
+        std::vector<rule_result> results;
+        ctx.eval_rules({}, results, deadline);
+        EXPECT_EQ(results.size(), 0);
+    }
+
+    {
+        auto root = object_builder_da::map({{"server.request.query", "value"}});
+        ctx.insert_and_apply(std::move(root));
+
+        std::vector<rule_result> results;
+        ctx.eval_rules({}, results, deadline);
+        EXPECT_EQ(results.size(), 0);
+    }
+
+    {
+        auto root = object_builder_da::map({{"usr.id", "admin"}});
+        ctx.insert_and_apply(std::move(root));
+
+        std::vector<rule_result> results;
+        ctx.eval_rules({}, results, deadline);
+        ASSERT_EQ(results.size(), 1);
+        ASSERT_TRUE(results[0].event.has_value());
+        EXPECT_STRV(results[0].event->rule.id, "id");
+    }
+}
+
+TEST(TestEvaluationEngine, UnconditionalRuleIsEvaluatedEveryTime)
+{
+    test::ruleset_builder rbuilder;
+    // Unlike the WAF module, the network ACL module has no collections, which
+    // would otherwise prevent any further evaluation after the first match.
+    rbuilder.insert_base_rule(core_rule{"unconditional", "unconditional",
+        make_tags("type1", "network-acl"), std::make_shared<expression>()});
+    rbuilder.insert_base_rule(core_rule{"other", "other", make_tags("type2"),
+        make_exact_match_expression("server.request.query", "admin")});
+
+    ddwaf::timer deadline{2s};
+    context ctx{rbuilder.build()};
+
+    for (const auto *value : {"value", "other_value"}) {
+        auto root = object_builder_da::map({{"server.request.query", value}});
+        ctx.insert_and_apply(std::move(root));
+
+        std::vector<rule_result> results;
+        ctx.eval_rules({}, results, deadline);
+        ASSERT_EQ(results.size(), 1);
+        ASSERT_TRUE(results[0].event.has_value());
+        EXPECT_STRV(results[0].event->rule.id, "unconditional");
+    }
+}
+
 } // namespace

@@ -25,15 +25,20 @@
 #include "obfuscator.hpp"
 #include "processor/base.hpp"
 #include "rule.hpp"
+#include "rule_target_index.hpp"
 #include "scanner.hpp"
 #include "target_address.hpp"
 
 namespace ddwaf {
 
 struct ruleset {
+    // The index of the rule targets only depends on the modules, so the index
+    // of a previous ruleset with the same rules can be provided for reuse; it's
+    // only used if the modules are identical.
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
     void insert_rules(std::shared_ptr<const std::vector<core_rule>> base,
-        std::shared_ptr<const std::vector<core_rule>> user)
+        std::shared_ptr<const std::vector<core_rule>> user,
+        std::shared_ptr<const rule_target_index> targets = {})
     {
         base_rules = std::move(base);
         user_rules = std::move(user);
@@ -43,6 +48,11 @@ struct ruleset {
 
         rule_module_set_builder builder;
         rule_modules = builder.build(*base_rules, *user_rules);
+        if (targets && targets->is_valid_for(rule_modules)) {
+            rule_targets = std::move(targets);
+        } else {
+            rule_targets = std::make_shared<const rule_target_index>(rule_modules);
+        }
     }
 
     void insert_filters(std::shared_ptr<const std::vector<rule_filter>> filters)
@@ -153,6 +163,8 @@ struct ruleset {
 
     // Rule modules
     std::array<rule_module, rule_module_count> rule_modules;
+    // Rules of each module referencing each of the rule addresses
+    std::shared_ptr<const rule_target_index> rule_targets;
 
     std::unordered_map<target_index, std::string> rule_addresses;
     std::unordered_map<target_index, std::string> filter_addresses;

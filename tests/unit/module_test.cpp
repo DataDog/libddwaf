@@ -4,6 +4,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include <algorithm>
+#include <cstdint>
+
 #include "clock.hpp"
 #include "common/gtest_utils.hpp"
 #include "condition/scalar_condition.hpp"
@@ -16,6 +19,14 @@ using namespace ddwaf::test;
 using namespace std::literals;
 
 namespace {
+
+// The module only evaluates the rules flagged as pending in its cache, which
+// is otherwise the responsibility of the evaluation engine, so this flags all
+// of them after the targets have been updated.
+void flag_all_rules(rule_module_cache &cache)
+{
+    std::fill(cache.pending.begin(), cache.pending.end(), ~uint64_t{0});
+}
 
 bool contains(auto results, auto id)
 {
@@ -66,6 +77,7 @@ TEST(TestModuleUngrouped, SingleRuleMatch)
         auto root = object_builder_da::map({{"http.client_ip", "192.168.0.1"}});
 
         store.insert_and_apply(root);
+        flag_all_rules(cache);
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
         mod.eval(results, store, cache, {}, {}, deadline);
@@ -133,6 +145,7 @@ TEST(TestModuleUngrouped, MultipleMonitoringRuleMatch)
         auto root = object_builder_da::map({{"http.client_ip", "192.168.0.1"}});
 
         store.insert_and_apply(root);
+        flag_all_rules(cache);
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
         mod.eval(results, store, cache, {}, {}, deadline);
@@ -257,6 +270,7 @@ TEST(TestModuleUngrouped, MonitoringRuleMatch)
     {
         auto root = object_builder_da::map({{"http.client_ip", "192.168.0.2"}});
         store.insert_and_apply(std::move(root));
+        flag_all_rules(cache);
 
         std::vector<rule_result> results;
         ddwaf::timer deadline = endless_timer();
@@ -1729,6 +1743,131 @@ TEST(TestModuleGrouped, ExpiringModule)
         ddwaf::timer deadline{0s};
         EXPECT_THROW(mod.eval(results, store, cache, {}, {}, deadline), ddwaf::timeout_exception);
     }
+}
+
+std::vector<std::shared_ptr<core_rule>> make_ip_rules(std::size_t count, const std::string &type)
+{
+    std::vector<std::shared_ptr<core_rule>> rules;
+    for (std::size_t i = 0; i < count; ++i) {
+        test::expression_builder builder(1);
+        builder.start_condition();
+        builder.add_argument();
+        builder.add_target("http.client_ip");
+        builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+
+        std::unordered_map<std::string, std::string> tags{{"type", type}, {"category", "category"}};
+        rules.emplace_back(std::make_shared<core_rule>(
+            "id" + std::to_string(i), "name", std::move(tags), builder.build()));
+    }
+    return rules;
+}
+
+TEST(TestModuleUngrouped, InitCacheFlagsAllRules)
+{
+    auto rules = make_ip_rules(70, "type");
+
+    rule_module_builder mod_builder{base_rule_precedence, null_grouping_key};
+    for (const auto &rule : rules) { mod_builder.insert(rule.get()); }
+    auto mod = mod_builder.build();
+
+    rule_module_cache cache;
+    mod.init_cache(cache);
+    EXPECT_EQ(cache.pending, (memory::vector<uint64_t>{~uint64_t{0}, (uint64_t{1} << 6) - 1}));
+
+    object_store store;
+    store.insert_and_apply(object_builder_da::map({{"http.client_ip", "192.168.0.2"}}));
+
+    std::vector<rule_result> results;
+    ddwaf::timer deadline = endless_timer();
+    mod.eval(results, store, cache, {}, {}, deadline);
+    EXPECT_EQ(results.size(), 0);
+    EXPECT_EQ(cache.pending, (memory::vector<uint64_t>{0, 0}));
+
+    // A copy of the cache, as inherited by a subcontext, keeps its state
+    auto inherited = cache;
+    mod.init_cache(inherited);
+    EXPECT_EQ(inherited.pending, (memory::vector<uint64_t>{0, 0}));
+}
+
+TEST(TestModuleUngrouped, OnlyPendingRulesAreEvaluated)
+{
+    auto rules = make_ip_rules(2, "type");
+
+    rule_module_builder mod_builder{base_rule_precedence, null_grouping_key};
+    for (const auto &rule : rules) { mod_builder.insert(rule.get()); }
+    auto mod = mod_builder.build();
+
+    rule_module_cache cache;
+    mod.init_cache(cache);
+
+    object_store store;
+    store.insert_and_apply(object_builder_da::map({{"http.client_ip", "192.168.0.1"}}));
+
+    for (const std::size_t i : {std::size_t{1}, std::size_t{0}}) {
+        cache.pending[0] = uint64_t{1} << i;
+
+        std::vector<rule_result> results;
+        ddwaf::timer deadline = endless_timer();
+        auto verdict = mod.eval(results, store, cache, {}, {}, deadline);
+        EXPECT_EQ(verdict, rule_module::verdict_type::monitor);
+        ASSERT_EQ(results.size(), 1);
+        EXPECT_TRUE(contains(results, mod.get_rules()[i]->get_id()));
+        EXPECT_EQ(cache.pending[0], 0);
+    }
+}
+
+TEST(TestModuleUngrouped, RulesRemainPendingAfterTimeout)
+{
+    auto rules = make_ip_rules(2, "type");
+
+    rule_module_builder mod_builder{base_rule_precedence, null_grouping_key};
+    for (const auto &rule : rules) { mod_builder.insert(rule.get()); }
+    auto mod = mod_builder.build();
+
+    rule_module_cache cache;
+    mod.init_cache(cache);
+
+    object_store store;
+    store.insert_and_apply(object_builder_da::map({{"http.client_ip", "192.168.0.1"}}));
+
+    {
+        std::vector<rule_result> results;
+        ddwaf::timer deadline{0s};
+        EXPECT_THROW(mod.eval(results, store, cache, {}, {}, deadline), ddwaf::timeout_exception);
+        EXPECT_EQ(cache.pending[0], 0b11);
+    }
+
+    {
+        std::vector<rule_result> results;
+        ddwaf::timer deadline = endless_timer();
+        mod.eval(results, store, cache, {}, {}, deadline);
+        EXPECT_EQ(results.size(), 2);
+        EXPECT_EQ(cache.pending[0], 0);
+    }
+}
+
+TEST(TestModuleGrouped, RulesAfterCollectionMatchRemainPending)
+{
+    auto rules = make_ip_rules(2, "type");
+
+    rule_module_builder mod_builder{base_rule_precedence, type_grouping_key};
+    for (const auto &rule : rules) { mod_builder.insert(rule.get()); }
+    auto mod = mod_builder.build();
+
+    rule_module_cache cache;
+    mod.init_cache(cache);
+
+    object_store store;
+    store.insert_and_apply(object_builder_da::map({{"http.client_ip", "192.168.0.1"}}));
+
+    std::vector<rule_result> results;
+    ddwaf::timer deadline = endless_timer();
+    mod.eval(results, store, cache, {}, {}, deadline);
+    ASSERT_EQ(results.size(), 1);
+    EXPECT_TRUE(contains(results, mod.get_rules()[0]->get_id()));
+
+    // The collection stops evaluating rules after the first match
+    EXPECT_EQ(cache.pending[0], 0b10);
 }
 
 } // namespace

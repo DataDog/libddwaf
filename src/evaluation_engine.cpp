@@ -84,8 +84,13 @@ std::pair<bool, owned_object> evaluation_engine::eval(timer &deadline)
 
     // Once evaluation finishes (on any exit path, including a timeout) flush any
     // input batches left unevaluated and reset the new-target set so that the
-    // next eval can identify new targets.
-    auto on_exit = defer([this]() { input_batches_.flush(store_); });
+    // next eval can identify new targets. The targets registered since the
+    // last batch was evaluated (flushed or derived) flag their rules right
+    // away, so that subcontexts don't need to inherit them from the store.
+    auto on_exit = defer([this]() {
+        input_batches_.flush(store_);
+        flag_updated_rules();
+    });
 
     std::vector<rule_result> all_results;
     std::size_t batches_evaluated = 0;
@@ -104,8 +109,10 @@ std::pair<bool, owned_object> evaluation_engine::eval(timer &deadline)
         } catch (const ddwaf::timeout_exception &) {}
 
         try {
-            // If no rule targets are available, there is no point in evaluating them
-            const bool should_eval_rules = check_new_rule_targets();
+            // Only the rules referencing a target updated since their last
+            // evaluation are evaluated, and only if at least one rule target
+            // is new to this batch.
+            const bool should_eval_rules = flag_updated_rules();
             const bool should_eval_filters = should_eval_rules || check_new_filter_targets();
 
             if (should_eval_filters) {
@@ -245,6 +252,15 @@ exclusion_policy &evaluation_engine::eval_filters(timer &deadline)
 rule_verdict evaluation_engine::eval_rules(
     const exclusion_policy &policy, std::vector<rule_result> &results, timer &deadline)
 {
+    // When called from eval, the updated targets have already been flagged
+    // before evaluating filters, this is only relevant when the rules are
+    // evaluated directly.
+    flag_updated_rules();
+    // Rules without conditions match every time they're evaluated
+    for (const auto &[module, word, mask] : ruleset_->rule_targets->unconditional_rules()) {
+        cache_.rule_modules[module].pending[word] |= mask;
+    }
+
     auto verdict = rule_verdict::none;
     for (std::size_t i = 0; i < ruleset_->rule_modules.size(); ++i) {
         const auto &mod = ruleset_->rule_modules[i];
@@ -256,6 +272,25 @@ rule_verdict evaluation_engine::eval_rules(
         }
     }
     return verdict;
+}
+
+bool evaluation_engine::flag_updated_rules()
+{
+    bool new_rule_targets = false;
+    for (auto target : store_.updated_targets()) {
+        const auto rules = ruleset_->rule_targets->find(target);
+        if (rules.empty()) {
+            continue;
+        }
+
+        for (const auto &[module, word, mask] : rules) {
+            cache_.rule_modules[module].pending[word] |= mask;
+        }
+
+        new_rule_targets = new_rule_targets || store_.is_new_target(target);
+    }
+    store_.clear_updated_targets();
+    return new_rule_targets;
 }
 
 } // namespace ddwaf

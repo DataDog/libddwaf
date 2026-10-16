@@ -622,6 +622,80 @@ TEST(TestContextMultievalIntegration, CrossBatchDataCombination)
     ddwaf_destroy(handle);
 }
 
+TEST(TestContextMultievalIntegration, BatchesFlushedAfterBlockAreEvaluatedLater)
+{
+    auto *alloc = ddwaf_get_default_allocator();
+    auto rule = read_file<ddwaf_object>("blocking_rules.yaml", base_dir);
+    ASSERT_TRUE(rule.type != DDWAF_OBJ_INVALID);
+
+    ddwaf_handle handle = ddwaf_init(&rule, nullptr);
+    ASSERT_NE(handle, nullptr);
+    ddwaf_object_destroy(&rule, alloc);
+
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
+    ASSERT_NE(context, nullptr);
+
+    auto event_rule_id = [](const ddwaf_object &result) {
+        const auto *events = ddwaf_object_find(&result, STRL("events"));
+        const auto *rule = ddwaf_object_find(ddwaf_object_at_value(events, 0), STRL("rule"));
+        std::size_t length = 0;
+        const auto *id = ddwaf_object_get_string(ddwaf_object_find(rule, STRL("id")), &length);
+        return std::string_view{id, length};
+    };
+
+    {
+        // The first batch blocks, so the second one is added to the context
+        // without being evaluated.
+        ddwaf_object data;
+        ddwaf_object_set_array(&data, 2, alloc);
+
+        ddwaf_object *batch1 = ddwaf_object_insert(&data, alloc);
+        ddwaf_object_set_map(batch1, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(batch1, STRL("value1"), alloc), STRL("block1"), alloc);
+
+        ddwaf_object *batch2 = ddwaf_object_insert(&data, alloc);
+        ddwaf_object_set_map(batch2, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(batch2, STRL("value2"), alloc), STRL("rule2"), alloc);
+
+        ddwaf_object result;
+        ddwaf_object_set_invalid(&result);
+
+        EXPECT_EQ(ddwaf_context_multieval(context, &data, alloc, &result, LONG_TIME), DDWAF_MATCH);
+
+        ASSERT_EQ(ddwaf_object_get_type(&result), DDWAF_OBJ_MAP);
+        EXPECT_EQ(ddwaf_object_get_size(ddwaf_object_find(&result, STRL("events"))), 1);
+        EXPECT_EQ(event_rule_id(result), "block1");
+        EXPECT_EQ(ddwaf_object_get_unsigned(ddwaf_object_find(&result, STRL("evaluated"))), 1);
+
+        ddwaf_object_destroy(&result, alloc);
+    }
+
+    {
+        // The flushed batch is evaluated on the next call, even if it provides
+        // none of the addresses of the rule.
+        ddwaf_object data;
+        ddwaf_object_set_map(&data, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&data, STRL("value3"), alloc), STRL("no_match"), alloc);
+
+        ddwaf_object result;
+        ddwaf_object_set_invalid(&result);
+
+        EXPECT_EQ(ddwaf_context_eval(context, &data, alloc, &result, LONG_TIME), DDWAF_MATCH);
+
+        ASSERT_EQ(ddwaf_object_get_type(&result), DDWAF_OBJ_MAP);
+        EXPECT_EQ(ddwaf_object_get_size(ddwaf_object_find(&result, STRL("events"))), 1);
+        EXPECT_EQ(event_rule_id(result), "rule2");
+
+        ddwaf_object_destroy(&result, alloc);
+    }
+
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+}
+
 //------------------------------------------------------------------------------
 // ddwaf_subcontext_multieval tests
 //------------------------------------------------------------------------------

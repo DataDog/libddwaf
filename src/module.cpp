@@ -4,9 +4,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include <algorithm>
+#include <bit>
 #include <cstddef>
+#include <cstdint>
 #include <module.hpp>
 #include <optional>
+#include <span>
 #include <string_view>
 #include <utility>
 #include <vector>
@@ -23,6 +27,34 @@ namespace ddwaf {
 
 namespace {
 using verdict_type = rule_module::verdict_type;
+
+constexpr std::size_t pending_word_bits = rule_module_cache::pending_word_bits;
+
+// Returns the position of the first pending rule within [pos, end), or end if none
+std::size_t next_pending(std::span<const uint64_t> pending, std::size_t pos, std::size_t end)
+{
+    while (pos < end) {
+        const uint64_t word = pending[pos / pending_word_bits] >> (pos % pending_word_bits);
+        if (word != 0) {
+            return std::min(pos + std::countr_zero(word), end);
+        }
+        pos = ((pos / pending_word_bits) + 1) * pending_word_bits;
+    }
+    return end;
+}
+
+void check_deadline(ddwaf::timer &deadline)
+{
+    if (deadline.expired()) {
+        DDWAF_INFO("Ran out of time while evaluating rules");
+        throw timeout_exception();
+    }
+}
+
+void clear_pending(std::span<uint64_t> pending, std::size_t pos)
+{
+    pending[pos / pending_word_bits] &= ~(uint64_t{1} << (pos % pending_word_bits));
+}
 
 std::pair<verdict_type, std::optional<rule_result>> eval_rule(const core_rule &rule,
     const object_store &store, core_rule::cache_type &cache, const exclusion_policy &policy,
@@ -94,17 +126,32 @@ verdict_type rule_module::eval_with_collections(std::vector<rule_result> &result
     const matcher_mapper &dynamic_matchers, ddwaf::timer &deadline) const
 {
     verdict_type final_verdict = verdict_type::none;
+    bool deadline_checked = false;
     for (const auto &collection : collections_) {
-        DDWAF_DEBUG("Evaluating collection: {}", collection.name);
         auto &collection_cache = cache.collections[collection.name];
         if (collection_cache.type >= collection.type) {
             continue;
         }
 
-        for (std::size_t i = collection.begin; i < collection.end; ++i) {
+        // See rule_module::eval
+        if (!deadline_checked && collection.begin < collection.end) {
+            deadline_checked = true;
+            check_deadline(deadline);
+        }
+
+        auto i = next_pending(cache.pending, collection.begin, collection.end);
+        if (i == collection.end) {
+            // None of the rules in the collection needs to be evaluated
+            continue;
+        }
+
+        DDWAF_DEBUG("Evaluating collection: {}", collection.name);
+
+        for (; i < collection.end; i = next_pending(cache.pending, i + 1, collection.end)) {
             const auto &rule = *rules_[i];
             auto [verdict, outcome] =
                 eval_rule(rule, store, cache.rules[i], exclusion, dynamic_matchers, deadline);
+            clear_pending(cache.pending, i);
             if (outcome.has_value()) {
                 collection_cache.type = verdict;
 
@@ -130,13 +177,23 @@ verdict_type rule_module::eval(std::vector<rule_result> &results, object_store &
     auto &apt_deadline = get_deadline(deadline);
 
     if (collections_.empty()) {
+        // Rules whose targets haven't been updated aren't evaluated, but the
+        // deadline is still checked as if they were, so that an expired
+        // deadline interrupts the evaluation of the module (and so of the
+        // batch) even when it has no pending rules.
+        if (!rules_.empty()) {
+            check_deadline(apt_deadline);
+        }
+
         auto final_verdict = verdict_type::none;
-        for (std::size_t i = 0; i < rules_.size(); ++i) {
+        for (auto i = next_pending(cache.pending, 0, rules_.size()); i < rules_.size();
+             i = next_pending(cache.pending, i + 1, rules_.size())) {
             const auto &rule = *rules_[i];
             auto &rule_cache = cache.rules[i];
 
             auto [verdict, outcome] =
                 eval_rule(rule, store, rule_cache, exclusion, dynamic_matchers, apt_deadline);
+            clear_pending(cache.pending, i);
             if (outcome.has_value()) {
                 results.emplace_back(std::move(*outcome));
                 DDWAF_DEBUG("Found event on rule {}", rule.get_id());

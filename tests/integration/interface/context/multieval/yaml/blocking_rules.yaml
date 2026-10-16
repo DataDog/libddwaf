@@ -1,0 +1,37 @@
+version: '2.1'
+rules:
+  - id: block1
+    name: block1
+    tags:
+      type: flow1
+      category: category1
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: value1
+          regex: block1
+    on_match:
+      - block
+  - id: rule2
+    name: rule2
+    tags:
+      type: flow2
+      category: category2
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: value2
+          regex: rule2
+  - id: rule3
+    name: rule3
+    tags:
+      type: flow3
+      category: category3
+    conditions:
+      - operator: match_regex
+        parameters:
+          inputs:
+            - address: value3
+          regex: rule3

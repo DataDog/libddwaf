@@ -18,6 +18,7 @@
 #include "obfuscator.hpp"
 #include "processor/base.hpp"
 #include "rule.hpp"
+#include "rule_target_index.hpp"
 #include "ruleset.hpp"
 #include "scanner.hpp"
 
@@ -47,6 +48,8 @@ protected:
     std::shared_ptr<const std::vector<core_rule>> final_base_rules_;
     std::shared_ptr<const std::vector<core_rule>> final_user_rules_;
     indexer<const core_rule> rule_index_;
+    // Derived from the final rules, so only regenerated when they change
+    std::shared_ptr<const rule_target_index> rule_targets_;
 
     // Filters
     std::shared_ptr<const std::vector<rule_filter>> rule_filters_;
