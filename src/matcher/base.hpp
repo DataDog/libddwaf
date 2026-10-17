@@ -6,7 +6,10 @@
 
 #pragma once
 
+#include <array>
+#include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <memory>
 #include <string>
 #include <string_view>
@@ -24,7 +27,34 @@ class regex_prefilter;
 
 class base {
 public:
-    base() = default;
+    // The set of object types supported by a matcher, as a bitmap indexed by
+    // the value of object_type, so that the type of every iterated object
+    // can be checked inline instead of with a virtual call.
+    class type_set {
+    public:
+        template <typename Predicate> static constexpr type_set from_predicate(Predicate pred)
+        {
+            type_set set;
+            for (std::size_t i = 0; i <= std::numeric_limits<uint8_t>::max(); ++i) {
+                if (pred(static_cast<object_type>(i))) {
+                    set.bits_[i / word_bits] |= uint64_t{1} << (i % word_bits);
+                }
+            }
+            return set;
+        }
+
+        [[nodiscard]] constexpr bool contains(object_type type) const
+        {
+            const auto i = static_cast<std::size_t>(type);
+            return ((bits_[i / word_bits] >> (i % word_bits)) & 1) != 0;
+        }
+
+    private:
+        static constexpr std::size_t word_bits = 64;
+        std::array<uint64_t, (std::numeric_limits<uint8_t>::max() + 1) / word_bits> bits_{};
+    };
+
+    explicit base(type_set supported_types) : supported_types_(supported_types) {}
     virtual ~base() = default;
     base(const base &) = default;
     base(base &&) noexcept = default;
@@ -43,7 +73,10 @@ public:
     [[nodiscard]] virtual std::string_view to_string() const = 0;
 
     // Scalar matcher methods
-    [[nodiscard]] virtual bool is_supported_type(object_type type) const = 0;
+    [[nodiscard]] bool is_supported_type(object_type type) const
+    {
+        return supported_types_.contains(type);
+    }
 
     [[nodiscard]] virtual std::pair<bool, dynamic_string> match(std::string_view str) const = 0;
     [[nodiscard]] virtual std::pair<bool, dynamic_string> match(object_view obj) const = 0;
@@ -54,11 +87,14 @@ public:
     // Builds the prefilter, once, if the matcher supports one. This is only
     // done for the matchers of rules, which can use it.
     virtual const regex_prefilter *build_prefilter() const { return nullptr; }
+
+private:
+    type_set supported_types_;
 };
 
 template <typename T> class base_impl : public base {
 public:
-    base_impl() = default;
+    base_impl() : base(supported_types()) {}
     ~base_impl() override = default;
     base_impl(const base_impl &) = default;
     base_impl(base_impl &&) noexcept = default;
@@ -71,11 +107,6 @@ public:
     [[nodiscard]] std::string_view to_string() const override
     {
         return static_cast<const T *>(this)->to_string_impl();
-    }
-
-    [[nodiscard]] bool is_supported_type(object_type type) const override
-    {
-        return T::is_supported_type_impl(type);
     }
 
     // Helper used for testing purposes
@@ -131,6 +162,12 @@ public:
         }
 
         return {false, {}};
+    }
+
+private:
+    static consteval type_set supported_types()
+    {
+        return type_set::from_predicate(T::is_supported_type_impl);
     }
 };
 
