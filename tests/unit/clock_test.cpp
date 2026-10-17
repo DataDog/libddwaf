@@ -65,4 +65,45 @@ TEST(TestTimer, TimerExpirationBeyondSizeLimit)
     EXPECT_FALSE(deadline.expired());
 }
 
+TEST(TestTimer, UnboundedTimer)
+{
+    auto deadline = ddwaf::timer::unbounded();
+    for (unsigned i = 0; i < 1000; ++i) { EXPECT_FALSE(deadline.expired()); }
+    EXPECT_FALSE(deadline.expired_before());
+}
+
+TEST(TestTimer, AdaptivePeriodBoundedByMaximum)
+{
+    // Far from the deadline, the clock is read once every MaxPeriod calls
+    ddwaf::base_timer<2, 100> deadline{50ms};
+    EXPECT_FALSE(deadline.expired());
+
+    std::this_thread::sleep_for(60ms);
+    for (unsigned i = 0; i < 99; ++i) { EXPECT_FALSE(deadline.expired()); }
+    EXPECT_TRUE(deadline.expired());
+    EXPECT_TRUE(deadline.expired());
+    EXPECT_TRUE(deadline.expired_before());
+}
+
+TEST(TestTimer, AdaptivePeriodFallsBackToMinimumNearDeadline)
+{
+    // The work done before the first check is as long as the remaining
+    // budget, so the timer must check again after MinPeriod calls
+    ddwaf::base_timer<2, 100> deadline{400ms};
+    std::this_thread::sleep_for(200ms);
+    EXPECT_FALSE(deadline.expired());
+
+    std::this_thread::sleep_for(250ms);
+    EXPECT_FALSE(deadline.expired());
+    EXPECT_TRUE(deadline.expired());
+    EXPECT_TRUE(deadline.expired());
+}
+
+TEST(TestTimer, AdaptivePeriodExpiredFromConstruction)
+{
+    ddwaf::base_timer<2, 100> deadline{0us};
+    EXPECT_TRUE(deadline.expired());
+    EXPECT_TRUE(deadline.expired());
+}
+
 } // namespace

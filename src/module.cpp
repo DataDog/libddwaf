@@ -122,12 +122,6 @@ std::pair<verdict_type, std::optional<rule_result>> eval_rule(const core_rule &r
 
 } // namespace
 
-ddwaf::timer &rule_module::get_deadline(ddwaf::timer &deadline) const
-{
-    static auto no_deadline = endless_timer();
-    return may_expire() ? deadline : no_deadline;
-}
-
 verdict_type rule_module::eval_with_collections(std::vector<rule_result> &results,
     object_store &store, cache_type &cache, const exclusion_policy &exclusion,
     const matcher_mapper &dynamic_matchers, ddwaf::timer &deadline) const
@@ -181,7 +175,10 @@ verdict_type rule_module::eval(std::vector<rule_result> &results, object_store &
     cache_type &cache, const exclusion_policy &exclusion, const matcher_mapper &dynamic_matchers,
     ddwaf::timer &deadline) const
 {
-    auto &apt_deadline = get_deadline(deadline);
+    // Non-expiring modules use their own timer, which doesn't read the clock
+    // and, unlike a shared one, isn't written to by concurrent evaluations.
+    auto no_deadline = ddwaf::timer::unbounded();
+    auto &apt_deadline = may_expire() ? deadline : no_deadline;
 
     if (collections_.empty()) {
         // Rules whose targets haven't been updated aren't evaluated, but the

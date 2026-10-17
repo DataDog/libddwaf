@@ -107,8 +107,6 @@ protected:
         cache_type &cache, const exclusion_policy &exclusion,
         const matcher_mapper &dynamic_matchers, ddwaf::timer &deadline) const;
 
-    ddwaf::timer &get_deadline(ddwaf::timer &deadline) const;
-
     struct rule_collection {
         std::string_view name;
         verdict_type type;
