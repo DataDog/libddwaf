@@ -255,14 +255,14 @@ void configuration_manager::remove_config(const configuration_change_spec &cfg)
         auto it = global_config_.rule_data.find(data_id);
         if (it != global_config_.rule_data.end()) {
             // Should always be true...
-            it->second.values.erase(id);
+            it->second.erase(id);
         }
     }
     for (const auto &[data_id, id] : cfg.exclusion_data) {
         auto it = global_config_.exclusion_data.find(data_id);
         if (it != global_config_.exclusion_data.end()) {
             // Should always be true...
-            it->second.values.erase(id);
+            it->second.erase(id);
         }
     }
 

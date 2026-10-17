@@ -9,11 +9,11 @@
 #include <cstdint>
 #include <string>
 #include <string_view>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
 #include "dynamic_string.hpp"
+#include "expiring_string_list.hpp"
 #include "indexed_multivector.hpp"
 #include "matcher/base.hpp"
 #include "object_type.hpp"
@@ -31,6 +31,8 @@ public:
     explicit exact_match(std::vector<std::string> &&data);
     explicit exact_match(
         const indexed_multivector<std::string, std::pair<std::string, uint64_t>> &data);
+    explicit exact_match(const indexed_multivector<std::string, expiring_string_list::value_type,
+        expiring_string_list> &data);
     explicit exact_match(const data_type &data);
     ~exact_match() override = default;
     exact_match(const exact_match &) = default;
@@ -47,8 +49,24 @@ protected:
 
     [[nodiscard]] std::pair<bool, dynamic_string> match_impl(std::string_view str) const;
 
-    std::vector<std::string> data_;
-    std::unordered_map<std::string_view, uint64_t> values_;
+    template <typename T> void build(const T &data);
+    [[nodiscard]] const uint64_t *find(std::string_view str) const;
+
+    // The distinct values are stored back to back in buffer_ and indexed by
+    // an open-addressing hash table, so that building, copying and destroying
+    // the matcher doesn't require one allocation per value.
+    struct entry {
+        std::size_t offset;
+        std::size_t length;
+        uint64_t expiration;
+    };
+
+    std::string buffer_;
+    std::vector<entry> entries_;
+    // Linear-probing table of 1-based indexes into entries_ (0 marks an empty
+    // slot); the upper 32 bits hold the upper bits of the hash of the value.
+    std::vector<uint64_t> slots_;
+    std::size_t max_length_{0};
 
     friend class base_impl<exact_match>;
 };

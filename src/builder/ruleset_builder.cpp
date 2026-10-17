@@ -5,6 +5,7 @@
 // Copyright 2021 Datadog, Inc.
 //
 #include <algorithm>
+#include <cstdint>
 #include <functional>
 #include <memory>
 #include <string>
@@ -72,6 +73,39 @@ std::vector<T *> resolve_references(
         rule_refs.erase(std::unique(rule_refs.begin(), rule_refs.end()), rule_refs.end());
     }
     return rule_refs;
+}
+
+// Builds a matcher for each data set, reusing the previous matcher of those
+// whose contents haven't changed since it was built. The versions are updated
+// to reflect the returned matchers.
+std::shared_ptr<const matcher_mapper> build_matchers(
+    const std::unordered_map<std::string, data_spec> &data, const matcher_mapper *previous,
+    std::unordered_map<std::string, uint64_t> &versions)
+{
+    matcher_mapper matchers;
+    matchers.reserve(data.size());
+    std::unordered_map<std::string, uint64_t> new_versions;
+    new_versions.reserve(data.size());
+    for (const auto &[id, spec] : data) {
+        std::shared_ptr<const matcher::base> matcher;
+        if (previous != nullptr) {
+            auto version_it = versions.find(id);
+            auto matcher_it = previous->find(id);
+            if (version_it != versions.end() && version_it->second == spec.version &&
+                matcher_it != previous->end()) {
+                matcher = matcher_it->second;
+            }
+        }
+
+        if (!matcher) {
+            matcher = matcher_builder::build(spec);
+        }
+
+        matchers.emplace(id, std::move(matcher));
+        new_versions.emplace(id, spec.version);
+    }
+    versions = std::move(new_versions);
+    return std::make_shared<matcher_mapper>(std::move(matchers));
 }
 
 } // namespace
@@ -253,21 +287,13 @@ std::shared_ptr<ruleset> ruleset_builder::build(
     }
 
     if (!rule_matchers_ || contains(current_changes, change_set::rule_data)) {
-        matcher_mapper matchers;
-        matchers.reserve(global_config.rule_data.size());
-        for (const auto &[id, spec] : global_config.rule_data) {
-            matchers.emplace(id, matcher_builder::build(spec));
-        }
-        rule_matchers_ = std::make_shared<matcher_mapper>(std::move(matchers));
+        rule_matchers_ =
+            build_matchers(global_config.rule_data, rule_matchers_.get(), rule_matcher_versions_);
     }
 
     if (!exclusion_matchers_ || contains(current_changes, change_set::exclusion_data)) {
-        matcher_mapper matchers;
-        matchers.reserve(global_config.rule_data.size());
-        for (const auto &[id, spec] : global_config.exclusion_data) {
-            matchers.emplace(id, matcher_builder::build(spec));
-        }
-        exclusion_matchers_ = std::make_shared<matcher_mapper>(std::move(matchers));
+        exclusion_matchers_ = build_matchers(
+            global_config.exclusion_data, exclusion_matchers_.get(), exclusion_matcher_versions_);
     }
 
     if (contains(current_changes, change_set::obfuscator)) {

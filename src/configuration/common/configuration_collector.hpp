@@ -132,7 +132,7 @@ public:
 
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
     void emplace_rule_data(std::string data_id, std::string id, data_type type,
-        std::vector<data_spec::value_type> values)
+        expiring_string_list values)
     {
         change_.content |= change_set::rule_data;
 
@@ -140,17 +140,17 @@ public:
         if (it == config_.rule_data.end()) {
             auto &spec = config_.rule_data[data_id];
             spec.type = type;
-            spec.values.emplace(id, std::move(values));
+            spec.emplace(id, std::move(values));
         } else {
             // TODO fail if type differs
-            it->second.values.emplace(id, std::move(values));
+            it->second.emplace(id, std::move(values));
         }
         change_.rule_data.emplace_back(std::move(data_id), std::move(id));
     }
 
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
     void emplace_exclusion_data(std::string data_id, std::string id, data_type type,
-        std::vector<data_spec::value_type> values)
+        expiring_string_list values)
     {
         change_.content |= change_set::exclusion_data;
 
@@ -158,10 +158,10 @@ public:
         if (it == config_.exclusion_data.end()) {
             auto &spec = config_.exclusion_data[data_id];
             spec.type = type;
-            spec.values.emplace(id, std::move(values));
+            spec.emplace(id, std::move(values));
         } else {
             // TODO fail if type differs
-            it->second.values.emplace(id, std::move(values));
+            it->second.emplace(id, std::move(values));
         }
         change_.exclusion_data.emplace_back(std::move(data_id), std::move(id));
     }

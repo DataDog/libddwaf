@@ -16,11 +16,12 @@ namespace ddwaf {
 // by a key. The main purpose of the indexed multivector is to allow the
 // iteration of all vectors as a single vector, as well as the ability to remove
 // individual ones as needed. Note that the vector the insertion order isn't
-// preserved.
-template <typename Key, typename T> class indexed_multivector {
+// preserved. The per-key container defaults to std::vector<T>, but any
+// container with size() and forward const iterators can be used.
+template <typename Key, typename T, typename Container = std::vector<T>> class indexed_multivector {
 public:
     indexed_multivector() = default;
-    void emplace(Key key, std::vector<T> element)
+    void emplace(Key key, Container element)
     {
         total_size_ += element.size();
         data_.emplace(std::move(key), std::move(element));
@@ -38,27 +39,21 @@ public:
 
     class const_iterator {
     public:
-        using index_iterator_type =
-            typename std::unordered_map<Key, std::vector<T>>::const_iterator;
-        using item_iterator_type = typename std::vector<T>::const_iterator;
+        using index_iterator_type = typename std::unordered_map<Key, Container>::const_iterator;
+        using item_iterator_type = typename Container::const_iterator;
         const_iterator(
             // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
             index_iterator_type index_it, index_iterator_type end_index_it,
             item_iterator_type item_it)
             : index_it_(index_it), end_index_it_(end_index_it), item_it_(item_it)
-        {}
+        {
+            skip_empty();
+        }
 
         const_iterator &operator++()
         {
             ++item_it_;
-            if (item_it_ == index_it_->second.end()) {
-                ++index_it_;
-                if (index_it_ != end_index_it_) {
-                    item_it_ = index_it_->second.begin();
-                } else {
-                    item_it_ = {};
-                }
-            }
+            skip_empty();
             return *this;
         }
 
@@ -69,9 +64,22 @@ public:
 
         bool operator!=(const_iterator other) const { return !(*this == other); }
 
-        const T &operator*() const { return *item_it_; }
+        decltype(auto) operator*() const { return *item_it_; }
 
     protected:
+        // Advance to the next element, skipping exhausted or empty containers
+        void skip_empty()
+        {
+            while (index_it_ != end_index_it_ && item_it_ == index_it_->second.end()) {
+                ++index_it_;
+                if (index_it_ != end_index_it_) {
+                    item_it_ = index_it_->second.begin();
+                } else {
+                    item_it_ = {};
+                }
+            }
+        }
+
         index_iterator_type index_it_;
         index_iterator_type end_index_it_;
         item_iterator_type item_it_;
@@ -92,7 +100,7 @@ public:
     const_iterator end() const { return {data_.end(), data_.end(), {}}; }
 
 protected:
-    std::unordered_map<Key, std::vector<T>> data_;
+    std::unordered_map<Key, Container> data_;
     std::size_t total_size_{0};
 };
 } // namespace ddwaf

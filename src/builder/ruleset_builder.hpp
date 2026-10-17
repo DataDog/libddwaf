@@ -6,7 +6,10 @@
 
 #pragma once
 
+#include <cstdint>
 #include <memory>
+#include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "action_mapper.hpp"
@@ -61,9 +64,12 @@ protected:
     std::shared_ptr<const std::vector<std::unique_ptr<base_processor>>> preprocessors_;
     std::shared_ptr<const std::vector<std::unique_ptr<base_processor>>> postprocessors_;
 
-    // Matchers
+    // Matchers, along with the version of the data_spec each one was built
+    // from, so that the matchers of unchanged data sets can be reused
     std::shared_ptr<const matcher_mapper> rule_matchers_;
     std::shared_ptr<const matcher_mapper> exclusion_matchers_;
+    std::unordered_map<std::string, uint64_t> rule_matcher_versions_;
+    std::unordered_map<std::string, uint64_t> exclusion_matcher_versions_;
 
     // Scanners
     std::shared_ptr<const std::vector<scanner>> scanners_;

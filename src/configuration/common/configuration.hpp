@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <cstdint>
 #include <memory>
 #include <optional>
@@ -19,6 +20,7 @@
 #include "action_mapper.hpp"
 #include "exclusion/common.hpp"
 #include "exclusion/object_filter.hpp"
+#include "expiring_string_list.hpp"
 #include "expression.hpp"
 #include "indexed_multivector.hpp"
 #include "obfuscator.hpp"
@@ -102,9 +104,31 @@ struct processor_override_spec {
 enum class data_type : uint8_t { unknown, data_with_expiration, ip_with_expiration };
 
 struct data_spec {
-    using value_type = std::pair<std::string, uint64_t>;
+    using value_type = expiring_string_list::value_type;
+    using values_type = indexed_multivector<std::string, value_type, expiring_string_list>;
     data_type type{data_type::unknown};
-    indexed_multivector<std::string, value_type> values;
+    values_type values;
+    // Process-wide unique stamp of the current contents, renewed on every
+    // modification, so that matchers built from unchanged data can be reused.
+    uint64_t version{next_version()};
+
+    void emplace(std::string id, expiring_string_list list)
+    {
+        values.emplace(std::move(id), std::move(list));
+        version = next_version();
+    }
+
+    void erase(const std::string &id)
+    {
+        values.erase(id);
+        version = next_version();
+    }
+
+    static uint64_t next_version()
+    {
+        static std::atomic<uint64_t> counter{0};
+        return counter.fetch_add(1, std::memory_order_relaxed) + 1;
+    }
 };
 
 struct action_spec {

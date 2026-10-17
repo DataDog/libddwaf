@@ -115,7 +115,7 @@ TEST(TestRuleFilter, MatchWithDynamicMatcher)
 
         ddwaf::timer deadline{2s};
 
-        std::unordered_map<std::string, std::unique_ptr<matcher::base>> matchers;
+        matcher_mapper matchers;
         matchers["ip_data"] =
             std::make_unique<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
 

@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "dynamic_string.hpp"
+#include "expiring_string_list.hpp"
 #include "indexed_multivector.hpp"
 #include "ip_range_table.hpp"
 #include "ip_utils.hpp"
@@ -23,6 +24,11 @@ ip_match::ip_match(const std::vector<std::string_view> &ip_list) : table_(build_
 
 ip_match::ip_match(
     const indexed_multivector<std::string, std::pair<std::string, uint64_t>> &ip_list)
+    : table_(build_table(ip_list))
+{}
+
+ip_match::ip_match(const indexed_multivector<std::string, expiring_string_list::value_type,
+    expiring_string_list> &ip_list)
     : table_(build_table(ip_list))
 {}
 

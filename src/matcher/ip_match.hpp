@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "dynamic_string.hpp"
+#include "expiring_string_list.hpp"
 #include "indexed_multivector.hpp"
 #include "ip_range_table.hpp"
 #include "ip_utils.hpp"
@@ -39,6 +40,8 @@ public:
 
     explicit ip_match(
         const indexed_multivector<std::string, std::pair<std::string, uint64_t>> &ip_list);
+    explicit ip_match(const indexed_multivector<std::string, expiring_string_list::value_type,
+        expiring_string_list> &ip_list);
     explicit ip_match(const data_type &ip_list);
     ~ip_match() override = default;
     ip_match(const ip_match &) = delete;

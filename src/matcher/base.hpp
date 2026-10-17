@@ -173,6 +173,8 @@ private:
 
 } // namespace matcher
 
-using matcher_mapper = std::unordered_map<std::string, std::unique_ptr<matcher::base>>;
+// Matchers built from rules_data or exclusion_data. They are shared so that
+// the matchers of unchanged data sets can be reused by subsequent builds.
+using matcher_mapper = std::unordered_map<std::string, std::shared_ptr<const matcher::base>>;
 
 } // namespace ddwaf
