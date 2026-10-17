@@ -12,6 +12,11 @@ using namespace ddwaf::test;
 
 namespace {
 
+template <typename T> bool contains(const std::vector<T *> &items, T *item)
+{
+    return std::find(items.begin(), items.end(), item) != items.end();
+}
+
 struct test_object {
     test_object(std::string id_, std::unordered_map<std::string, std::string> tags_)
         : id(std::move(id_)), tags(std::move(tags_))
@@ -37,7 +42,7 @@ TEST(TestIndexer, FindSingleElement)
 
     auto items = index.find_by_tags(decltype(test_object::tags){{"tag", "value"}});
     EXPECT_EQ(items.size(), 1);
-    EXPECT_TRUE(items.contains(object.get()));
+    EXPECT_TRUE(contains(items, object.get()));
 }
 
 /*TEST(TestIndexer, EraseSingleElementById)*/
@@ -138,30 +143,30 @@ TEST(TestIndexer, FindMultipleElements)
     {
         auto items = index.find_by_tags(decltype(test_object::tags){{"tag", "value1"}});
         EXPECT_EQ(items.size(), 2);
-        EXPECT_TRUE(items.contains(objects["id0"].get()));
-        EXPECT_TRUE(items.contains(objects["id2"].get()));
+        EXPECT_TRUE(contains(items, objects["id0"].get()));
+        EXPECT_TRUE(contains(items, objects["id2"].get()));
     }
 
     {
         auto items = index.find_by_tags(decltype(test_object::tags){{"tag", "value2"}});
         EXPECT_EQ(items.size(), 2);
-        EXPECT_TRUE(items.contains(objects["id1"].get()));
-        EXPECT_TRUE(items.contains(objects["id3"].get()));
+        EXPECT_TRUE(contains(items, objects["id1"].get()));
+        EXPECT_TRUE(contains(items, objects["id3"].get()));
     }
 
     {
         auto items = index.find_by_tags(decltype(test_object::tags){{"common", "value"}});
         EXPECT_EQ(items.size(), 4);
-        EXPECT_TRUE(items.contains(objects["id0"].get()));
-        EXPECT_TRUE(items.contains(objects["id1"].get()));
-        EXPECT_TRUE(items.contains(objects["id2"].get()));
-        EXPECT_TRUE(items.contains(objects["id3"].get()));
+        EXPECT_TRUE(contains(items, objects["id0"].get()));
+        EXPECT_TRUE(contains(items, objects["id1"].get()));
+        EXPECT_TRUE(contains(items, objects["id2"].get()));
+        EXPECT_TRUE(contains(items, objects["id3"].get()));
     }
 
     {
         auto items = index.find_by_tags(decltype(test_object::tags){{"random", "value"}});
         EXPECT_EQ(items.size(), 1);
-        EXPECT_TRUE(items.contains(objects["id3"].get()));
+        EXPECT_TRUE(contains(items, objects["id3"].get()));
     }
 }
 
@@ -520,5 +525,41 @@ TEST(TestIndexer, IterateMultipleElements)
 /*EXPECT_EQ(items.size(), 1);*/
 /*EXPECT_TRUE(items.contains(object.get()));*/
 /*}*/
+
+} // namespace
+
+namespace {
+
+TEST(TestIndexer, ItemsAreSortedAndUnique)
+{
+    // Insert in an order unrelated to the addresses
+    std::vector<test_object> storage;
+    storage.reserve(8);
+    for (unsigned i = 0; i < 8; ++i) {
+        storage.emplace_back(
+            "id" + std::to_string(i), decltype(test_object::tags){{"tag", "value"}});
+    }
+
+    indexer<test_object> index;
+    for (unsigned i : {5U, 1U, 7U, 0U, 3U, 6U, 2U, 4U}) { index.emplace(&storage[i]); }
+
+    // A second item with an existing ID is not indexed by ID, but is by tags
+    test_object duplicate{"id3", decltype(test_object::tags){{"tag", "value"}}};
+    index.emplace(&duplicate);
+
+    const auto &items = index.items();
+    ASSERT_EQ(items.size(), 8);
+    EXPECT_TRUE(std::is_sorted(items.begin(), items.end(), std::less<test_object *>{}));
+    EXPECT_FALSE(contains(items, &duplicate));
+    for (auto &object : storage) { EXPECT_TRUE(contains(items, &object)); }
+
+    auto tagged = index.find_by_tags(decltype(test_object::tags){{"tag", "value"}});
+    EXPECT_EQ(tagged.size(), 9);
+    EXPECT_TRUE(std::is_sorted(tagged.begin(), tagged.end(), std::less<test_object *>{}));
+    EXPECT_TRUE(contains(tagged, &duplicate));
+
+    index.clear();
+    EXPECT_TRUE(index.items().empty());
+}
 
 } // namespace

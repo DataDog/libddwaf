@@ -6,11 +6,13 @@
 
 #pragma once
 
+#include <algorithm>
 #include <cstddef>
-#include <set>
+#include <functional>
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <vector>
 
 #include "mkmap.hpp"
 
@@ -23,7 +25,10 @@ public:
 
     void emplace(T *item)
     {
-        by_id_.emplace(item->get_id(), item);
+        auto [it, inserted] = by_id_.emplace(item->get_id(), item);
+        if (inserted) {
+            insert_sorted(items_, item);
+        }
         by_tags_.insert(item->get_tags(), item);
     }
 
@@ -35,10 +40,16 @@ public:
         return it != by_id_.end() ? it->second : nullptr;
     }
 
-    template <typename U> std::set<T *> find_by_tags(const U &tags) const
+    // Returns the items matching all the given tags, sorted by address and
+    // without duplicates.
+    template <typename U> std::vector<T *> find_by_tags(const U &tags) const
     {
         return by_tags_.multifind(tags);
     }
+
+    // All the items indexed by ID (the first item for each ID), sorted by
+    // address and without duplicates.
+    [[nodiscard]] const std::vector<T *> &items() const { return items_; }
 
     [[nodiscard]] std::size_t size() const { return by_id_.size(); }
     [[nodiscard]] bool empty() const { return by_id_.empty(); }
@@ -47,6 +58,7 @@ public:
     {
         by_id_.clear();
         by_tags_.clear();
+        items_.clear();
     }
 
     iterator begin() { return by_id_.begin(); }
@@ -56,7 +68,18 @@ public:
     const_iterator end() const { return by_id_.end(); }
 
 protected:
+    static void insert_sorted(std::vector<T *> &items, T *item)
+    {
+        // Items usually come from a vector, so they arrive in increasing order
+        if (items.empty() || std::less<T *>{}(items.back(), item)) {
+            items.emplace_back(item);
+            return;
+        }
+        items.insert(std::lower_bound(items.begin(), items.end(), item, std::less<T *>{}), item);
+    }
+
     std::unordered_map<std::string_view, T *> by_id_;
+    std::vector<T *> items_;
     multi_key_map<std::string, T *> by_tags_;
 };
 

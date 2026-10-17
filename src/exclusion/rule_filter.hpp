@@ -8,11 +8,9 @@
 
 #include <memory>
 #include <optional>
-#include <set>
 #include <string>
 #include <string_view>
 #include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
 #include "clock.hpp"
@@ -29,7 +27,7 @@ class rule_filter {
 public:
     struct excluded_set {
         // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
-        const std::unordered_set<const core_rule *> &rules;
+        const std::vector<const core_rule *> &rules;
         filter_mode mode{filter_mode::none};
         std::string_view action;
     };
@@ -37,7 +35,7 @@ public:
     using cache_type = expression::cache_type;
 
     rule_filter(std::string id, std::shared_ptr<expression> expr,
-        std::set<const core_rule *> rule_targets, filter_mode mode = filter_mode::bypass,
+        std::vector<const core_rule *> rule_targets, filter_mode mode = filter_mode::bypass,
         std::string action = {});
     rule_filter(const rule_filter &) = delete;
     rule_filter &operator=(const rule_filter &) = delete;
@@ -62,7 +60,8 @@ public:
 protected:
     std::string id_;
     std::shared_ptr<expression> expr_;
-    std::unordered_set<const core_rule *> rule_targets_;
+    // Sorted by address, without duplicates
+    std::vector<const core_rule *> rule_targets_;
     filter_mode mode_;
     std::string action_;
 };

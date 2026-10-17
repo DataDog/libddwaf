@@ -47,6 +47,37 @@ TEST(TestRuleFilter, Match)
     EXPECT_EQ(res.value_or(default_set).mode, filter_mode::bypass);
 }
 
+TEST(TestRuleFilter, TargetsAreSortedAndUnique)
+{
+    test::expression_builder builder(1);
+    builder.start_condition();
+    builder.add_argument();
+    builder.add_target("http.client_ip");
+    builder.end_condition<matcher::ip_match>(std::vector<std::string_view>{"192.168.0.1"});
+
+    std::vector<core_rule> rules;
+    rules.reserve(4);
+    for (unsigned i = 0; i < 4; ++i) {
+        rules.emplace_back(std::to_string(i), "", std::unordered_map<std::string, std::string>{},
+            std::make_shared<expression>());
+    }
+
+    ddwaf::rule_filter filter{"filter", builder.build(),
+        {&rules[2], &rules[0], &rules[3], &rules[2], &rules[1], &rules[0]}};
+
+    auto root = object_builder_da::map({{"http.client_ip", "192.168.0.1"}});
+
+    object_store store;
+    store.insert_and_apply(std::move(root));
+
+    ddwaf::timer deadline{2s};
+    ddwaf::rule_filter::cache_type cache;
+    auto res = filter.match(store, cache, {}, deadline);
+    ASSERT_TRUE(res.has_value());
+    EXPECT_EQ(res->rules,
+        (std::vector<const core_rule *>{&rules[0], &rules[1], &rules[2], &rules[3]}));
+}
+
 TEST(TestRuleFilter, MatchWithDynamicMatcher)
 {
     test::expression_builder builder(1);

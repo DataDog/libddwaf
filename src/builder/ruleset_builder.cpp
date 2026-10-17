@@ -4,8 +4,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 //
+#include <algorithm>
+#include <functional>
 #include <memory>
-#include <set>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -36,27 +37,39 @@ namespace ddwaf {
 
 namespace {
 
+// Returns the items targeted by the references, sorted by address and without
+// duplicates.
 template <typename T>
-std::set<T *> resolve_references(
+std::vector<T *> resolve_references(
     const std::vector<reference_spec> &references, const indexer<T> &rules)
 {
-    std::set<T *> rule_refs;
-    if (!references.empty()) {
-        for (const auto &ref : references) {
-            if (ref.type == reference_type::id) {
-                auto *rule = rules.find_by_id(ref.ref_id);
-                if (rule == nullptr) {
-                    continue;
-                }
-                rule_refs.emplace(rule);
-            } else if (ref.type == reference_type::tags) {
-                auto current_refs = rules.find_by_tags(ref.tags);
-                rule_refs.merge(current_refs);
+    if (references.empty()) {
+        // An empty rules reference applies to all rules
+        return rules.items();
+    }
+
+    std::vector<T *> rule_refs;
+    for (const auto &ref : references) {
+        if (ref.type == reference_type::id) {
+            auto *rule = rules.find_by_id(ref.ref_id);
+            if (rule == nullptr) {
+                continue;
+            }
+            rule_refs.emplace_back(rule);
+        } else if (ref.type == reference_type::tags) {
+            auto current_refs = rules.find_by_tags(ref.tags);
+            if (rule_refs.empty()) {
+                rule_refs = std::move(current_refs);
+            } else {
+                rule_refs.insert(rule_refs.end(), current_refs.begin(), current_refs.end());
             }
         }
-    } else {
-        // An empty rules reference applies to all rules
-        for (const auto &[id, rule] : rules) { rule_refs.emplace(rule); }
+    }
+
+    // A single reference already yields a sorted list without duplicates
+    if (references.size() > 1) {
+        std::sort(rule_refs.begin(), rule_refs.end(), std::less<T *>{});
+        rule_refs.erase(std::unique(rule_refs.begin(), rule_refs.end()), rule_refs.end());
     }
     return rule_refs;
 }

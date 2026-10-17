@@ -6,12 +6,15 @@
 
 #pragma once
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <optional>
 #include <string_view>
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
 
 #include "object.hpp"
 #include "utils.hpp"
@@ -23,6 +26,21 @@ class core_rule;
 enum class filter_mode : uint8_t { none = 0, custom = 1, monitor = 2, bypass = 3 };
 
 using object_set = std::unordered_set<object_cache_key>;
+
+// Sorts the rules targeted by a filter by address and removes duplicates. The
+// builder already provides them in this form, in which case this is a single
+// linear check.
+inline std::vector<const core_rule *> normalize_rule_targets(std::vector<const core_rule *> rules)
+{
+    constexpr std::less<const core_rule *> less;
+    if (std::adjacent_find(rules.begin(), rules.end(), [&](const auto *lhs, const auto *rhs) {
+            return !less(lhs, rhs);
+        }) != rules.end()) {
+        std::sort(rules.begin(), rules.end(), less);
+        rules.erase(std::unique(rules.begin(), rules.end()), rules.end());
+    }
+    return rules;
+}
 
 struct object_set_ref {
     optional_ref<const object_set> objects;

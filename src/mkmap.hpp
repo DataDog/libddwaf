@@ -9,33 +9,42 @@
 #include <algorithm>
 #include <functional>
 #include <iterator>
-#include <set>
 #include <type_traits>
 #include <unordered_map>
 #include <utility>
+#include <vector>
 
 #include "traits.hpp"
 
 namespace ddwaf {
+
+// A map from (key, value) pairs, e.g. tags, to the set of items carrying them.
+//
+// Each set is a sorted vector without duplicates, ordered by std::less<T>, so
+// that lookups and intersections are linear scans over contiguous memory and
+// building the map does not allocate one node per item and tag. Results are
+// returned in the same order.
 template <typename Key, typename T, class Compare = std::less<Key>>
     requires std::is_copy_constructible_v<std::decay_t<T>>
 class multi_key_map {
 public:
+    using set_type = std::vector<T>;
+
     template <typename U>
     void insert(const U &keys, const T &value)
         requires is_pair<typename U::iterator::value_type>::value
     {
-        for (const auto &key : keys) { data_[key.first][key.second].emplace(value); }
+        for (const auto &key : keys) { sorted_insert(data_[key.first][key.second], value); }
     }
 
     template <typename U>
     void erase(const U &keys, const T &value)
         requires is_pair<typename U::iterator::value_type>::value
     {
-        for (const auto &key : keys) { data_[key.first][key.second].erase(value); }
+        for (const auto &key : keys) { sorted_erase(data_[key.first][key.second], value); }
     }
 
-    template <typename CompatKey> std::set<T> find(const std::pair<CompatKey, CompatKey> &key) const
+    template <typename CompatKey> set_type find(const std::pair<CompatKey, CompatKey> &key) const
     {
         auto first_it = data_.find(key.first);
         if (first_it == data_.end()) {
@@ -52,9 +61,9 @@ public:
     }
 
     template <typename CompatKey>
-    const std::set<T> &find_ref(const std::pair<CompatKey, CompatKey> &key) const
+    const set_type &find_ref(const std::pair<CompatKey, CompatKey> &key) const
     {
-        static const std::set<T> empty;
+        static const set_type empty;
         auto first_it = data_.find(Key(key.first));
         if (first_it == data_.end()) {
             return empty;
@@ -70,7 +79,7 @@ public:
     }
 
     template <typename CompatKey>
-    std::set<T> find2(const std::pair<CompatKey, CompatKey> &key0,
+    set_type find2(const std::pair<CompatKey, CompatKey> &key0,
         const std::pair<CompatKey, CompatKey> &key1) const
     {
         const auto &set0 = find_ref(key0);
@@ -83,13 +92,14 @@ public:
             return {};
         }
 
-        std::set<T> result;
+        set_type result;
+        result.reserve(std::min(set0.size(), set1.size()));
         std::set_intersection(set0.begin(), set0.end(), set1.begin(), set1.end(),
-            std::inserter(result, result.begin()));
+            std::back_inserter(result), item_less{});
         return result;
     }
 
-    template <typename U> std::set<T> multifind(const U &keys) const
+    template <typename U> set_type multifind(const U &keys) const
     {
         const std::pair<Key, Key> first = *keys.begin();
 
@@ -104,12 +114,13 @@ public:
         }
         }
 
-        std::set<T> latest = find(first);
+        set_type latest = find(first);
         if (latest.empty()) {
             return {};
         }
 
-        std::set<T> current;
+        set_type current;
+        current.reserve(latest.size());
         for (const std::pair<Key, Key> key : keys) {
             const auto &next = find_ref(key);
             if (next.empty()) {
@@ -117,7 +128,7 @@ public:
             }
 
             std::set_intersection(latest.begin(), latest.end(), next.begin(), next.end(),
-                std::inserter(current, current.begin()));
+                std::back_inserter(current), item_less{});
             std::swap(latest, current);
             current.clear();
         }
@@ -129,7 +140,32 @@ public:
     [[nodiscard]] bool empty() const { return data_.empty(); }
 
 protected:
-    std::unordered_map<Key, std::unordered_map<Key, std::set<T>>> data_;
+    using item_less = std::less<T>;
+
+    static void sorted_insert(set_type &set, const T &value)
+    {
+        // Items are usually inserted in increasing order (e.g. pointers to the
+        // elements of a vector), in which case this is an append.
+        if (set.empty() || item_less{}(set.back(), value)) {
+            set.emplace_back(value);
+            return;
+        }
+
+        auto it = std::lower_bound(set.begin(), set.end(), value, item_less{});
+        if (it == set.end() || item_less{}(value, *it)) {
+            set.insert(it, value);
+        }
+    }
+
+    static void sorted_erase(set_type &set, const T &value)
+    {
+        auto it = std::lower_bound(set.begin(), set.end(), value, item_less{});
+        if (it != set.end() && !item_less{}(value, *it)) {
+            set.erase(it);
+        }
+    }
+
+    std::unordered_map<Key, std::unordered_map<Key, set_type>> data_;
 };
 
 } // namespace ddwaf

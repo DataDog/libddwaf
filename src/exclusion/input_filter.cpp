@@ -6,10 +6,10 @@
 
 #include <memory>
 #include <optional>
-#include <set>
 #include <stdexcept>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "clock.hpp"
 #include "exclusion/input_filter.hpp"
@@ -25,9 +25,9 @@ namespace ddwaf {
 using excluded_set = input_filter::excluded_set;
 
 input_filter::input_filter(std::string id, std::shared_ptr<expression> expr,
-    std::set<const core_rule *> rule_targets, std::shared_ptr<object_filter> filter)
-    : id_(std::move(id)), expr_(std::move(expr)), rule_targets_(std::move(rule_targets)),
-      filter_(std::move(filter))
+    std::vector<const core_rule *> rule_targets, std::shared_ptr<object_filter> filter)
+    : id_(std::move(id)), expr_(std::move(expr)),
+      rule_targets_(normalize_rule_targets(std::move(rule_targets))), filter_(std::move(filter))
 {
     if (!expr_) {
         throw std::invalid_argument("rule filter constructed with null expression");

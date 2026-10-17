@@ -4,6 +4,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2021 Datadog, Inc.
 
+#include <algorithm>
+#include <array>
+
 #include "mkmap.hpp"
 #include "ruleset.hpp"
 
@@ -307,6 +310,54 @@ TEST(TestMultiKeyMap, Erase)
     {
         auto rules = ruledb.find(sv_pair{"key"sv, "value1"sv});
         EXPECT_EQ(rules.size(), 2);
+    }
+}
+
+TEST(TestMultiKeyMap, ResultsAreSortedAndUnique)
+{
+    multi_key_map<std::string, int *> map;
+    std::array<int, 6> storage{};
+    using tags_type = std::unordered_map<std::string, std::string>;
+
+    // Out of order and repeated insertions
+    for (unsigned i : {4U, 0U, 5U, 2U, 2U, 1U, 3U, 0U}) {
+        tags_type tags{{"type", "t"}, {"parity", (i % 2) == 0 ? "even" : "odd"}};
+        if (i >= 3) {
+            tags.emplace("high", "yes");
+        }
+        map.insert(tags, &storage[i]);
+    }
+
+    auto is_sorted = [](const auto &v) {
+        return std::is_sorted(v.begin(), v.end(), std::less<int *>{}) &&
+               std::adjacent_find(v.begin(), v.end()) == v.end();
+    };
+
+    using pair_vec = std::vector<std::pair<std::string, std::string>>;
+    {
+        auto items = map.multifind(pair_vec{{"type", "t"}});
+        EXPECT_EQ(items.size(), 6);
+        EXPECT_TRUE(is_sorted(items));
+    }
+    {
+        auto items = map.multifind(pair_vec{{"type", "t"}, {"parity", "even"}});
+        EXPECT_EQ(items, (std::vector<int *>{&storage[0], &storage[2], &storage[4]}));
+    }
+    {
+        auto items = map.multifind(pair_vec{{"type", "t"}, {"parity", "odd"}, {"high", "yes"}});
+        EXPECT_EQ(items, (std::vector<int *>{&storage[3], &storage[5]}));
+    }
+    {
+        auto items = map.multifind(pair_vec{{"type", "t"}, {"parity", "odd"}, {"high", "no"}});
+        EXPECT_TRUE(items.empty());
+    }
+
+    map.erase(tags_type{{"type", "t"}}, &storage[2]);
+    map.erase(tags_type{{"type", "t"}}, &storage[2]);
+    {
+        auto items = map.multifind(pair_vec{{"type", "t"}});
+        EXPECT_EQ(items, (std::vector<int *>{
+                             &storage[0], &storage[1], &storage[3], &storage[4], &storage[5]}));
     }
 }
 

@@ -48,7 +48,8 @@ std::set<const scanner *> references_to_scanners(
             exclude_by_id_and_tags.emplace(scanner);
             exclude_by_id.emplace(scanner);
         } else if (ref.type == reference_type::tags) {
-            exclude_by_id_and_tags.merge(scanners.find_by_tags(ref.tags));
+            auto tagged = scanners.find_by_tags(ref.tags);
+            exclude_by_id_and_tags.insert(tagged.begin(), tagged.end());
         }
     }
 

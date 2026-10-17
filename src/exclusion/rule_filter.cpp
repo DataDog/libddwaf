@@ -5,10 +5,10 @@
 // Copyright 2021 Datadog, Inc.
 #include <memory>
 #include <optional>
-#include <set>
 #include <stdexcept>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "clock.hpp"
 #include "exclusion/common.hpp"
@@ -24,16 +24,13 @@ namespace ddwaf {
 using excluded_set = rule_filter::excluded_set;
 
 rule_filter::rule_filter(std::string id, std::shared_ptr<expression> expr,
-    std::set<const core_rule *> rule_targets, filter_mode mode, std::string action)
-    : id_(std::move(id)), expr_(std::move(expr)), mode_(mode), action_(std::move(action))
+    std::vector<const core_rule *> rule_targets, filter_mode mode, std::string action)
+    : id_(std::move(id)), expr_(std::move(expr)),
+      rule_targets_(normalize_rule_targets(std::move(rule_targets))), mode_(mode),
+      action_(std::move(action))
 {
     if (!expr_) {
         throw std::invalid_argument("rule filter constructed with null expression");
-    }
-
-    rule_targets_.reserve(rule_targets.size());
-    for (auto it = rule_targets.begin(); it != rule_targets.end();) {
-        rule_targets_.emplace(rule_targets.extract(it++).value());
     }
 }
 

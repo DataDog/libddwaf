@@ -8,7 +8,6 @@
 
 #include <memory>
 #include <optional>
-#include <set>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -29,7 +28,7 @@ class input_filter {
 public:
     struct excluded_set {
         // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
-        const std::set<const core_rule *> &rules;
+        const std::vector<const core_rule *> &rules;
         object_set objects;
     };
 
@@ -39,7 +38,7 @@ public:
     };
 
     input_filter(std::string id, std::shared_ptr<expression> expr,
-        std::set<const core_rule *> rule_targets, std::shared_ptr<object_filter> filter);
+        std::vector<const core_rule *> rule_targets, std::shared_ptr<object_filter> filter);
     input_filter(const input_filter &) = delete;
     input_filter &operator=(const input_filter &) = delete;
     input_filter(input_filter &&) = default;
@@ -66,7 +65,8 @@ public:
 protected:
     std::string id_;
     std::shared_ptr<expression> expr_;
-    std::set<const core_rule *> rule_targets_;
+    // Sorted by address, without duplicates
+    std::vector<const core_rule *> rule_targets_;
     std::shared_ptr<object_filter> filter_;
 };
 
