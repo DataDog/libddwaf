@@ -91,7 +91,8 @@ bool lfi_impl_unix(std::string_view path, std::string_view param)
 {
     static constexpr std::size_t min_str_len = 5;
 
-    if (param.size() < min_str_len || param.find('/') == npos || !path.ends_with(param)) {
+    // The suffix check is the cheapest and most selective, so it comes first
+    if (param.size() < min_str_len || !path.ends_with(param) || param.find('/') == npos) {
         return false;
     }
 

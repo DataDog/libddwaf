@@ -18,6 +18,7 @@
 #include <cstdint>
 #include <optional>
 #include <span>
+#include <stdexcept>
 #include <string_view>
 #include <variant>
 #include <vector>
@@ -43,13 +44,7 @@ public:
 
     // The returned view is only valid until the next call to operator++, as the
     // underlying buffer is replaced on every advance
-    [[nodiscard]] std::string_view current_value() const
-    {
-        if (current_param_.has_value()) {
-            return static_cast<std::string_view>(current_param_.value());
-        }
-        return {};
-    }
+    [[nodiscard]] std::string_view current_value() const { return current_value_; }
 
     // Wraps the current value in a string object, for the benefit of callers
     // which require an object rather than a view. As with current_value(), the
@@ -98,17 +93,33 @@ protected:
                 continue;
             }
 
-            current_param_ = transformer::manager::transform(current_obj, transformers_);
-            if (!current_param_.has_value()) {
-                current_param_ = cow_string{current_obj.template as<std::string_view>()};
+            auto value = current_obj.template as<std::string_view>();
+            [[unlikely]] if (value.data() == nullptr) {
+                // As with any other string being transformed (see cow_string)
+                throw std::runtime_error{"cow_string initialised with nullptr"};
             }
 
+            // Release the previous value first, so that its memory can be
+            // reused. Without transformers, the value is used directly, as
+            // the result would be the original string anyway.
+            current_param_.reset();
+            if (!transformers_.empty()) {
+                current_param_ = transformer::manager::transform(current_obj, transformers_);
+                if (current_param_.has_value()) {
+                    value = static_cast<std::string_view>(current_param_.value());
+                }
+            }
+
+            current_value_ = value;
             return true;
         }
 
         return false;
     }
 
+    // The current value, either the original string or the one owned by
+    // current_param_, if it was transformed
+    std::string_view current_value_;
     std::optional<cow_string> current_param_;
     owned_object current_object_;
     IteratorType it_;

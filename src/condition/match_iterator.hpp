@@ -7,6 +7,7 @@
 #pragma once
 
 #include "clock.hpp"
+#include "condition/substring_filter.hpp"
 #include "condition/transforming_iterator.hpp"
 #include "exclusion/common.hpp"
 #include "iterator.hpp"
@@ -29,10 +30,12 @@ class match_iterator {
 public:
     static constexpr std::size_t npos = std::string_view::npos;
 
+    // The filter, if provided, must be built over the text within which the
+    // values are searched, and is used to skip values which can't be found
     explicit match_iterator(ResourceType resource, object_view obj,
         std::span<const transformer_id> transformers, const object_set_ref &exclude,
-        ddwaf::timer &deadline)
-        : resource_(std::move(resource)), it_(obj, transformers, exclude, deadline)
+        ddwaf::timer &deadline, substring_filter *filter = nullptr)
+        : resource_(std::move(resource)), filter_(filter), it_(obj, transformers, exclude, deadline)
     {
         find_next_match();
     }
@@ -84,6 +87,10 @@ protected:
                 continue;
             }
 
+            if (filter_ != nullptr && !filter_->may_contain(value)) {
+                continue;
+            }
+
             current_index_ = resource_.find(value, 0);
             if (current_index_ != npos) {
                 return true;
@@ -94,6 +101,7 @@ protected:
     }
 
     ResourceType resource_;
+    substring_filter *filter_;
     std::size_t current_index_{npos};
     transforming_iterator<IteratorType> it_;
 };

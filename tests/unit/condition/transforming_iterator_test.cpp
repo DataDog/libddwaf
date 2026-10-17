@@ -166,4 +166,29 @@ TEST(TestTransformingIterator, KeyPath)
     EXPECT_FALSE(++it);
 }
 
+// Without transformers, the values are the original strings rather than copies
+TEST(TestTransformingIterator, NoTransformersYieldsOriginalStrings)
+{
+    owned_object object = object_builder_da::map(
+        {{"key", object_builder_da::array({"first", 1, "", "a much longer second value"})}});
+
+    object_set_ref exclude;
+    ddwaf::timer deadline{2s};
+    transforming_iterator<kv_iterator> it(object, {}, exclude, deadline);
+
+    const object_view root = object;
+    auto key = root.at_key(0);
+    auto array = root.at_value(0);
+    const std::vector<object_view> expected{
+        key, array.at_value(0), array.at_value(2), array.at_value(3)};
+    for (const auto &value : expected) {
+        ASSERT_TRUE((bool)it);
+        EXPECT_EQ(it.current_value().data(), value.as<std::string_view>().data());
+        EXPECT_EQ(it.current_value().size(), value.size());
+        ++it;
+    }
+
+    EXPECT_FALSE((bool)it);
+}
+
 } // namespace

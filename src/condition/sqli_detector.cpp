@@ -21,6 +21,7 @@
 #include "condition/match_iterator.hpp"
 #include "condition/sqli_detector.hpp"
 #include "condition/structured_condition.hpp"
+#include "condition/substring_filter.hpp"
 #include "exception.hpp"
 #include "exclusion/common.hpp"
 #include "log.hpp"
@@ -467,12 +468,14 @@ std::vector<sql_token> tokenize(std::string_view statement, sql_dialect dialect)
 }
 
 sqli_result sqli_impl(std::string_view resource, std::vector<sql_token> &resource_tokens,
-    object_view params, std::span<const transformer_id> transformers, sql_dialect dialect,
+    substring_filter &resource_filter, object_view params,
+    std::span<const transformer_id> transformers, sql_dialect dialect,
     const object_set_ref &objects_excluded, ddwaf::timer &deadline)
 {
     static constexpr std::size_t min_str_len = 3;
 
-    match_iterator<min_str_len> it(resource, params, transformers, objects_excluded, deadline);
+    match_iterator<min_str_len> it(
+        resource, params, transformers, objects_excluded, deadline, &resource_filter);
     for (; it; ++it) {
         if (deadline.expired()) {
             throw ddwaf::timeout_exception();
@@ -528,10 +531,11 @@ sqli_detector::sqli_detector(std::vector<condition_parameter> args)
     auto dialect = sql_dialect_from_type(db_type.value);
 
     std::vector<sql_token> resource_tokens;
+    substring_filter resource_filter{sql.value};
 
     for (const auto &param : params) {
-        auto res = internal::sqli_impl(sql.value, resource_tokens, param.value, param.transformers,
-            dialect, objects_excluded, deadline);
+        auto res = internal::sqli_impl(sql.value, resource_tokens, resource_filter, param.value,
+            param.transformers, dialect, objects_excluded, deadline);
         if (std::holds_alternative<internal::matched_param>(res)) {
             auto stripped_stmt = internal::strip_literals(sql.value, resource_tokens);
 
