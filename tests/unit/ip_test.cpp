@@ -441,4 +441,58 @@ TEST(TestIP, ParsingStopsAtNul)
     EXPECT_FALSE(ddwaf::parse_ip("\0001.2.3.4"sv, ip));
 }
 
+TEST(TestIP, ParseNetworkAgreesWithParseCidrOnBackendSyntax)
+{
+    // The forms the backend sends (netip.ParseAddr / netip.ParsePrefix syntax,
+    // without zones)
+    for (auto str : {"1.2.3.4", "0.0.0.0", "255.255.255.255", "1.2.3.4/32", "1.2.3.4/24",
+             "10.0.0.0/8", "0.0.0.0/0", "203.0.113.0/24", "2001:db8::1", "2001:db8::/32",
+             "::/0", "::", "::1", "::1/128", "fe80::/10", "2001:DB8:CAFE::/48",
+             "2001:0db8:0000:0000:0000:0000:0000:0001", "1:2:3:4:5:6:7:8", "::ffff:1.2.3.4",
+             "::ffff:1.2.3.0/120", "::ffff:0:0/96", "64:ff9b::1.2.3.4", "1.2.3.4/0",
+             "abcd:ef01:2345:6789:abcd:ef01:2345:6789/127", "2001:db8::1:2:34",
+             "2001:db8::1:2:34/64", "::ffff:10.2.3.45"}) {
+        ddwaf::ipaddr expected{};
+        ddwaf::ipaddr ip{};
+        ASSERT_TRUE(ddwaf::parse_cidr(str, expected)) << str;
+        ASSERT_TRUE(ddwaf::parse_network(str, ip)) << str;
+        EXPECT_EQ(memcmp(ip.data, expected.data, sizeof(ip.data)), 0) << str;
+        EXPECT_EQ(ip.mask, expected.mask) << str;
+        EXPECT_EQ(ip.type, expected.type) << str;
+    }
+
+    // Prefix lengths with leading zeros are still accepted
+    ddwaf::ipaddr ip{};
+    EXPECT_TRUE(ddwaf::parse_network("1.2.3.4/08", ip));
+    EXPECT_EQ(ip.mask, 96 + 8);
+    EXPECT_EQ(ip.data[13], 0);
+    EXPECT_TRUE(ddwaf::parse_network("::1/000", ip));
+    EXPECT_EQ(ip.mask, 0);
+}
+
+TEST(TestIP, ParseNetworkRejectsWhatParseCidrRejects)
+{
+    for (auto str : {"", "bad ip", "1.2.3", "1.2.3.4/", "/8", "1.2.3.4/33", "::1/129", "::1/a",
+             "1.2.3.4/1234", "::1/1291", "01.2.3.4", "256.1.1.1", "1.2.3.4.5", ":::",
+             "12345::", "1.2.3.4 ", " 1.2.3.4", "fe80::1%eth0", "fe80::1%eth0/64"}) {
+        ddwaf::ipaddr ip{};
+        EXPECT_FALSE(ddwaf::parse_cidr(str, ip)) << str;
+        EXPECT_FALSE(ddwaf::parse_network(str, ip)) << str;
+    }
+}
+
+TEST(TestIP, ParseNetworkStricterThanParseCidr)
+{
+    // parse_cidr reads the prefix length with std::stoi and the address up to
+    // a NUL character; the backend never sends these forms
+    using namespace std::literals;
+    for (auto str : {"1.2.3.4/+8"sv, "1.2.3.4/ 8"sv, "1.2.3.4/8 "sv, "1.2.3.4/8a"sv,
+             "1.2.3.4/-0"sv, "1.2.3.4/8/"sv, "::1/\t64"sv, "1.2.3.4\0junk"sv,
+             "1.2.3.4\0/8"sv}) {
+        ddwaf::ipaddr ip{};
+        EXPECT_TRUE(ddwaf::parse_cidr(str, ip)) << str;
+        EXPECT_FALSE(ddwaf::parse_network(str, ip)) << str;
+    }
+}
+
 } // namespace

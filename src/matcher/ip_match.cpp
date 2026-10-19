@@ -14,31 +14,33 @@
 #include "dynamic_string.hpp"
 #include "expiring_string_list.hpp"
 #include "indexed_multivector.hpp"
-#include "ip_range_table.hpp"
+#include "ip_radix_tree.hpp"
 #include "ip_utils.hpp"
 #include "matcher/ip_match.hpp"
 
 namespace ddwaf::matcher {
 
-ip_match::ip_match(const std::vector<std::string_view> &ip_list) : table_(build_table(ip_list)) {}
+ip_match::ip_match(const std::vector<std::string_view> &ip_list)
+    : tree_(build_tree(ip_list, parse_cidr))
+{}
 
 ip_match::ip_match(
     const indexed_multivector<std::string, std::pair<std::string, uint64_t>> &ip_list)
-    : table_(build_table(ip_list))
+    : tree_(build_tree(ip_list, parse_network))
 {}
 
 ip_match::ip_match(const indexed_multivector<std::string, expiring_string_list::value_type,
     expiring_string_list> &ip_list)
-    : table_(build_table(ip_list))
+    : tree_(build_tree(ip_list, parse_network))
 {}
 
 ip_match::ip_match(const std::vector<std::pair<std::string, uint64_t>> &ip_list)
-    : table_(build_table(ip_list))
+    : tree_(build_tree(ip_list, parse_network))
 {}
 
 [[nodiscard]] bool ip_match::match_ip(const ipaddr &ip) const
 {
-    auto expiration = table_.find(ip);
+    auto expiration = tree_.find(ip);
     if (!expiration.has_value()) {
         return false;
     }
@@ -57,7 +59,7 @@ ip_match::ip_match(const std::vector<std::pair<std::string, uint64_t>> &ip_list)
 
 std::pair<bool, dynamic_string> ip_match::match_impl(std::string_view str) const
 {
-    if (table_.empty() || str.empty() || str.data() == nullptr) {
+    if (tree_.empty() || str.empty() || str.data() == nullptr) {
         return {false, {}};
     }
 

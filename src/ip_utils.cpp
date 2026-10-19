@@ -220,6 +220,21 @@ bool parse_ipv6_internal(std::string_view ip, ipaddr &out)
     return true;
 }
 
+// Clears the bits of the address beyond its prefix length (mask)
+void clear_host_bits(ipaddr &out)
+{
+    uint8_t byte_index = out.mask / 8;
+    if (byte_index < 16) {
+        // Mask the lower bits of the first masked byte (we want to keep some of them)
+        // if bitLength & 0x7 == 2, we want to keep the top two bits (& 0x7 <=> % 8)
+        // Therefore, we take 0xff and shift it by 2 (resulting in 0011_1111)
+        // We then flip the bits (resulting in 1100_0000) and use that as a mask
+        out.data[byte_index] &= ~(0xff >> (out.mask & 0x7));
+
+        while (++byte_index < 16) { out.data[byte_index] = 0; }
+    }
+}
+
 } // namespace
 
 bool parse_ip(std::string_view ip, ipaddr &out)
@@ -313,19 +328,49 @@ bool parse_cidr(std::string_view str, ipaddr &out)
     }
 
     ipv4_to_ipv6(out);
+    clear_host_bits(out);
+    return true;
+}
 
-    // Zero the masked bits if we have a mask
-    uint8_t byte_index = out.mask / 8;
-    if (byte_index < 16) {
-        // Mask the lower bits of the first masked byte (we want to keep some of them)
-        // if bitLength & 0x7 == 2, we want to keep the top two bits (& 0x7 <=> % 8)
-        // Therefore, we take 0xff and shift it by 2 (resulting in 0011_1111)
-        // We then flip the bits (resulting in 1100_0000) and use that as a mask
-        out.data[byte_index] &= ~(0xff >> (out.mask & 0x7));
+bool parse_network(std::string_view str, ipaddr &out)
+{
+    const auto slash_idx = str.find('/');
+    const std::string_view address = str.substr(0, slash_idx);
 
-        while (++byte_index < 16) { out.data[byte_index] = 0; }
+    unsigned max_prefix_len;
+    // NOLINTBEGIN(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
+    if (pton4(address, out.data)) {
+        out.type = ipaddr::address_family::ipv4;
+        max_prefix_len = 32;
+    } else if (pton6(address, out.data)) {
+        out.type = ipaddr::address_family::ipv6;
+        max_prefix_len = 128;
+    } else {
+        return false;
     }
+    // NOLINTEND(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay)
 
+    unsigned prefix_len = max_prefix_len;
+    if (slash_idx != std::string_view::npos) {
+        const std::string_view digits = str.substr(slash_idx + 1);
+        if (digits.empty() || digits.size() > 3) {
+            return false;
+        }
+        prefix_len = 0;
+        for (const char c : digits) {
+            if (c < '0' || c > '9') {
+                return false;
+            }
+            prefix_len = prefix_len * 10 + static_cast<unsigned>(c - '0');
+        }
+        if (prefix_len > max_prefix_len) {
+            return false;
+        }
+    }
+    out.mask = static_cast<uint8_t>(prefix_len);
+
+    ipv4_to_ipv6(out);
+    clear_host_bits(out);
     return true;
 }
 

@@ -18,7 +18,7 @@
 #include "dynamic_string.hpp"
 #include "expiring_string_list.hpp"
 #include "indexed_multivector.hpp"
-#include "ip_range_table.hpp"
+#include "ip_radix_tree.hpp"
 #include "ip_utils.hpp"
 #include "matcher/base.hpp"
 #include "object_type.hpp"
@@ -33,11 +33,16 @@ public:
     static constexpr std::string_view negated_matcher_name = "!ip_match";
 
     ip_match() = default;
+    // A list of IPs or CIDR networks which never expire, as given in a rule
+    // ("list" parameter) or by the SSRF detector, parsed with parse_cidr
     explicit ip_match(const std::vector<std::string_view> &ip_list);
     template <std::size_t N>
-    explicit ip_match(const std::array<std::string_view, N> &ip_list) : table_(build_table(ip_list))
+    explicit ip_match(const std::array<std::string_view, N> &ip_list)
+        : tree_(build_tree(ip_list, parse_cidr))
     {}
 
+    // Rules or exclusion data (ip_with_expiration): (IP or network,
+    // expiration) pairs, parsed with parse_network
     explicit ip_match(
         const indexed_multivector<std::string, std::pair<std::string, uint64_t>> &ip_list);
     explicit ip_match(const indexed_multivector<std::string, expiring_string_list::value_type,
@@ -60,12 +65,13 @@ protected:
 
     [[nodiscard]] std::pair<bool, dynamic_string> match_impl(std::string_view str) const;
 
-    // Builds the table from a list of IPs or CIDR networks, either as plain
+    // Builds the tree from a list of IPs or CIDR networks, either as plain
     // strings (which never expire) or as (string, expiration) pairs. Entries
     // which can't be parsed are ignored.
-    template <typename T> static ip_range_table build_table(const T &ip_list)
+    template <typename T, typename Parser>
+    static ip_radix_tree build_tree(const T &ip_list, Parser &&parse)
     {
-        ip_range_table::builder builder;
+        ip_radix_tree::builder builder;
         builder.reserve(ip_list.size());
         for (const auto &item : ip_list) {
             std::string_view str;
@@ -78,14 +84,14 @@ protected:
             }
 
             ipaddr ip{};
-            if (ddwaf::parse_cidr(str, ip)) {
+            if (parse(str, ip)) {
                 builder.insert(ip, expiration);
             }
         }
         return builder.build();
     }
 
-    ip_range_table table_;
+    ip_radix_tree tree_;
 
     friend class base_impl<ip_match>;
 };
