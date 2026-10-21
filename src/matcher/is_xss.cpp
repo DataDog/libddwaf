@@ -9,18 +9,19 @@
 #include <utility>
 
 #include "dynamic_string.hpp"
+#include "matcher/base.hpp"
 #include "matcher/is_xss.hpp"
 
 namespace ddwaf::matcher {
 
-std::pair<bool, dynamic_string> is_xss::match_impl(std::string_view pattern)
+std::pair<match_result, dynamic_string> is_xss::match_impl(std::string_view pattern)
 {
     if (pattern.empty() || pattern.data() == nullptr ||
         libinjection_xss(pattern.data(), pattern.size()) == 0) {
-        return {false, {}};
+        return {match_result::no_match, {}};
     }
 
-    return {true, {}};
+    return {match_result::match, {}};
 }
 
 } // namespace ddwaf::matcher

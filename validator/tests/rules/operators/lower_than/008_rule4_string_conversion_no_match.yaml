@@ -1,0 +1,4 @@
+{
+  name: "lower_than does not match a numeric string above the threshold",
+  runs: [ { input: { rule4-input: "150" }, code: ok } ]
+}

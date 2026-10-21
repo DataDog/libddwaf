@@ -18,10 +18,10 @@ TEST(TestGreaterThanInt, Basic)
 {
     matcher::greater_than<int64_t> matcher(5);
 
-    EXPECT_TRUE(matcher.match(6).first);
-    EXPECT_FALSE(matcher.match(5).first);
-    EXPECT_FALSE(matcher.match(1).first);
-    EXPECT_FALSE(matcher.match(-1).first);
+    EXPECT_EQ(matcher.match(6).first, ddwaf::matcher::match_result::match);
+    EXPECT_NE(matcher.match(5).first, ddwaf::matcher::match_result::match);
+    EXPECT_NE(matcher.match(1).first, ddwaf::matcher::match_result::match);
+    EXPECT_NE(matcher.match(-1).first, ddwaf::matcher::match_result::match);
 
     EXPECT_TRUE(matcher.is_supported_type(object_type::float64));
     EXPECT_TRUE(matcher.is_supported_type(object_type::int64));
@@ -33,22 +33,28 @@ TEST(TestGreaterThanInt, Basic)
     EXPECT_FALSE(matcher.is_supported_type(object_type::invalid));
     EXPECT_FALSE(matcher.is_supported_type(object_type::boolean));
 
-    EXPECT_TRUE(matcher.match(test::ddwaf_object_da::make_signed(6L)).first);
-    EXPECT_TRUE(matcher.match(test::ddwaf_object_da::make_unsigned(6UL)).first);
-    EXPECT_TRUE(matcher.match(test::ddwaf_object_da::make_float(6.0)).first);
+    EXPECT_EQ(matcher.match(test::ddwaf_object_da::make_signed(6L)).first,
+        ddwaf::matcher::match_result::match);
+    EXPECT_EQ(matcher.match(test::ddwaf_object_da::make_unsigned(6UL)).first,
+        ddwaf::matcher::match_result::match);
+    EXPECT_EQ(matcher.match(test::ddwaf_object_da::make_float(6.0)).first,
+        ddwaf::matcher::match_result::match);
 
-    EXPECT_FALSE(matcher.match(test::ddwaf_object_da::make_signed(5L)).first);
-    EXPECT_FALSE(matcher.match(test::ddwaf_object_da::make_unsigned(5UL)).first);
-    EXPECT_FALSE(matcher.match(test::ddwaf_object_da::make_float(5.0)).first);
+    EXPECT_NE(matcher.match(test::ddwaf_object_da::make_signed(5L)).first,
+        ddwaf::matcher::match_result::match);
+    EXPECT_NE(matcher.match(test::ddwaf_object_da::make_unsigned(5UL)).first,
+        ddwaf::matcher::match_result::match);
+    EXPECT_NE(matcher.match(test::ddwaf_object_da::make_float(5.0)).first,
+        ddwaf::matcher::match_result::match);
 }
 
 TEST(TestGreaterThanUint, Basic)
 {
     matcher::greater_than<uint64_t> matcher(2132132);
 
-    EXPECT_TRUE(matcher.match(2132133).first);
-    EXPECT_FALSE(matcher.match(2132132).first);
-    EXPECT_FALSE(matcher.match(1).first);
+    EXPECT_EQ(matcher.match(2132133).first, ddwaf::matcher::match_result::match);
+    EXPECT_NE(matcher.match(2132132).first, ddwaf::matcher::match_result::match);
+    EXPECT_NE(matcher.match(1).first, ddwaf::matcher::match_result::match);
 
     EXPECT_TRUE(matcher.is_supported_type(object_type::float64));
     EXPECT_TRUE(matcher.is_supported_type(object_type::int64));
@@ -60,23 +66,29 @@ TEST(TestGreaterThanUint, Basic)
     EXPECT_FALSE(matcher.is_supported_type(object_type::invalid));
     EXPECT_FALSE(matcher.is_supported_type(object_type::boolean));
 
-    EXPECT_TRUE(matcher.match(test::ddwaf_object_da::make_signed(2132133L)).first);
-    EXPECT_TRUE(matcher.match(test::ddwaf_object_da::make_unsigned(2132133UL)).first);
-    EXPECT_TRUE(matcher.match(test::ddwaf_object_da::make_float(2132133.1)).first);
+    EXPECT_EQ(matcher.match(test::ddwaf_object_da::make_signed(2132133L)).first,
+        ddwaf::matcher::match_result::match);
+    EXPECT_EQ(matcher.match(test::ddwaf_object_da::make_unsigned(2132133UL)).first,
+        ddwaf::matcher::match_result::match);
+    EXPECT_EQ(matcher.match(test::ddwaf_object_da::make_float(2132133.1)).first,
+        ddwaf::matcher::match_result::match);
 
-    EXPECT_FALSE(matcher.match(test::ddwaf_object_da::make_signed(5L)).first);
-    EXPECT_FALSE(matcher.match(test::ddwaf_object_da::make_unsigned(5UL)).first);
-    EXPECT_FALSE(matcher.match(test::ddwaf_object_da::make_float(5.0)).first);
+    EXPECT_NE(matcher.match(test::ddwaf_object_da::make_signed(5L)).first,
+        ddwaf::matcher::match_result::match);
+    EXPECT_NE(matcher.match(test::ddwaf_object_da::make_unsigned(5UL)).first,
+        ddwaf::matcher::match_result::match);
+    EXPECT_NE(matcher.match(test::ddwaf_object_da::make_float(5.0)).first,
+        ddwaf::matcher::match_result::match);
 }
 
 TEST(TestGreaterThanDouble, Basic)
 {
     matcher::greater_than<double> matcher(5.1);
 
-    EXPECT_TRUE(matcher.match(5.11).first);
-    EXPECT_FALSE(matcher.match(5.1).first);
-    EXPECT_FALSE(matcher.match(5.09).first);
-    EXPECT_FALSE(matcher.match(-5.1).first);
+    EXPECT_EQ(matcher.match(5.11).first, ddwaf::matcher::match_result::match);
+    EXPECT_NE(matcher.match(5.1).first, ddwaf::matcher::match_result::match);
+    EXPECT_NE(matcher.match(5.09).first, ddwaf::matcher::match_result::match);
+    EXPECT_NE(matcher.match(-5.1).first, ddwaf::matcher::match_result::match);
 
     EXPECT_TRUE(matcher.is_supported_type(object_type::float64));
     EXPECT_TRUE(matcher.is_supported_type(object_type::int64));
@@ -88,13 +100,19 @@ TEST(TestGreaterThanDouble, Basic)
     EXPECT_FALSE(matcher.is_supported_type(object_type::invalid));
     EXPECT_FALSE(matcher.is_supported_type(object_type::boolean));
 
-    EXPECT_TRUE(matcher.match(test::ddwaf_object_da::make_signed(6L)).first);
-    EXPECT_TRUE(matcher.match(test::ddwaf_object_da::make_unsigned(6UL)).first);
-    EXPECT_TRUE(matcher.match(test::ddwaf_object_da::make_float(5.12)).first);
+    EXPECT_EQ(matcher.match(test::ddwaf_object_da::make_signed(6L)).first,
+        ddwaf::matcher::match_result::match);
+    EXPECT_EQ(matcher.match(test::ddwaf_object_da::make_unsigned(6UL)).first,
+        ddwaf::matcher::match_result::match);
+    EXPECT_EQ(matcher.match(test::ddwaf_object_da::make_float(5.12)).first,
+        ddwaf::matcher::match_result::match);
 
-    EXPECT_FALSE(matcher.match(test::ddwaf_object_da::make_signed(5L)).first);
-    EXPECT_FALSE(matcher.match(test::ddwaf_object_da::make_unsigned(5UL)).first);
-    EXPECT_FALSE(matcher.match(test::ddwaf_object_da::make_float(5.0)).first);
+    EXPECT_NE(matcher.match(test::ddwaf_object_da::make_signed(5L)).first,
+        ddwaf::matcher::match_result::match);
+    EXPECT_NE(matcher.match(test::ddwaf_object_da::make_unsigned(5UL)).first,
+        ddwaf::matcher::match_result::match);
+    EXPECT_NE(matcher.match(test::ddwaf_object_da::make_float(5.0)).first,
+        ddwaf::matcher::match_result::match);
 }
 
 // The negated form of greater_than is exposed as the "lower_equal" operator

@@ -1,0 +1,4 @@
+{
+  name: "equals does not match a numeric string with a different value",
+  runs: [ { input: { rule11-input: "43" }, code: ok } ]
+}

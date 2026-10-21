@@ -12,6 +12,7 @@
 
 #include "configuration/common/parser_exception.hpp"
 #include "dynamic_string.hpp"
+#include "matcher/base.hpp"
 #include "matcher/regex_match.hpp"
 #include "re2.h"
 
@@ -34,18 +35,18 @@ regex_match::regex_match(const std::string &regex_str, std::size_t minLength, bo
     }
 }
 
-std::pair<bool, dynamic_string> regex_match::match_impl(std::string_view pattern) const
+std::pair<match_result, dynamic_string> regex_match::match_impl(std::string_view pattern) const
 {
     if (pattern.size() < min_length || pattern.empty()) {
-        return {false, {}};
+        return {match_result::no_match, {}};
     }
 
     std::string_view match;
     if (!regex->Match(pattern, 0, pattern.size(), RE2::UNANCHORED, &match, 1)) {
-        return {false, {}};
+        return {match_result::no_match, {}};
     }
 
-    return {true, match};
+    return {match_result::match, match};
 }
 
 } // namespace ddwaf::matcher

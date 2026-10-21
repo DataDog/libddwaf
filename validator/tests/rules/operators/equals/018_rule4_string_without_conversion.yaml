@@ -1,0 +1,4 @@
+{
+  name: "Without the option, numeric strings are not evaluated",
+  runs: [ { input: { rule4-input: "42" }, code: ok } ]
+}

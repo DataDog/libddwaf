@@ -13,6 +13,7 @@
 
 #include "dynamic_string.hpp"
 #include "indexed_multivector.hpp"
+#include "matcher/base.hpp"
 #include "matcher/exact_match.hpp"
 
 namespace ddwaf::matcher {
@@ -56,15 +57,15 @@ exact_match::exact_match(
     }
 }
 
-std::pair<bool, dynamic_string> exact_match::match_impl(std::string_view str) const
+std::pair<match_result, dynamic_string> exact_match::match_impl(std::string_view str) const
 {
     if (values_.empty() || str.empty() || str.data() == nullptr) {
-        return {false, {}};
+        return {match_result::no_match, {}};
     }
 
     auto it = values_.find(str);
     if (it == values_.end()) {
-        return {false, {}};
+        return {match_result::no_match, {}};
     }
 
     if (it->second > 0) {
@@ -72,10 +73,10 @@ std::pair<bool, dynamic_string> exact_match::match_impl(std::string_view str) co
             std::chrono::system_clock::now().time_since_epoch())
                                  .count();
         if (it->second < now) {
-            return {false, {}};
+            return {match_result::no_match, {}};
         }
     }
-    return {true, std::string{str}};
+    return {match_result::match, std::string{str}};
 }
 
 } // namespace ddwaf::matcher

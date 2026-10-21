@@ -69,6 +69,10 @@ protected:
 template <typename T> std::string to_string(T value);
 template <typename T> std::pair<bool, T> from_string(std::string_view str);
 
+// Accepts "true" and "false", case-insensitively. Declared here so that every
+// translation unit uses the specialisation rather than the primary template.
+template <> std::pair<bool, bool> from_string<bool>(std::string_view str);
+
 std::vector<std::string_view> split(std::string_view str, char sep);
 
 template <std::size_t N, std::size_t... I>

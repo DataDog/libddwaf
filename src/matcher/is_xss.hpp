@@ -17,6 +17,8 @@ namespace ddwaf::matcher {
 
 class is_xss : public base_impl<is_xss> {
 public:
+    using value_type = std::string;
+
     static constexpr std::string_view matcher_name = "is_xss";
     static constexpr std::string_view negated_matcher_name = "!is_xss";
 
@@ -34,7 +36,7 @@ protected:
         return (type & object_type::string) != 0;
     }
 
-    static std::pair<bool, dynamic_string> match_impl(std::string_view pattern);
+    static std::pair<match_result, dynamic_string> match_impl(std::string_view pattern);
 
     friend class base_impl<is_xss>;
 };

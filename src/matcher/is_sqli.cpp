@@ -10,23 +10,24 @@
 #include <utility>
 
 #include "dynamic_string.hpp"
+#include "matcher/base.hpp"
 #include "matcher/is_sqli.hpp"
 
 namespace ddwaf::matcher {
 
-std::pair<bool, dynamic_string> is_sqli::match_impl(std::string_view pattern)
+std::pair<match_result, dynamic_string> is_sqli::match_impl(std::string_view pattern)
 {
     if (pattern.empty() || pattern.data() == nullptr) {
-        return {false, {}};
+        return {match_result::no_match, {}};
     }
 
     // NOLINTNEXTLINE(hicpp-avoid-c-arrays)
     std::array<char, fingerprint_length> fingerprint{0};
     if (libinjection_sqli(pattern.data(), pattern.size(), fingerprint.data()) == 0) {
-        return {false, {}};
+        return {match_result::no_match, {}};
     }
 
-    return {true, fingerprint.data()};
+    return {match_result::match, fingerprint.data()};
 }
 
 } // namespace ddwaf::matcher
