@@ -1,13 +1,4 @@
-FROM alpine:3.18.3 AS truststore
-
-RUN apk add --no-cache ca-certificates && \
-    sed -i -e 's|^mozilla/emSign_ECC_Root_CA_-_G3.crt|!&|' \
-           -e 's|^mozilla/Comodo_AAA_Services_root.crt|!&|' /etc/ca-certificates.conf && \
-    rm -f /usr/share/ca-certificates/mozilla/emSign_ECC_Root_CA_-_G3.crt \
-          /usr/share/ca-certificates/mozilla/Comodo_AAA_Services_root.crt && \
-    update-ca-certificates -f
-
-FROM truststore AS smoketest
+FROM alpine:3.24.3 AS smoketest
 
 ARG ARCH
 
