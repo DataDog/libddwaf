@@ -1,6 +1,10 @@
 ARG MUSL_BUILD_ENV_IMAGE=docker.io/datadog/musl-build-env:1.0.5
 
-FROM ${MUSL_BUILD_ENV_IMAGE} AS libddwaf_build
+FROM ${MUSL_BUILD_ENV_IMAGE} AS truststore
+
+RUN apk upgrade --no-cache ca-certificates ca-certificates-bundle
+
+FROM truststore AS libddwaf_build
 
 COPY . /libddwaf
 
