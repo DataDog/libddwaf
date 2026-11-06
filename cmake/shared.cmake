@@ -14,6 +14,10 @@ string(SUBSTRING "${BUILD_ID}" 2 39 BUILD_ID_SUFFIX)
 
 add_library(libddwaf_shared SHARED
     $<TARGET_OBJECTS:libddwaf_shared_objects> $<$<BOOL:${MSVC}>:libddwaf.def>)
+if(LINUX AND LIBDDWAF_BUNDLE_LIBM_IN_DSO)
+    target_sources(libddwaf_shared PRIVATE
+        ${libddwaf_SOURCE_DIR}/src/compat/ceilf.c)
+endif()
 set_target_properties(libddwaf_shared PROPERTIES OUTPUT_NAME ddwaf)
 if(MINGW)
     set_target_properties(libddwaf_shared PROPERTIES PREFIX "")
@@ -24,7 +28,8 @@ install(TARGETS libddwaf_shared EXPORT libddwaf-config
     INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 if(LINUX)
-    target_link_libraries(libddwaf_shared PUBLIC ${LIBDDWAF_INTERFACE_LIBRARIES})
+    target_link_libraries(libddwaf_shared
+        PUBLIC ${LIBDDWAF_SHARED_INTERFACE_LIBRARIES})
     target_link_libraries(libddwaf_shared PRIVATE
         $<$<BOOL:${LIBDDWAF_ENABLE_LTO}>:-flto>
         -Wl,--no-undefined

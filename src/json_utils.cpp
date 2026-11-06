@@ -256,7 +256,8 @@ owned_object json_to_object(std::string_view json, nonnull_ptr<memory::memory_re
     string_view_stream ss(json);
 
     rapidjson::Reader reader;
-    const rapidjson::ParseResult res = reader.Parse(ss, handler);
+    const rapidjson::ParseResult res =
+        reader.Parse<rapidjson::kParseDefaultFlags | rapidjson::kParseIterativeFlag>(ss, handler);
     if (res.IsError()) {
         // Not interested in partial JSON for now
         return owned_object{};
