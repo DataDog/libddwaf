@@ -167,4 +167,57 @@ TEST(TestEqualsString, InvalidMatchInput)
         matcher.match(std::string_view{"aaaa", 0}).first, ddwaf::matcher::match_result::match);
 }
 
+TEST(TestEqualsConvertStrings, Bool)
+{
+    matcher::equals<bool, true> matcher(true);
+
+    EXPECT_TRUE(matcher.is_supported_type(object_type::string));
+    EXPECT_TRUE(matcher.is_supported_type(object_type::boolean));
+
+    EXPECT_EQ(matcher.match(std::string_view{"true"}).first, matcher::match_result::match);
+    EXPECT_EQ(matcher.match(std::string_view{"TrUe"}).first, matcher::match_result::match);
+    EXPECT_EQ(matcher.match(std::string_view{"false"}).first, matcher::match_result::no_match);
+    EXPECT_EQ(matcher.match(std::string_view{"yes"}).first, matcher::match_result::unknown);
+
+    EXPECT_EQ(matcher.match(test::ddwaf_object_da::make_string_literal("true")).first,
+        matcher::match_result::match);
+    EXPECT_EQ(matcher.match(test::ddwaf_object_da::make_string_literal("1")).first,
+        matcher::match_result::unknown);
+}
+
+TEST(TestEqualsConvertStrings, Signed)
+{
+    matcher::equals<int64_t, true> matcher(-5);
+
+    EXPECT_TRUE(matcher.is_supported_type(object_type::string));
+
+    EXPECT_EQ(matcher.match(std::string_view{"-5"}).first, matcher::match_result::match);
+    EXPECT_EQ(matcher.match(std::string_view{"5"}).first, matcher::match_result::no_match);
+    EXPECT_EQ(matcher.match(std::string_view{"-5.0"}).first, matcher::match_result::unknown);
+    EXPECT_EQ(matcher.match(std::string_view{"-5a"}).first, matcher::match_result::unknown);
+    EXPECT_EQ(
+        matcher.match(test::ddwaf_object_da::make_signed(-5)).first, matcher::match_result::match);
+}
+
+TEST(TestEqualsConvertStrings, Double)
+{
+    matcher::equals<double, true> matcher(2.5, 0.01);
+
+    EXPECT_TRUE(matcher.is_supported_type(object_type::string));
+
+    EXPECT_EQ(matcher.match(std::string_view{"2.5"}).first, matcher::match_result::match);
+    EXPECT_EQ(matcher.match(std::string_view{"2.6"}).first, matcher::match_result::no_match);
+    EXPECT_EQ(matcher.match(std::string_view{"abc"}).first, matcher::match_result::unknown);
+}
+
+TEST(TestEqualsConvertStrings, DisabledByDefault)
+{
+    matcher::equals<int64_t> matcher(5);
+
+    EXPECT_FALSE(matcher.is_supported_type(object_type::string));
+    EXPECT_EQ(matcher.match(std::string_view{"5"}).first, matcher::match_result::unknown);
+    EXPECT_EQ(matcher.match(test::ddwaf_object_da::make_string_literal("5")).first,
+        matcher::match_result::unknown);
+}
+
 } // namespace

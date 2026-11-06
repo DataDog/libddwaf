@@ -17,17 +17,18 @@
 
 namespace ddwaf::matcher {
 
-template <typename T = void> class lower_than : public base_impl<lower_than<T>> {
+template <typename T = void, bool ConvertStrings = false>
+class lower_than : public base_impl<lower_than<T, ConvertStrings>, ConvertStrings> {
 public:
     using value_type = T;
 
     static constexpr std::string_view matcher_name = "lower_than";
     static constexpr std::string_view negated_matcher_name = "greater_equal";
 
-    explicit lower_than(T maximum, bool convert_strings = false)
+    explicit lower_than(T maximum)
         requires std::is_same_v<T, uint64_t> || std::is_same_v<T, int64_t> ||
-                     std::is_same_v<T, double>
-        : base_impl<lower_than<T>>(convert_strings), maximum_(std::move(maximum))
+                 std::is_same_v<T, double>
+        : maximum_(std::move(maximum))
     {}
     ~lower_than() override = default;
     lower_than(const lower_than &) = default;
@@ -58,7 +59,7 @@ protected:
 
     T maximum_;
 
-    friend class base_impl<lower_than<T>>;
+    friend class base_impl<lower_than<T, ConvertStrings>, ConvertStrings>;
 };
 
 template <> class lower_than<void> : public base_impl<lower_than<void>> {

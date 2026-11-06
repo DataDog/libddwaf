@@ -210,9 +210,8 @@ std::shared_ptr<expression> parse_expression(const raw_configuration::vector &co
         auto version_idx = operator_name.find("@v");
         if (version_idx != std::string_view::npos) {
             auto version_str = operator_name.substr(version_idx + 2);
-            auto [res, value] = from_string<unsigned>(version_str);
-            if (res) {
-                version = value;
+            if (auto value = from_string<unsigned>(version_str); value.has_value()) {
+                version = *value;
             }
             operator_name = operator_name.substr(0, version_idx);
         }

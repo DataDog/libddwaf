@@ -370,8 +370,8 @@ std::optional<uri_decomposed> uri_parse(std::string_view uri)
 
             auto port_substr = uri.substr(token_begin, i - token_begin);
             if (!port_substr.empty()) {
-                if (auto [res, value] = from_string<uint16_t>(port_substr); res) {
-                    decomposed.authority.port = value;
+                if (auto value = from_string<uint16_t>(port_substr); value.has_value()) {
+                    decomposed.authority.port = *value;
                 } else {
                     return std::nullopt;
                 }

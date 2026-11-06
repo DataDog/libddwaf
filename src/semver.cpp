@@ -57,8 +57,8 @@ semantic_version::semantic_version(std::string_view version) : str_(version)
 
 bool semantic_version::parse_number(std::string_view str, uint16_t &output)
 {
-    if (auto [res, value] = from_string<uint16_t>(str); res) {
-        output = value;
+    if (auto value = from_string<uint16_t>(str); value.has_value()) {
+        output = *value;
         return true;
     }
     return false;

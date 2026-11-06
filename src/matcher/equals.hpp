@@ -19,16 +19,17 @@
 
 namespace ddwaf::matcher {
 
-template <typename T = void> class equals : public base_impl<equals<T>> {
+template <typename T = void, bool ConvertStrings = false>
+class equals : public base_impl<equals<T, ConvertStrings>, ConvertStrings> {
 public:
     using value_type = T;
 
     static constexpr std::string_view matcher_name = "equals";
     static constexpr std::string_view negated_matcher_name = "!equals";
 
-    explicit equals(T expected, bool convert_strings = false)
+    explicit equals(T expected)
         requires(!std::is_floating_point_v<T>)
-        : base_impl<equals<T>>(convert_strings), expected_(std::move(expected))
+        : expected_(std::move(expected))
     {}
     ~equals() override = default;
     equals(const equals &) = default;
@@ -76,10 +77,12 @@ protected:
 
     T expected_;
 
-    friend class base_impl<equals<T>>;
+    friend class base_impl<equals<T, ConvertStrings>, ConvertStrings>;
 };
 
-template <> class equals<double> : public base_impl<equals<double>> {
+template <bool ConvertStrings>
+class equals<double, ConvertStrings>
+    : public base_impl<equals<double, ConvertStrings>, ConvertStrings> {
 public:
     using value_type = double;
 
@@ -87,9 +90,7 @@ public:
     static constexpr std::string_view negated_matcher_name = "!equals";
 
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-    equals(double expected, double delta, bool convert_strings = false)
-        : base_impl<equals<double>>(convert_strings), expected_(expected), delta_(delta)
-    {}
+    equals(double expected, double delta) : expected_(expected), delta_(delta) {}
     ~equals() override = default;
     equals(const equals &) = default;
     equals(equals &&) noexcept = default;
@@ -113,7 +114,7 @@ protected:
     double expected_;
     double delta_;
 
-    friend class base_impl<equals<double>>;
+    friend class base_impl<equals<double, ConvertStrings>, ConvertStrings>;
 };
 
 template <> class equals<void> : public base_impl<equals<void>> {

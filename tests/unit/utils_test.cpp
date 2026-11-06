@@ -4,6 +4,8 @@
 // This product includes software developed at Datadog
 // (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
+#include <cstdint>
+#include <optional>
 #include <unordered_map>
 
 #include "utils.hpp"
@@ -195,6 +197,31 @@ TEST(TestUtils, ConvertKeyPathEmpty)
     std::vector<std::variant<std::string, int64_t>> input;
     auto converted = convert_key_path(input);
     EXPECT_TRUE(converted.empty());
+}
+
+TEST(TestUtils, FromStringBool)
+{
+    EXPECT_EQ(from_string<bool>("true"), true);
+    EXPECT_EQ(from_string<bool>("TRUE"), true);
+    EXPECT_EQ(from_string<bool>("false"), false);
+    EXPECT_EQ(from_string<bool>("FaLsE"), false);
+
+    EXPECT_FALSE(from_string<bool>(""));
+    EXPECT_FALSE(from_string<bool>("1"));
+    EXPECT_FALSE(from_string<bool>("tru"));
+    EXPECT_FALSE(from_string<bool>("truee"));
+}
+
+TEST(TestUtils, FromStringNumeric)
+{
+    EXPECT_EQ(from_string<int64_t>("-42"), -42);
+    EXPECT_EQ(from_string<uint64_t>("42"), 42U);
+    EXPECT_EQ(from_string<uint16_t>("65535"), 65535);
+
+    EXPECT_FALSE(from_string<uint16_t>("65536"));
+    EXPECT_FALSE(from_string<uint64_t>("-1"));
+    EXPECT_FALSE(from_string<int64_t>("42a"));
+    EXPECT_FALSE(from_string<int64_t>(""));
 }
 
 } // namespace

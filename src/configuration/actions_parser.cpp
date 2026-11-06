@@ -46,8 +46,8 @@ bool validate_status_code_presence_and_type(
         if constexpr (std::is_same_v<T, bool>) {
             return std::nullopt;
         } else if constexpr (std::is_same_v<T, std::string>) {
-            if (auto [res, value] = from_string<uint64_t>(code); res) {
-                ucode = value;
+            if (auto value = from_string<uint64_t>(code); value.has_value()) {
+                ucode = *value;
             } else {
                 return std::nullopt;
             }

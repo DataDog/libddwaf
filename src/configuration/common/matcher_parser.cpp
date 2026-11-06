@@ -162,6 +162,17 @@ bool parse_convert_strings_option(const raw_configuration::map &params)
     return at<bool>(options, "convert_strings", false);
 }
 
+// String conversion is a template parameter of the matcher, so the choice made
+// at configuration time selects which instantiation is created
+template <template <typename, bool> typename Matcher, typename T, typename... Args>
+std::unique_ptr<matcher::base> make_scalar_matcher(bool convert_strings, Args &&...args)
+{
+    if (convert_strings) {
+        return std::make_unique<Matcher<T, true>>(std::forward<Args>(args)...);
+    }
+    return std::make_unique<Matcher<T, false>>(std::forward<Args>(args)...);
+}
+
 } // namespace
 
 template <>
@@ -173,20 +184,20 @@ std::pair<std::string, std::unique_ptr<matcher::base>> parse_matcher<matcher::eq
     const bool convert_strings = parse_convert_strings_option(params);
     if (value_type == "string") {
         auto value = at<std::string>(params, "value");
-        matcher = std::make_unique<matcher::equals<std::string>>(std::move(value), convert_strings);
+        matcher = std::make_unique<matcher::equals<std::string>>(std::move(value));
     } else if (value_type == "boolean") {
         auto value = at<bool>(params, "value");
-        matcher = std::make_unique<matcher::equals<bool>>(value, convert_strings);
+        matcher = make_scalar_matcher<matcher::equals, bool>(convert_strings, value);
     } else if (value_type == "unsigned") {
         auto value = at<uint64_t>(params, "value");
-        matcher = std::make_unique<matcher::equals<uint64_t>>(value, convert_strings);
+        matcher = make_scalar_matcher<matcher::equals, uint64_t>(convert_strings, value);
     } else if (value_type == "signed") {
         auto value = at<int64_t>(params, "value");
-        matcher = std::make_unique<matcher::equals<int64_t>>(value, convert_strings);
+        matcher = make_scalar_matcher<matcher::equals, int64_t>(convert_strings, value);
     } else if (value_type == "float") {
         auto value = at<double>(params, "value");
         auto delta = at<double>(params, "delta", 0.01);
-        matcher = std::make_unique<matcher::equals<double>>(value, delta, convert_strings);
+        matcher = make_scalar_matcher<matcher::equals, double>(convert_strings, value, delta);
     } else {
         throw ddwaf::parsing_error("invalid type for matcher equals " + value_type);
     }
@@ -202,13 +213,13 @@ std::pair<std::string, std::unique_ptr<matcher::base>> parse_matcher<matcher::lo
     const bool convert_strings = parse_convert_strings_option(params);
     if (value_type == "unsigned") {
         auto value = at<uint64_t>(params, "value");
-        matcher = std::make_unique<matcher::lower_than<uint64_t>>(value, convert_strings);
+        matcher = make_scalar_matcher<matcher::lower_than, uint64_t>(convert_strings, value);
     } else if (value_type == "signed") {
         auto value = at<int64_t>(params, "value");
-        matcher = std::make_unique<matcher::lower_than<int64_t>>(value, convert_strings);
+        matcher = make_scalar_matcher<matcher::lower_than, int64_t>(convert_strings, value);
     } else if (value_type == "float") {
         auto value = at<double>(params, "value");
-        matcher = std::make_unique<matcher::lower_than<double>>(value, convert_strings);
+        matcher = make_scalar_matcher<matcher::lower_than, double>(convert_strings, value);
     } else {
         throw ddwaf::parsing_error("invalid type for matcher lower_than " + value_type);
     }
@@ -226,13 +237,13 @@ std::pair<std::string, std::unique_ptr<matcher::base>> parse_matcher<matcher::gr
     const bool convert_strings = parse_convert_strings_option(params);
     if (value_type == "unsigned") {
         auto value = at<uint64_t>(params, "value");
-        matcher = std::make_unique<matcher::greater_than<uint64_t>>(value, convert_strings);
+        matcher = make_scalar_matcher<matcher::greater_than, uint64_t>(convert_strings, value);
     } else if (value_type == "signed") {
         auto value = at<int64_t>(params, "value");
-        matcher = std::make_unique<matcher::greater_than<int64_t>>(value, convert_strings);
+        matcher = make_scalar_matcher<matcher::greater_than, int64_t>(convert_strings, value);
     } else if (value_type == "float") {
         auto value = at<double>(params, "value");
-        matcher = std::make_unique<matcher::greater_than<double>>(value, convert_strings);
+        matcher = make_scalar_matcher<matcher::greater_than, double>(convert_strings, value);
     } else {
         throw ddwaf::parsing_error("invalid type for matcher greater_than " + value_type);
     }

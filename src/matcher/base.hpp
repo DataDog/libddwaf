@@ -56,10 +56,12 @@ public:
     [[nodiscard]] virtual std::pair<match_result, dynamic_string> match(object_view obj) const = 0;
 };
 
-template <typename T> class base_impl : public base {
+// ConvertStrings enables the evaluation of string values by converting them to
+// the scalar type of the matcher; strings which can't be converted are not
+// evaluated at all
+template <typename T, bool ConvertStrings = false> class base_impl : public base {
 public:
     base_impl() = default;
-    explicit base_impl(bool convert_strings) : convert_strings_(convert_strings) {}
     ~base_impl() override = default;
     base_impl(const base_impl &) = default;
     base_impl(base_impl &&) noexcept = default;
@@ -81,8 +83,10 @@ public:
     {
         // Strings can be evaluated through a conversion, so they must not be
         // filtered out by callers relying on this method
-        if (convert_strings_ && (type & object_type::string) != 0) {
-            return true;
+        if constexpr (ConvertStrings) {
+            if ((type & object_type::string) != 0) {
+                return true;
+            }
         }
         return T::is_supported_type_impl(type);
     }
@@ -101,10 +105,11 @@ public:
         if constexpr (std::is_void_v<value_type> || std::is_same_v<value_type, std::string>) {
             return {};
         } else {
-            auto [res, value] = from_string<value_type>(input);
-            if (!res) {
+            auto maybe_value = from_string<value_type>(input);
+            if (!maybe_value.has_value()) {
                 return {};
             }
+            const value_type value = *maybe_value;
 
             if constexpr (std::same_as<value_type, bool>) {
                 return owned_object::make_boolean(value);
@@ -138,7 +143,7 @@ public:
             return ptr->match_impl(str);
         }
 
-        if (convert_strings_) {
+        if constexpr (ConvertStrings) {
             auto converted = convert_string_to_compatible_type(str);
             if (converted.is_valid()) {
                 return match_scalar(object_view{converted});
@@ -157,11 +162,12 @@ public:
             }
         }
 
-        owned_object converted;
-        if (convert_strings_ && obj.is_string()) {
-            converted = convert_string_to_compatible_type(obj.as<std::string_view>());
-            if (converted.is_valid()) {
-                obj = converted;
+        if constexpr (ConvertStrings) {
+            if (obj.is_string()) {
+                auto converted = convert_string_to_compatible_type(obj.as<std::string_view>());
+                if (converted.is_valid()) {
+                    return match_scalar(object_view{converted});
+                }
             }
         }
 
@@ -200,10 +206,6 @@ protected:
 
         return {match_result::unknown, {}};
     }
-
-    // Evaluate string values by converting them to the scalar type of the
-    // matcher; strings which can't be converted are not evaluated at all
-    bool convert_strings_{false};
 };
 
 } // namespace matcher

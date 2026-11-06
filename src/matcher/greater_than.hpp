@@ -17,17 +17,18 @@
 
 namespace ddwaf::matcher {
 
-template <typename T = void> class greater_than : public base_impl<greater_than<T>> {
+template <typename T = void, bool ConvertStrings = false>
+class greater_than : public base_impl<greater_than<T, ConvertStrings>, ConvertStrings> {
 public:
     using value_type = T;
 
     static constexpr std::string_view matcher_name = "greater_than";
     static constexpr std::string_view negated_matcher_name = "lower_equal";
 
-    explicit greater_than(T minimum, bool convert_strings = false)
+    explicit greater_than(T minimum)
         requires std::is_same_v<T, uint64_t> || std::is_same_v<T, int64_t> ||
-                     std::is_same_v<T, double>
-        : base_impl<greater_than<T>>(convert_strings), minimum_(std::move(minimum))
+                 std::is_same_v<T, double>
+        : minimum_(std::move(minimum))
     {}
     ~greater_than() override = default;
     greater_than(const greater_than &) = default;
@@ -57,7 +58,7 @@ protected:
     }
     T minimum_;
 
-    friend class base_impl<greater_than<T>>;
+    friend class base_impl<greater_than<T, ConvertStrings>, ConvertStrings>;
 };
 
 template <> class greater_than<void> : public base_impl<greater_than<void>> {

@@ -131,4 +131,25 @@ TEST(TestGreaterThan, Name)
     EXPECT_STRV(float_matcher.negated_name(), "lower_equal");
 }
 
+TEST(TestGreaterThanConvertStrings, Unsigned)
+{
+    matcher::greater_than<uint64_t, true> matcher(10);
+
+    EXPECT_TRUE(matcher.is_supported_type(object_type::string));
+
+    EXPECT_EQ(matcher.match(std::string_view{"11"}).first, matcher::match_result::match);
+    EXPECT_EQ(matcher.match(std::string_view{"10"}).first, matcher::match_result::no_match);
+    EXPECT_EQ(matcher.match(std::string_view{"-1"}).first, matcher::match_result::unknown);
+    EXPECT_EQ(matcher.match(test::ddwaf_object_da::make_string_literal("11")).first,
+        matcher::match_result::match);
+}
+
+TEST(TestGreaterThanConvertStrings, DisabledByDefault)
+{
+    matcher::greater_than<uint64_t> matcher(10);
+
+    EXPECT_FALSE(matcher.is_supported_type(object_type::string));
+    EXPECT_EQ(matcher.match(std::string_view{"11"}).first, matcher::match_result::unknown);
+}
+
 } // namespace
