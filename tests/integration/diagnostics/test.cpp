@@ -67,6 +67,32 @@ TEST(TestDiagnosticsIntegration, UnsupportedSchema)
     ddwaf_destroy(handle);
 }
 
+TEST(TestDiagnosticsIntegration, InvalidSchemaVersion)
+{
+    auto *alloc = ddwaf_get_default_allocator();
+    auto rule = yaml_to_object<ddwaf_object>(
+        R"({version: abc, metadata: {rules_version: '1.2.7'}, rules: [{id: 1, name: rule1, tags: {type: flow1, category: category1}, conditions: [{operator: match_regex, parameters: {inputs: [{address: arg1}], regex: .*}}]}]})");
+    ASSERT_NE(rule.type, DDWAF_OBJ_INVALID);
+
+    ddwaf_object diagnostics;
+
+    ddwaf_handle handle = ddwaf_init(&rule, &diagnostics);
+    ASSERT_EQ(handle, nullptr);
+    ddwaf_object_destroy(&rule, alloc);
+
+    EXPECT_TRUE(ValidateDiagnosticsSchema(diagnostics));
+
+    ddwaf::raw_configuration root(reinterpret_cast<const ddwaf::detail::object &>(diagnostics));
+    auto root_map = static_cast<ddwaf::raw_configuration::map>(root);
+
+    auto error = ddwaf::at<std::string>(root_map, "error");
+    EXPECT_STR(error, "invalid version format, expected major.minor");
+
+    ddwaf_object_destroy(&diagnostics, alloc);
+
+    ddwaf_destroy(handle);
+}
+
 TEST(TestDiagnosticsIntegration, NoSchema)
 {
     auto *alloc = ddwaf_get_default_allocator();

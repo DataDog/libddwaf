@@ -30,6 +30,7 @@
 #include "log.hpp"
 #include "obfuscator.hpp"
 #include "ruleset_info.hpp"
+#include "utils.hpp"
 
 namespace ddwaf {
 
@@ -294,13 +295,21 @@ bool configuration_manager::add_or_update(
         configuration_change_spec new_config;
         configuration_collector collector{new_config, global_config_};
 
+        bool accepted = false;
+        const defer rollback([&]() {
+            if (!accepted) {
+                remove_config(new_config);
+                configs_.erase(it);
+            }
+        });
+
         if (!load(root_map, collector, info)) {
-            configs_.erase(it);
             return false;
         }
 
         changes_ |= new_config.content;
         it->second = std::move(new_config);
+        accepted = true;
 
         return true;
     } catch (const bad_cast &e) {
@@ -310,6 +319,9 @@ bool configuration_manager::add_or_update(
             e.expected(), e.obtained()));
     } catch (const unsupported_schema_version &e) {
         DDWAF_WARN("Unsupported schema version: '{}'", e.version());
+        info.set_error(e.what());
+    } catch (const parsing_exception &e) {
+        DDWAF_WARN("Failed to parse configuration: {}", e.what());
         info.set_error(e.what());
     }
 
