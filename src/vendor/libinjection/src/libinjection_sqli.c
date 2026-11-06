@@ -108,11 +108,14 @@ static const char *
 memchr2(const char *haystack, size_t haystack_len, char c0, char c1)
 {
     const char *cur = haystack;
-    const char *last = haystack + haystack_len - 1;
+    const char *last;
 
     if (haystack_len < 2) {
         return NULL;
     }
+
+    /* computed only now: with haystack_len == 0 it would wrap around */
+    last = haystack + haystack_len - 1;
 
     while (cur < last) {
         /* safe since cur < len - 1 always */
@@ -533,7 +536,8 @@ static size_t parse_slash(struct libinjection_sqli_state * sf)
      *  are an automatic black ban!
      */
 
-    if (memchr2(cur + 2, (size_t)(ptr - (cur + 1)), '/', '*') !=  NULL) {
+    /* without a closing comment, ptr is NULL and there is nothing to search */
+    if (ptr != NULL && memchr2(cur + 2, (size_t)(ptr - (cur + 1)), '/', '*') !=  NULL) {
         ctype = TYPE_EVIL;
     } else if (is_mysql_comment(cs, slen, pos)) {
         ctype = TYPE_EVIL;
