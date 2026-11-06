@@ -119,6 +119,18 @@ TEST(TestJsonUtils, NestedEmptyArraysHardcodedLimit)
     EXPECT_JSON(object.ref(), R"([[[[[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]]])");
 }
 
+TEST(TestJsonUtils, DeeplyNestedArray)
+{
+    constexpr std::size_t depth = 100'000;
+    std::string json_str(depth, '[');
+    json_str += '0';
+    json_str.append(depth, ']');
+
+    auto object = ddwaf::json_to_object(json_str);
+
+    EXPECT_JSON(object.ref(), R"([[[[[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]]])");
+}
+
 TEST(TestJsonUtils, EmptyMap)
 {
     auto object = ddwaf::json_to_object("{}");
