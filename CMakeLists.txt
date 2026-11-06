@@ -40,6 +40,8 @@ option(LIBDDWAF_TESTING "Load test subdirectories and targets" ON)
 option(LIBDDWAF_TEST_COVERAGE "Do coverage if possible" OFF)
 option(LIBDDWAF_VECTORIZED_TRANSFORMERS "Enable vectorization for transformers" ON)
 option(LIBDDWAF_ENABLE_LTO "Enable link-time optimisation" OFF)
+option(LIBDDWAF_BUNDLE_LIBM_IN_DSO
+    "Bundle required libm functionality into the Linux shared library" OFF)
 option(LIBDDWAF_BENCHMARK_PGO_STAGE1 "Stage 1 profile-optimized benchmark enables instrumentation" OFF)
 option(LIBDDWAF_BENCHMARK_BOLT_STAGE3 "Stage 3 profile-optimized benchmark enables relocations" OFF)
 option(LIBDDWAF_ON_VALGRIND "Hides some RE2 optimisations on valgrind" OFF)
@@ -69,6 +71,7 @@ message(STATUS "Has recursive unordered_map    : ${STDLIB_MAP_RECURSIVE}")
 
 # System dependencies
 set(LIBDDWAF_INTERFACE_LIBRARIES "")
+set(LIBDDWAF_SHARED_INTERFACE_LIBRARIES "")
 if(LINUX)
     find_library(LIBPTHREAD pthread)
     find_library(LIBRT rt)
@@ -78,13 +81,25 @@ if(LINUX)
     # add the dependency
     find_library(LIBM m)
 
-    set(LIBDDWAF_INTERFACE_LIBRARIES
+    set(LIBDDWAF_LINUX_LIBRARIES
         $<$<BOOL:${LIBPTHREAD}>:pthread>
         $<$<BOOL:${LIBRT}>:rt>
-        $<$<BOOL:${LIBDL}>:dl>
+        $<$<BOOL:${LIBDL}>:dl>)
+
+    set(LIBDDWAF_INTERFACE_LIBRARIES
+        ${LIBDDWAF_LINUX_LIBRARIES}
         $<$<BOOL:${LIBM}>:m>)
+
+    if(LIBDDWAF_BUNDLE_LIBM_IN_DSO)
+        set(LIBDDWAF_SHARED_INTERFACE_LIBRARIES
+            ${LIBDDWAF_LINUX_LIBRARIES})
+    else()
+        set(LIBDDWAF_SHARED_INTERFACE_LIBRARIES
+            ${LIBDDWAF_INTERFACE_LIBRARIES})
+    endif()
 elseif(WIN32)
     list(APPEND LIBDDWAF_INTERFACE_LIBRARIES ws2_32)
+    list(APPEND LIBDDWAF_SHARED_INTERFACE_LIBRARIES ws2_32)
 endif()
 
 add_library(lib_rapidjson INTERFACE)
