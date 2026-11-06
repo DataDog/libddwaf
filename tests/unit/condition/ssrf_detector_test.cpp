@@ -182,6 +182,36 @@ TEST(TestSSRFDetector, MatchDangerousIP)
     });
 }
 
+TEST(TestSSRFDetector, MatchAuthorityOverlap)
+{
+    const std::vector<std::pair<std::string, ssrf_sample>> samples{
+        {"http://10.0.0.1:8080/path", {.yaml = R"({url: "http://10.0.0.1:8080"})",
+                                          .resolved = "http://10.0.0.1:8080",
+                                          .key_path = {"url"}}},
+        {"http://10.0.0.1:8080/path", {.yaml = "//10.0.0.1:8080"}},
+        {"https://[::1]/path", {.yaml = "https://[::1]"}},
+        {"https://ifconfig.pro/path", {.yaml = "https://ifconfig.pro"}},
+        {"http://10.0.0.1:8080/path/suffix", {.yaml = "http://10.0.0.1:8080/path"}},
+    };
+    match_path_and_input(samples, true, ssrf_opts{.path_inspection = true});
+    match_path_and_input(samples, false, ssrf_opts{.authority_inspection = false});
+}
+
+TEST(TestSSRFDetector, NoMatchAuthorityOverlap)
+{
+    match_path_and_input(
+        {
+            {"https://example.com/path", {.yaml = "https://example.com"}},
+            {"https://example.com/path/suffix", {.yaml = "https://example.com/path"}},
+            {"https://example.com/path/suffix", {.yaml = "//example.com/path"}},
+            {"http://10.0.0.1:8080/path", {.yaml = "http://"}},
+            {"http://10.0.0.1:8080/path", {.yaml = "http://10.0"}},
+            {"http://10.0.0.1:8080/path", {.yaml = "http://10.0.0.1:8080/path"}},
+            {"file:/path/to/file", {.yaml = "file:/path"}},
+        },
+        false, ssrf_opts{.path_inspection = true}, {{"http", "https", "file"}});
+}
+
 TEST(TestSSRFDetector, MatchCustomDangerousIP)
 {
     match_path_and_input(

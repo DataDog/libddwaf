@@ -12,6 +12,8 @@
 
 #include <fmt/core.h> // IWYU pragma: keep
 
+#include "ddwaf.h"
+
 // NOLINTBEGIN(cppcoreguidelines-macro-usage)
 // Reduces an absolute __FILE__ path to one relative to the repository root by
 // stripping everything before the library's `src/` directory, e.g.
@@ -100,8 +102,7 @@ inline std::string_view log_level_to_str(log_level level)
 
 class logger {
 public:
-    using log_cb_type = void (*)(log_level level, const char *function, const char *file,
-        unsigned line, const char *message, uint64_t message_len);
+    using log_cb_type = ddwaf_log_cb;
 
     static void init(log_cb_type cb, log_level min_level);
     static bool valid(log_level level) { return cb != nullptr && level >= min_level; }
