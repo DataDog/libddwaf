@@ -160,9 +160,8 @@ raw_configuration::operator uint64_t() const
     // NOLINTEND(bugprone-narrowing-conversions, cppcoreguidelines-narrowing-conversions)
 
     if (view_.is_string() && !view_.empty()) {
-        auto [res, result] = from_string<uint64_t>(view_.as<std::string_view>());
-        if (res) {
-            return result;
+        if (auto result = from_string<uint64_t>(view_.as<std::string_view>()); result.has_value()) {
+            return *result;
         }
     }
 
@@ -192,9 +191,8 @@ raw_configuration::operator int64_t() const
     // NOLINTEND(bugprone-narrowing-conversions, cppcoreguidelines-narrowing-conversions)
 
     if (view_.is_string() && !view_.empty()) {
-        auto [res, result] = from_string<int64_t>(view_.as<std::string_view>());
-        if (res) {
-            return result;
+        if (auto result = from_string<int64_t>(view_.as<std::string_view>()); result.has_value()) {
+            return *result;
         }
     }
 
@@ -208,9 +206,8 @@ raw_configuration::operator double() const
     }
 
     if (view_.is_string() && !view_.empty()) {
-        auto [res, result] = from_string<double>(view_.as<std::string_view>());
-        if (res) {
-            return result;
+        if (auto result = from_string<double>(view_.as<std::string_view>()); result.has_value()) {
+            return *result;
         }
     }
 

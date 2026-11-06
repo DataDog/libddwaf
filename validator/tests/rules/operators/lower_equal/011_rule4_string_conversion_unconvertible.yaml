@@ -1,0 +1,4 @@
+{
+  name: "A string which can't be converted is not a negated match either",
+  runs: [ { input: { rule4-input: "abc" }, code: ok } ]
+}

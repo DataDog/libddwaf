@@ -36,3 +36,17 @@ rules:
             - address: rule3-input
           type: float
           value: 4.2
+  - id: "4"
+    name: rule4-signed-lower-than-with-string-conversion
+    tags:
+      type: flow1
+      category: category
+    conditions:
+      - operator: lower_than
+        parameters:
+          inputs:
+            - address: rule4-input
+          type: signed
+          value: 100
+          options:
+            convert_strings: true

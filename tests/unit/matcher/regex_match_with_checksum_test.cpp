@@ -33,7 +33,7 @@ TEST(TestRegexMatchWithChecksum, Match)
         std::make_unique<ddwaf::luhn_checksum>());
 
     auto [res, highlight] = matcher.match("4000-0000-0000-1000");
-    EXPECT_TRUE(res);
+    EXPECT_EQ(res, ddwaf::matcher::match_result::match);
     EXPECT_STR(highlight, "4000-0000-0000-1000");
 }
 
@@ -44,7 +44,7 @@ TEST(TestRegexMatchWithChecksum, MatchRegexButNotChecksum)
         std::make_unique<ddwaf::luhn_checksum>());
 
     auto [res, highlight] = matcher.match("4000-0000-0000-0000");
-    EXPECT_FALSE(res);
+    EXPECT_NE(res, ddwaf::matcher::match_result::match);
 }
 
 TEST(TestRegexMatchWithChecksum, NoMatch)
@@ -54,7 +54,7 @@ TEST(TestRegexMatchWithChecksum, NoMatch)
         std::make_unique<ddwaf::luhn_checksum>());
 
     auto [res, highlight] = matcher.match("whatisthis");
-    EXPECT_FALSE(res);
+    EXPECT_NE(res, ddwaf::matcher::match_result::match);
 }
 
 TEST(TestRegexMatchWithChecksum, MinLength)
@@ -64,7 +64,7 @@ TEST(TestRegexMatchWithChecksum, MinLength)
         std::make_unique<ddwaf::luhn_checksum>());
 
     auto [res, highlight] = matcher.match("4000-0000-0000-1000");
-    EXPECT_FALSE(res);
+    EXPECT_NE(res, ddwaf::matcher::match_result::match);
 }
 
 TEST(TestRegexMatchWithChecksum, MultipleMatches)
@@ -75,27 +75,27 @@ TEST(TestRegexMatchWithChecksum, MultipleMatches)
 
     {
         auto [res, highlight] = matcher.match("4000-0000-0000-1000 4000-0000-0000-0000");
-        EXPECT_TRUE(res);
+        EXPECT_EQ(res, ddwaf::matcher::match_result::match);
         EXPECT_STR(highlight, "4000-0000-0000-1000");
     }
 
     {
         auto [res, highlight] = matcher.match("4000-0000-0000-0000 4000-0000-0000-1000");
-        EXPECT_TRUE(res);
+        EXPECT_EQ(res, ddwaf::matcher::match_result::match);
         EXPECT_STR(highlight, "4000-0000-0000-1000");
     }
 
     {
         auto [res, highlight] =
             matcher.match("4000-0000-0000-0000 4000-0000-0000-1000 4000-0000-0000-0000");
-        EXPECT_TRUE(res);
+        EXPECT_EQ(res, ddwaf::matcher::match_result::match);
         EXPECT_STR(highlight, "4000-0000-0000-1000");
     }
 
     {
         auto [res, highlight] =
             matcher.match("4000-0000-0000-0000 4000-0000-0000-0000 4000-0000-0000-0000");
-        EXPECT_FALSE(res);
+        EXPECT_NE(res, ddwaf::matcher::match_result::match);
     }
 }
 
@@ -104,7 +104,7 @@ TEST(TestRegexMatchWithChecksum, ZeroLengthMatch)
     regex_match_with_checksum matcher(R"(.*)", 0, true, std::make_unique<ddwaf::luhn_checksum>());
 
     auto [res, highlight] = matcher.match("");
-    EXPECT_FALSE(res);
+    EXPECT_NE(res, ddwaf::matcher::match_result::match);
 }
 
 } // namespace

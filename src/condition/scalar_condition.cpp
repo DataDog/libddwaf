@@ -43,7 +43,7 @@ std::optional<condition_match> eval_object(Iterator &it, std::string_view addres
             if (transformed) {
                 auto transformed_sv = static_cast<std::string_view>(transformed.value());
                 auto [res, highlight] = matcher.match(transformed_sv);
-                if (!res) {
+                if (res != matcher::match_result::match) {
                     return {};
                 }
 
@@ -57,7 +57,7 @@ std::optional<condition_match> eval_object(Iterator &it, std::string_view addres
     }
 
     auto [res, highlight] = matcher.match(src);
-    if (!res) {
+    if (res != matcher::match_result::match) {
         return {};
     }
 
@@ -78,7 +78,8 @@ std::optional<condition_match> eval_target(Iterator &it, std::string_view addres
             throw ddwaf::timeout_exception();
         }
 
-        if (!matcher.is_supported_type(it.type())) {
+        const object_view src = *it;
+        if (!matcher.is_supported_type(src.type())) {
             continue;
         }
 

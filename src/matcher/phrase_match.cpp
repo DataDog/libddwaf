@@ -15,6 +15,7 @@
 
 #include "ac.h"
 #include "dynamic_string.hpp"
+#include "matcher/base.hpp"
 #include "matcher/phrase_match.hpp"
 #include "utils.hpp"
 
@@ -46,11 +47,11 @@ phrase_match::phrase_match(
     ac = std::unique_ptr<ac_t, void (*)(void *)>(ac_, ac_free);
 }
 
-std::pair<bool, dynamic_string> phrase_match::match_impl(std::string_view pattern) const
+std::pair<match_result, dynamic_string> phrase_match::match_impl(std::string_view pattern) const
 {
     ac_t *acStructure = ac.get();
     if (pattern.empty() || pattern.data() == nullptr || acStructure == nullptr) {
-        return {false, {}};
+        return {match_result::no_match, {}};
     }
 
     ac_result_t result;
@@ -66,14 +67,14 @@ std::pair<bool, dynamic_string> phrase_match::match_impl(std::string_view patter
 
     if (result.match_begin < 0 || result.match_end < 0 ||
         (enforce_word_boundary_ && !is_bounded_word(pattern, begin, end))) {
-        return {false, {}};
+        return {match_result::no_match, {}};
     }
 
     if (pattern.size() <= end) [[unlikely]] {
-        return {true, {}};
+        return {match_result::match, {}};
     }
 
-    return {true, std::string{pattern.substr(begin, (end - begin + 1))}};
+    return {match_result::match, std::string{pattern.substr(begin, (end - begin + 1))}};
 }
 
 } // namespace ddwaf::matcher

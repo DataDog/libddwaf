@@ -22,6 +22,8 @@ namespace ddwaf::matcher {
 
 class regex_match_with_checksum : public base_impl<regex_match_with_checksum> {
 public:
+    using value_type = std::string;
+
     static constexpr std::string_view matcher_name = "match_regex_with_checksum";
     static constexpr std::string_view negated_matcher_name = "!match_regex_with_checksum";
 
@@ -40,7 +42,8 @@ protected:
         return (type & object_type::string) != 0;
     }
 
-    [[nodiscard]] std::pair<bool, dynamic_string> match_impl(std::string_view pattern) const;
+    [[nodiscard]] std::pair<match_result, dynamic_string> match_impl(
+        std::string_view pattern) const;
 
     std::unique_ptr<re2::RE2> regex{nullptr};
     std::size_t min_length;

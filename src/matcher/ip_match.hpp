@@ -27,6 +27,7 @@ namespace ddwaf::matcher {
 
 class ip_match : public base_impl<ip_match> {
 public:
+    using value_type = std::string;
     using data_type = std::vector<std::pair<std::string, uint64_t>>;
 
     static constexpr std::string_view matcher_name = "ip_match";
@@ -63,7 +64,7 @@ protected:
         return (type & object_type::string) != 0;
     }
 
-    [[nodiscard]] std::pair<bool, dynamic_string> match_impl(std::string_view str) const;
+    [[nodiscard]] std::pair<match_result, dynamic_string> match_impl(std::string_view str) const;
 
     template <typename T> void init_tree(const T &ip_list)
     {

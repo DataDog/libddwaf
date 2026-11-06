@@ -17,8 +17,11 @@
 
 namespace ddwaf::matcher {
 
-template <typename T = void> class lower_than : public base_impl<lower_than<T>> {
+template <typename T = void, bool ConvertStrings = false>
+class lower_than : public base_impl<lower_than<T, ConvertStrings>, ConvertStrings> {
 public:
+    using value_type = T;
+
     static constexpr std::string_view matcher_name = "lower_than";
     static constexpr std::string_view negated_matcher_name = "greater_equal";
 
@@ -42,24 +45,27 @@ protected:
     }
 
     template <typename U>
-    [[nodiscard]] std::pair<bool, dynamic_string> match_impl(const U &obtained) const
+    [[nodiscard]] std::pair<match_result, dynamic_string> match_impl(const U &obtained) const
         requires(!std::is_floating_point_v<T>)
     {
-        return {std::cmp_less(obtained, maximum_), {}};
+        return {
+            std::cmp_less(obtained, maximum_) ? match_result::match : match_result::no_match, {}};
     }
 
-    [[nodiscard]] std::pair<bool, dynamic_string> match_impl(double obtained) const
+    [[nodiscard]] std::pair<match_result, dynamic_string> match_impl(double obtained) const
     {
-        return {obtained < maximum_, {}};
+        return {obtained < maximum_ ? match_result::match : match_result::no_match, {}};
     }
 
     T maximum_;
 
-    friend class base_impl<lower_than<T>>;
+    friend class base_impl<lower_than<T, ConvertStrings>, ConvertStrings>;
 };
 
 template <> class lower_than<void> : public base_impl<lower_than<void>> {
 public:
+    using value_type = void;
+
     static constexpr std::string_view matcher_name = "lower_than";
     static constexpr std::string_view negated_matcher_name = "greater_equal";
 
@@ -75,7 +81,7 @@ protected:
     static constexpr std::string_view to_string_impl() { return ""; }
     static constexpr bool is_supported_type_impl(object_type /*type*/) { return false; }
 
-    [[nodiscard]] static std::pair<bool, dynamic_string> match_impl() { return {}; }
+    [[nodiscard]] static std::pair<match_result, dynamic_string> match_impl() { return {}; }
 
     friend class base_impl<lower_than<void>>;
 };

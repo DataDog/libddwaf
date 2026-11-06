@@ -10,6 +10,7 @@
 
 #include "cow_string.hpp"
 #include "dynamic_string.hpp"
+#include "matcher/base.hpp"
 #include "matcher/hidden_ascii_match.hpp"
 #include "transformer/unicode_normalize.hpp"
 #include "utf8.hpp"
@@ -18,7 +19,7 @@ using namespace ddwaf::utf8;
 
 namespace ddwaf::matcher {
 
-std::pair<bool, dynamic_string> hidden_ascii_match::match_impl(std::string_view pattern)
+std::pair<match_result, dynamic_string> hidden_ascii_match::match_impl(std::string_view pattern)
 {
     uint32_t codepoint;
     uint64_t position = 0;
@@ -39,13 +40,13 @@ std::pair<bool, dynamic_string> hidden_ascii_match::match_impl(std::string_view 
     }
 
     if (!hidden_ascii_found) {
-        return {false, {}};
+        return {match_result::no_match, {}};
     }
 
     cow_string str{pattern};
     // The transformation shouldn't fail
     transformer::unicode_normalize::transform(str);
-    return {true, static_cast<dynamic_string>(str)};
+    return {match_result::match, static_cast<dynamic_string>(str)};
 }
 
 } // namespace ddwaf::matcher

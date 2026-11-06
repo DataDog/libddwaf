@@ -6,19 +6,28 @@
 
 #pragma once
 
+#include <concepts>
 #include <cstdint>
 #include <memory>
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <unordered_map>
 #include <utility>
 
 #include "dynamic_string.hpp"
 #include "object.hpp"
 #include "object_type.hpp"
+#include "utils.hpp"
 
 namespace ddwaf {
 namespace matcher {
+
+enum class match_result : uint8_t {
+    unknown,  // No data could be evaluated
+    no_match, // Data was evaluated but there was no match
+    match     // Data was evaluated and there was a match
+};
 
 class base {
 public:
@@ -42,12 +51,15 @@ public:
 
     // Scalar matcher methods
     [[nodiscard]] virtual bool is_supported_type(object_type type) const = 0;
-
-    [[nodiscard]] virtual std::pair<bool, dynamic_string> match(std::string_view str) const = 0;
-    [[nodiscard]] virtual std::pair<bool, dynamic_string> match(object_view obj) const = 0;
+    [[nodiscard]] virtual std::pair<match_result, dynamic_string> match(
+        std::string_view str) const = 0;
+    [[nodiscard]] virtual std::pair<match_result, dynamic_string> match(object_view obj) const = 0;
 };
 
-template <typename T> class base_impl : public base {
+// ConvertStrings enables the evaluation of string values by converting them to
+// the scalar type of the matcher; strings which can't be converted are not
+// evaluated at all
+template <typename T, bool ConvertStrings = false> class base_impl : public base {
 public:
     base_impl() = default;
     ~base_impl() override = default;
@@ -64,13 +76,58 @@ public:
         return static_cast<const T *>(this)->to_string_impl();
     }
 
+    // Note that callers use this method to filter out values before calling
+    // match, so reporting strings as supported here is what makes the
+    // conversion within match reachable at all
     [[nodiscard]] bool is_supported_type(object_type type) const override
     {
+        // Strings can be evaluated through a conversion, so they must not be
+        // filtered out by callers relying on this method
+        if constexpr (ConvertStrings) {
+            if ((type & object_type::string) != 0) {
+                return true;
+            }
+        }
         return T::is_supported_type_impl(type);
     }
 
+    // Converts a string into the scalar type evaluated by this matcher. Returns
+    // an invalid object when the matcher has no scalar type or when the string
+    // can't be represented in it.
+    [[nodiscard]] static owned_object convert_string_to_compatible_type(std::string_view input)
+    {
+        using value_type = std::remove_cvref_t<typename T::value_type>;
+
+        // from_string can't produce either of these, so no conversion is
+        // possible. Note that the else is required: statements following an
+        // if constexpr are instantiated regardless of the condition, which
+        // would make from_string<void> ill-formed for the void specialisations.
+        if constexpr (std::is_void_v<value_type> || std::is_same_v<value_type, std::string>) {
+            return {};
+        } else {
+            auto maybe_value = from_string<value_type>(input);
+            if (!maybe_value.has_value()) {
+                return {};
+            }
+            const value_type value = *maybe_value;
+
+            if constexpr (std::same_as<value_type, bool>) {
+                return owned_object::make_boolean(value);
+            } else if constexpr (std::is_integral_v<value_type> && std::is_signed_v<value_type>) {
+                return owned_object::make_signed(value);
+            } else if constexpr (std::is_integral_v<value_type> && std::is_unsigned_v<value_type>) {
+                return owned_object::make_unsigned(value);
+            } else if constexpr (std::is_floating_point_v<value_type>) {
+                return owned_object::make_float(value);
+            } else {
+                return {};
+            }
+        }
+    }
+
     // Helper used for testing purposes
-    template <typename U> [[nodiscard]] std::pair<bool, dynamic_string> match(const U &data) const
+    template <typename U>
+    [[nodiscard]] std::pair<match_result, dynamic_string> match(const U &data) const
     {
         if constexpr (is_type_in_set_v<U, owned_object, borrowed_object>) {
             return match(object_view{data});
@@ -79,16 +136,24 @@ public:
         }
     }
 
-    [[nodiscard]] std::pair<bool, dynamic_string> match(std::string_view str) const override
+    [[nodiscard]] std::pair<match_result, dynamic_string> match(std::string_view str) const override
     {
         const auto *ptr = static_cast<const T *>(this);
         if constexpr (T::is_supported_type_impl(object_type::string)) {
             return ptr->match_impl(str);
         }
-        return {false, {}};
+
+        if constexpr (ConvertStrings) {
+            auto converted = convert_string_to_compatible_type(str);
+            if (converted.is_valid()) {
+                return match_scalar(object_view{converted});
+            }
+        }
+
+        return {match_result::unknown, {}};
     }
 
-    [[nodiscard]] std::pair<bool, dynamic_string> match(object_view obj) const override
+    [[nodiscard]] std::pair<match_result, dynamic_string> match(object_view obj) const override
     {
         const auto *ptr = static_cast<const T *>(this);
         if constexpr (T::is_supported_type_impl(object_type::string)) {
@@ -97,6 +162,24 @@ public:
             }
         }
 
+        if constexpr (ConvertStrings) {
+            if (obj.is_string()) {
+                auto converted = convert_string_to_compatible_type(obj.as<std::string_view>());
+                if (converted.is_valid()) {
+                    return match_scalar(object_view{converted});
+                }
+            }
+        }
+
+        return match_scalar(obj);
+    }
+
+protected:
+    // Evaluates the scalar types natively supported by the matcher, reporting
+    // unknown when none of them apply
+    [[nodiscard]] std::pair<match_result, dynamic_string> match_scalar(object_view obj) const
+    {
+        const auto *ptr = static_cast<const T *>(this);
         if constexpr (T::is_supported_type_impl(object_type::int64)) {
             if (obj.type() == object_type::int64) {
                 return ptr->match_impl(obj.as<int64_t>());
@@ -121,7 +204,7 @@ public:
             }
         }
 
-        return {false, {}};
+        return {match_result::unknown, {}};
     }
 };
 
