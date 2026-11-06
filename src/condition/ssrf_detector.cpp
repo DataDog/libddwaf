@@ -201,14 +201,14 @@ ssrf_result ssrf_impl(const uri_decomposed &uri, object_view params,
             return {};
         }
 
-        // Verify if the injected param intereferes with the authority:
+        // Verify if the injected param overlaps the authority:
         //
         //  scheme://userinfo@host:port/path?query#fragment
         //           ──────────────────
         //
         // Note that if there is no authority, this condition will never be true
-        // as uri.authority.param_index will be npos (size_t::max)
-        if (opts.authority_inspection && param_index >= uri.authority.index &&
+        // as uri.authority.index will be npos (size_t::max)
+        if (opts.authority_inspection && param_index + param.size() > uri.authority.index &&
             param_index < uri.scheme_and_authority.size()) {
             // Verify if the host was fully modified by the injected param
             //
@@ -217,7 +217,9 @@ ssrf_result ssrf_impl(const uri_decomposed &uri, object_view params,
             //
             // Note that we require the injection to extend beyond the authority
             // to avoid false positives caused by the introduction of a single '/'
-            if ((param_index + param.size() - 1) > uri.scheme_and_authority.size()) {
+            // Keep scheme-prefixed URL inputs subject to the host policy checks below.
+            if (param_index >= uri.authority.index &&
+                (param_index + param.size() - 1) > uri.scheme_and_authority.size()) {
                 return {{std::string(param), it.get_current_path()}};
             }
 
