@@ -124,8 +124,9 @@ void object_to_yaml_helper(const ddwaf_object &obj, YAML::Node &output)
         output = std::string{ddwaf_object_get_string(&obj, nullptr), ddwaf_object_get_length(&obj)};
         break;
     case DDWAF_OBJ_MAP:
+    case DDWAF_OBJ_LARGE_MAP:
         output = YAML::Load("{}");
-        for (unsigned i = 0; i < obj.via.map.size; i++) {
+        for (std::size_t i = 0; i < ddwaf_object_get_size(&obj); i++) {
             const auto *child = ddwaf_object_at_key(&obj, i);
             std::string key{ddwaf_object_get_string(child, nullptr), ddwaf_object_get_length(child)};
 
@@ -135,12 +136,13 @@ void object_to_yaml_helper(const ddwaf_object &obj, YAML::Node &output)
         }
         break;
     case DDWAF_OBJ_ARRAY:
+    case DDWAF_OBJ_LARGE_ARRAY:
         output = YAML::Load("[]");
-        for (unsigned i = 0; i < obj.via.array.size; i++) {
-            auto child = obj.via.array.ptr[i];
+        for (std::size_t i = 0; i < ddwaf_object_get_size(&obj); i++) {
+            const auto *child = ddwaf_object_at_value(&obj, i);
 
             YAML::Node value;
-            object_to_yaml_helper(child, value);
+            object_to_yaml_helper(*child, value);
             output.push_back(value);
         }
         break;
@@ -282,13 +284,13 @@ void object_to_json_helper(
             ddwaf_object_get_string(&obj, nullptr), ddwaf_object_get_length(&obj), alloc);
     } break;
     case DDWAF_OBJ_MAP:
+    case DDWAF_OBJ_LARGE_MAP:
         output.SetObject();
-        for (unsigned i = 0; i < obj.via.map.size; i++) {
+        for (std::size_t i = 0; i < ddwaf_object_get_size(&obj); i++) {
             rapidjson::Value key;
             rapidjson::Value value;
 
-            auto child = obj.via.map.ptr[i];
-            object_to_json_helper(child.val, value, alloc);
+            object_to_json_helper(*ddwaf_object_at_value(&obj, i), value, alloc);
             const auto *child_key = ddwaf_object_at_key(&obj, i);
             key.SetString(ddwaf_object_get_string(child_key, nullptr),
                 ddwaf_object_get_length(child_key), alloc);
@@ -297,11 +299,11 @@ void object_to_json_helper(
         }
         break;
     case DDWAF_OBJ_ARRAY:
+    case DDWAF_OBJ_LARGE_ARRAY:
         output.SetArray();
-        for (unsigned i = 0; i < obj.via.array.size; i++) {
+        for (std::size_t i = 0; i < ddwaf_object_get_size(&obj); i++) {
             rapidjson::Value value;
-            auto child = obj.via.array.ptr[i];
-            object_to_json_helper(child, value, alloc);
+            object_to_json_helper(*ddwaf_object_at_value(&obj, i), value, alloc);
             output.PushBack(value, alloc);
         }
         break;

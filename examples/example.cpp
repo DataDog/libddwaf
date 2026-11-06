@@ -42,7 +42,7 @@ template <> struct as_if<ddwaf_object, void> {
         std::list<std::tuple<ddwaf_object *, YAML::Node, YAML::Node::const_iterator>> stack;
 
         ddwaf_object root = yaml_to_object_helper(node, alloc);
-        if (root.type == DDWAF_OBJ_MAP || root.type == DDWAF_OBJ_ARRAY) {
+        if (ddwaf_object_is_map(&root) || ddwaf_object_is_array(&root)) {
             stack.emplace_back(&root, node, node.begin());
         }
 
@@ -54,16 +54,16 @@ template <> struct as_if<ddwaf_object, void> {
                 YAML::Node child_node = parent_node.IsMap() ? it->second : *it;
                 auto child_obj = yaml_to_object_helper(child_node, alloc);
                 ddwaf_object *child_ptr = nullptr;
-                if (parent_obj->type == DDWAF_OBJ_MAP) {
+                if (ddwaf_object_is_map(parent_obj)) {
                     auto key = it->first.as<std::string>();
                     child_ptr = ddwaf_object_insert_key(parent_obj, key.c_str(), key.size(), alloc);
                     *child_ptr = child_obj;
-                } else if (parent_obj->type == DDWAF_OBJ_ARRAY) {
+                } else if (ddwaf_object_is_array(parent_obj)) {
                     child_ptr = ddwaf_object_insert(parent_obj, alloc);
                     *child_ptr = child_obj;
                 }
 
-                if (child_obj.type == DDWAF_OBJ_MAP || child_obj.type == DDWAF_OBJ_ARRAY) {
+                if (ddwaf_object_is_map(&child_obj) || ddwaf_object_is_array(&child_obj)) {
                     stack.emplace_back(child_ptr, child_node, child_node.begin());
                     ++it;
                     break;
@@ -110,9 +110,11 @@ YAML::Node object_to_yaml_helper(const ddwaf_object &obj)
         }
         break;
     case DDWAF_OBJ_MAP:
+    case DDWAF_OBJ_LARGE_MAP:
         output = YAML::Load("{}");
         break;
     case DDWAF_OBJ_ARRAY:
+    case DDWAF_OBJ_LARGE_ARRAY:
         output = YAML::Load("[]");
         break;
     case DDWAF_OBJ_INVALID:
@@ -130,7 +132,7 @@ YAML::Node object_to_yaml(const ddwaf_object &obj)
     std::list<std::tuple<const ddwaf_object &, YAML::Node, std::size_t>> stack;
 
     YAML::Node root = object_to_yaml_helper(obj);
-    if (obj.type == DDWAF_OBJ_MAP || obj.type == DDWAF_OBJ_ARRAY) {
+    if (ddwaf_object_is_map(&obj) || ddwaf_object_is_array(&obj)) {
         stack.emplace_back(obj, root, 0);
     }
 
@@ -141,7 +143,7 @@ YAML::Node object_to_yaml(const ddwaf_object &obj)
         size_t size = ddwaf_object_get_size(&parent_obj);
         for (; index < size; ++index) {
             const ddwaf_object *child_obj = nullptr;
-            if (parent_obj.type == DDWAF_OBJ_MAP) {
+            if (ddwaf_object_is_map(&parent_obj)) {
                 child_obj = ddwaf_object_at_value(&parent_obj, index);
                 auto *key_obj = ddwaf_object_at_key(&parent_obj, index);
                 size_t key_len;
@@ -151,17 +153,17 @@ YAML::Node object_to_yaml(const ddwaf_object &obj)
                 auto child_node = object_to_yaml_helper(*child_obj);
                 parent_node[key] = child_node;
 
-                if (child_obj->type == DDWAF_OBJ_MAP || child_obj->type == DDWAF_OBJ_ARRAY) {
+                if (ddwaf_object_is_map(child_obj) || ddwaf_object_is_array(child_obj)) {
                     stack.emplace_back(*child_obj, child_node, 0);
                     ++index;
                     break;
                 }
-            } else if (parent_obj.type == DDWAF_OBJ_ARRAY) {
+            } else if (ddwaf_object_is_array(&parent_obj)) {
                 child_obj = ddwaf_object_at_value(&parent_obj, index);
                 auto child_node = object_to_yaml_helper(*child_obj);
                 parent_node.push_back(child_node);
 
-                if (child_obj->type == DDWAF_OBJ_MAP || child_obj->type == DDWAF_OBJ_ARRAY) {
+                if (ddwaf_object_is_map(child_obj) || ddwaf_object_is_array(child_obj)) {
                     stack.emplace_back(*child_obj, child_node, 0);
                     ++index;
                     break;

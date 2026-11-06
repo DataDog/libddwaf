@@ -408,4 +408,125 @@ TEST(TestEngineBuilderFunctional, CustomRules)
     ddwaf_builder_destroy(builder);
 }
 
+TEST(TestEngineBuilderFunctional, InvalidSchemaVersionFormat)
+{
+    auto *alloc = ddwaf_get_default_allocator();
+
+    auto config = yaml_to_object<ddwaf_object>("{version: abc}");
+    ASSERT_NE(config.type, DDWAF_OBJ_INVALID);
+
+    ddwaf_builder builder = ddwaf_builder_init();
+    ASSERT_NE(builder, nullptr);
+
+    ASSERT_FALSE(ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &config, nullptr));
+    ddwaf_object_destroy(&config, alloc);
+
+    EXPECT_EQ(ddwaf_builder_get_config_paths(builder, nullptr, nullptr, 0), 0);
+
+    ddwaf_builder_destroy(builder);
+}
+
+TEST(TestEngineBuilderFunctional, RemoveRejectedConfig)
+{
+    auto *alloc = ddwaf_get_default_allocator();
+    ddwaf_builder builder = ddwaf_builder_init();
+    ASSERT_NE(builder, nullptr);
+
+    // Add the first config
+    {
+        auto config = read_file<ddwaf_object>("base_rules_1.yaml", base_dir);
+        ASSERT_NE(config.type, DDWAF_OBJ_INVALID);
+        ASSERT_TRUE(
+            ddwaf_builder_add_or_update_config(builder, LSTRARG("rules1"), &config, nullptr));
+        ddwaf_object_destroy(&config, alloc);
+    }
+
+    // Update the first config with an unsupported schema version
+    {
+        auto config = yaml_to_object<ddwaf_object>("{version: '3.0'}");
+        ASSERT_NE(config.type, DDWAF_OBJ_INVALID);
+        ASSERT_FALSE(
+            ddwaf_builder_add_or_update_config(builder, LSTRARG("rules1"), &config, nullptr));
+        ddwaf_object_destroy(&config, alloc);
+    }
+
+    EXPECT_EQ(ddwaf_builder_get_config_paths(builder, nullptr, nullptr, 0), 0);
+
+    // Provide the same rules through a second config
+    {
+        auto config = read_file<ddwaf_object>("base_rules_1.yaml", base_dir);
+        ASSERT_NE(config.type, DDWAF_OBJ_INVALID);
+        ASSERT_TRUE(
+            ddwaf_builder_add_or_update_config(builder, LSTRARG("rules2"), &config, nullptr));
+        ddwaf_object_destroy(&config, alloc);
+    }
+
+    // The rejected config is no longer registered
+    EXPECT_FALSE(ddwaf_builder_remove_config(builder, LSTRARG("rules1")));
+
+    ddwaf_handle handle = ddwaf_builder_build_instance(builder);
+    ASSERT_NE(handle, nullptr);
+
+    // Test that the rules from the second config work
+    {
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
+
+        ddwaf_object root;
+        ddwaf_object_set_map(&root, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&root, STRL("value1"), alloc), STRL("rule1"), alloc);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, nullptr, LONG_TIME), DDWAF_MATCH);
+
+        ddwaf_context_destroy(context);
+    }
+
+    ddwaf_destroy(handle);
+    ddwaf_builder_destroy(builder);
+}
+
+TEST(TestEngineBuilderFunctional, RejectedConfigWithLoadedItems)
+{
+    auto *alloc = ddwaf_get_default_allocator();
+    ddwaf_builder builder = ddwaf_builder_init();
+    ASSERT_NE(builder, nullptr);
+
+    // Add the first config
+    {
+        auto config = read_file<ddwaf_object>("base_rules_1.yaml", base_dir);
+        ASSERT_NE(config.type, DDWAF_OBJ_INVALID);
+        ASSERT_TRUE(
+            ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &config, nullptr));
+        ddwaf_object_destroy(&config, alloc);
+    }
+
+    // The second exclusion is invalid, so the config is rejected after loading the first one
+    {
+        auto config = yaml_to_object<ddwaf_object>(
+            "{exclusions: [{id: 1, rules_target: [{rule_id: 1}]}, invalid]}");
+        ASSERT_NE(config.type, DDWAF_OBJ_INVALID);
+        ASSERT_FALSE(
+            ddwaf_builder_add_or_update_config(builder, LSTRARG("exclusions"), &config, nullptr));
+        ddwaf_object_destroy(&config, alloc);
+    }
+
+    ddwaf_handle handle = ddwaf_builder_build_instance(builder);
+    ASSERT_NE(handle, nullptr);
+
+    // Test that the exclusion from the rejected config is not applied
+    {
+        ddwaf_context context = ddwaf_context_init(handle, alloc);
+
+        ddwaf_object root;
+        ddwaf_object_set_map(&root, 1, alloc);
+        ddwaf_object_set_string(
+            ddwaf_object_insert_key(&root, STRL("value1"), alloc), STRL("rule1"), alloc);
+        EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, nullptr, LONG_TIME), DDWAF_MATCH);
+
+        ddwaf_context_destroy(context);
+    }
+
+    ddwaf_destroy(handle);
+    ddwaf_builder_destroy(builder);
+}
+
 } // namespace

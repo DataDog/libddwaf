@@ -14,22 +14,29 @@ string(SUBSTRING "${BUILD_ID}" 2 39 BUILD_ID_SUFFIX)
 
 add_library(libddwaf_shared SHARED
     $<TARGET_OBJECTS:libddwaf_shared_objects> $<$<BOOL:${MSVC}>:libddwaf.def>)
+if(LINUX AND LIBDDWAF_BUNDLE_LIBM_IN_DSO)
+    target_sources(libddwaf_shared PRIVATE
+        ${libddwaf_SOURCE_DIR}/src/compat/ceilf.c)
+endif()
 set_target_properties(libddwaf_shared PROPERTIES OUTPUT_NAME ddwaf)
+if(MINGW)
+    set_target_properties(libddwaf_shared PROPERTIES PREFIX "")
+endif()
 
 install(TARGETS libddwaf_shared EXPORT libddwaf-config
     DESTINATION ${CMAKE_INSTALL_LIBDIR}
     INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 if(LINUX)
-    target_link_libraries(libddwaf_shared PUBLIC ${LIBDDWAF_INTERFACE_LIBRARIES})
+    target_link_libraries(libddwaf_shared
+        PUBLIC ${LIBDDWAF_SHARED_INTERFACE_LIBRARIES})
     target_link_libraries(libddwaf_shared PRIVATE
         $<$<BOOL:${LIBDDWAF_ENABLE_LTO}>:-flto>
         -Wl,--no-undefined
         -Wl,-version-script=${libddwaf_SOURCE_DIR}/libddwaf.version
         -Wl,--build-id=0x${BUILD_ID}
         ${LIBDDWAF_PRIVATE_LIBRARIES}
-        -static-libstdc++
-        glibc_compat_time64 glibc_compat_math)
+        -static-libstdc++)
 
     if(NOT (CMAKE_BUILD_TYPE MATCHES Debug))
         set(SYMBOL_FILE $<TARGET_FILE:libddwaf_shared>.debug)
@@ -68,10 +75,12 @@ elseif (APPLE)
             DESTINATION ${CMAKE_INSTALL_LIBDIR}/.build-id/${BUILD_ID_PREFIX}
             RENAME ${BUILD_ID_SUFFIX}.debug)
     endif()
-elseif (MSVC)
+elseif (WIN32)
     target_link_libraries(libddwaf_shared
         PRIVATE ${LIBDDWAF_PRIVATE_LIBRARIES}
         PUBLIC ${LIBDDWAF_INTERFACE_LIBRARIES})
 
-    install(FILES $<TARGET_PDB_FILE:libddwaf_shared> DESTINATION lib OPTIONAL)
+    if(MSVC)
+        install(FILES $<TARGET_PDB_FILE:libddwaf_shared> DESTINATION lib OPTIONAL)
+    endif()
 endif()

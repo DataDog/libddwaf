@@ -1,9 +1,6 @@
 cmake_minimum_required(VERSION 3.14)
 
-file(READ "version" version)
-
-string(STRIP "${version}" version)
-string(REGEX REPLACE "-(alpha|beta)[0-9]*$" "" mmp_version ${version})
+include(cmake/version.cmake)
 
 if (APPLE)
     set(CMAKE_OSX_DEPLOYMENT_TARGET "14.2.1" CACHE STRING "Minimum OS X deployment version")
@@ -21,7 +18,8 @@ if(UNIX AND NOT APPLE)
     set(LINUX TRUE)
 endif()
 
-configure_file(src/version.hpp.in ${CMAKE_CURRENT_SOURCE_DIR}/src/version.hpp)
+configure_file(src/version.hpp.in
+    ${CMAKE_CURRENT_BINARY_DIR}/generated/version.hpp)
 
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_CXX_STANDARD 20)
@@ -37,11 +35,13 @@ message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 set(GIT_COMMIT "" CACHE STRING "Git commit hash (skips git invocation if set)")
 
 option(LIBDDWAF_BUILD_SHARED "Build shared library" ON)
-option(LIBDDWAF_BUILD_STATIC "Build shared library" ON)
+option(LIBDDWAF_BUILD_STATIC "Build static library" ON)
 option(LIBDDWAF_TESTING "Load test subdirectories and targets" ON)
 option(LIBDDWAF_TEST_COVERAGE "Do coverage if possible" OFF)
 option(LIBDDWAF_VECTORIZED_TRANSFORMERS "Enable vectorization for transformers" ON)
 option(LIBDDWAF_ENABLE_LTO "Enable link-time optimisation" OFF)
+option(LIBDDWAF_BUNDLE_LIBM_IN_DSO
+    "Bundle required libm functionality into the Linux shared library" OFF)
 option(LIBDDWAF_BENCHMARK_PGO_STAGE1 "Stage 1 profile-optimized benchmark enables instrumentation" OFF)
 option(LIBDDWAF_BENCHMARK_BOLT_STAGE3 "Stage 3 profile-optimized benchmark enables relocations" OFF)
 option(LIBDDWAF_ON_VALGRIND "Hides some RE2 optimisations on valgrind" OFF)
@@ -64,27 +64,14 @@ endif()
 
 include(GNUInstallDirs)
 
-add_library(glibc_compat_time64 OBJECT ${libddwaf_SOURCE_DIR}/src/glibc-compat/time64.c)
-set_target_properties(glibc_compat_time64 PROPERTIES POSITION_INDEPENDENT_CODE 1)
-
-add_library(glibc_compat_math OBJECT ${libddwaf_SOURCE_DIR}/src/glibc-compat/math.c)
-set_target_properties(glibc_compat_math PROPERTIES POSITION_INDEPENDENT_CODE 1)
-
 try_compile(STDLIB_MAP_RECURSIVE ${CMAKE_CURRENT_BINARY_DIR}
     SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/try_rec_map.cpp)
 
-try_compile(STDLIB_MEMORY_RESOURCE_FTM ${CMAKE_CURRENT_BINARY_DIR}
-    SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/try_mem_resource_ftm.cpp)
-
-try_compile(STDLIB_MONOTONIC_RESOURCE ${CMAKE_CURRENT_BINARY_DIR}
-    SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/try_monotonic_resource.cpp)
-
 message(STATUS "Has recursive unordered_map    : ${STDLIB_MAP_RECURSIVE}")
-message(STATUS "Has memory_resource test macro : ${STDLIB_MEMORY_RESOURCE_FTM}")
-message(STATUS "Has monotonic_resource         : ${STDLIB_MONOTONIC_RESOURCE}")
 
 # System dependencies
 set(LIBDDWAF_INTERFACE_LIBRARIES "")
+set(LIBDDWAF_SHARED_INTERFACE_LIBRARIES "")
 if(LINUX)
     find_library(LIBPTHREAD pthread)
     find_library(LIBRT rt)
@@ -94,20 +81,38 @@ if(LINUX)
     # add the dependency
     find_library(LIBM m)
 
-    set(LIBDDWAF_INTERFACE_LIBRARIES
+    set(LIBDDWAF_LINUX_LIBRARIES
         $<$<BOOL:${LIBPTHREAD}>:pthread>
         $<$<BOOL:${LIBRT}>:rt>
         $<$<BOOL:${LIBDL}>:dl>)
+
+    set(LIBDDWAF_INTERFACE_LIBRARIES
+        ${LIBDDWAF_LINUX_LIBRARIES}
+        $<$<BOOL:${LIBM}>:m>)
+
+    if(LIBDDWAF_BUNDLE_LIBM_IN_DSO)
+        set(LIBDDWAF_SHARED_INTERFACE_LIBRARIES
+            ${LIBDDWAF_LINUX_LIBRARIES})
+    else()
+        set(LIBDDWAF_SHARED_INTERFACE_LIBRARIES
+            ${LIBDDWAF_INTERFACE_LIBRARIES})
+    endif()
 elseif(WIN32)
     list(APPEND LIBDDWAF_INTERFACE_LIBRARIES ws2_32)
+    list(APPEND LIBDDWAF_SHARED_INTERFACE_LIBRARIES ws2_32)
 endif()
 
-add_subdirectory(third_party EXCLUDE_FROM_ALL)
+add_library(lib_rapidjson INTERFACE)
+target_compile_definitions(lib_rapidjson INTERFACE RAPIDJSON_HAS_STDSTRING=1)
+target_include_directories(lib_rapidjson INTERFACE
+    "${libddwaf_SOURCE_DIR}/src/vendor/rapidjson/include")
 
 set(LIBDDWAF_PRIVATE_LIBRARIES lib_rapidjson)
 if(NOT MSVC AND LIBDDWAF_TESTING AND LIBDDWAF_TEST_COVERAGE)
     list(APPEND LIBDDWAF_PRIVATE_LIBRARIES gcov)
 endif()
+
+add_subdirectory(third_party EXCLUDE_FROM_ALL)
 
 if (LIBDDWAF_ENABLE_LTO)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -flto")

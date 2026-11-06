@@ -42,7 +42,7 @@ void run_fixture::warmup()
             for (; i < ddwaf_object_get_size(current); ++i) {
                 const auto &next = *ddwaf_object_at_value(current, i);
                 if (object_stack.size() <= max_depth &&
-                    (next.type == DDWAF_OBJ_ARRAY || next.type == DDWAF_OBJ_MAP)) {
+                    (ddwaf_object_is_array(&next) || ddwaf_object_is_map(&next))) {
                     break;
                 }
             }

@@ -1,47 +1,16 @@
 project(third_party)
+
+# These dependencies are used only by tests, tools, and examples.
+if(NOT LIBDDWAF_TESTING)
+    return()
+endif()
+
 include(ExternalProject)
 
-set(DOWNLOAD_SUBDIR downloads)
-set(INSTALL_DIR  ${CMAKE_BINARY_DIR}/third_party)
-#get_filename_component(INSTALL_DIR ${CMAKE_BINARY_DIR}/third_party REALPATH)
-#message("install dir is ${INSTALL_DIR}")
+set(INSTALL_DIR ${CMAKE_BINARY_DIR}/third_party)
 
-# workaround for using it in target_include_directories
+# Work around imported include directories having to exist at configure time.
 file(MAKE_DIRECTORY ${INSTALL_DIR}/include)
-
-if(NOT MSVC)
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wno-unused-parameter -Wno-shadow")
-    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELEASE} -Wno-unused-parameter -Wno-shadow")
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wno-unused-parameter -Wno-shadow")
-endif()
-
-set(RAPIDJSON_COMMIT 24b5e7a8b27f42fa16b96fc70aade9106cf7102f)
-ExternalProject_Add(proj_rapidjson
-    URL               https://github.com/Tencent/rapidjson/archive/${RAPIDJSON_COMMIT}.tar.gz
-    INSTALL_DIR       ${INSTALL_DIR}
-    CMAKE_ARGS -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}
-               -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
-               -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-               -DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}
-               -DCMAKE_CXX_FLAGS_RELEASE=${CMAKE_CXX_FLAGS_RELEASE}
-               -DCMAKE_CXX_FLAGS_RELWITHDEBINFO=${CMAKE_CXX_FLAGS_RELWITHDEBINFO}
-               -DCMAKE_CXX_FLAGS_DEBUG=${CMAKE_CXX_FLAGS_DEBUG}
-               -DCMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES}
-               -DCMAKE_POLICY_VERSION_MINIMUM=3.5
-    BUILD_COMMAND     ""
-    INSTALL_COMMAND   ${CMAKE_COMMAND} -E copy_directory "<SOURCE_DIR>/include/" "<INSTALL_DIR>/include/"
-)
-add_library(lib_rapidjson INTERFACE IMPORTED GLOBAL)
-target_include_directories(lib_rapidjson INTERFACE ${INSTALL_DIR}/include)
-add_dependencies(lib_rapidjson proj_rapidjson)
-target_compile_definitions(lib_rapidjson INTERFACE RAPIDJSON_HAS_STDSTRING=1)
-set_target_properties(proj_rapidjson PROPERTIES EXCLUDE_FROM_ALL TRUE)
-
-if(NOT MSVC)
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fPIC")
-    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELEASE} -fPIC")
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fPIC")
-endif()
 
 if(CMAKE_BUILD_TYPE MATCHES Debug)
     set(LIBGTEST_FILENAME ${CMAKE_STATIC_LIBRARY_PREFIX}gtestd${CMAKE_STATIC_LIBRARY_SUFFIX})
@@ -119,7 +88,7 @@ ExternalProject_Add(proj_yamlcpp
                 BUILD_BYPRODUCTS ${INSTALL_DIR}/lib/${LIBYAML_FILENAME}
 )
 add_library(lib_yamlcpp STATIC IMPORTED GLOBAL)
-set_target_properties(lib_yamlcpp PROPERTIES  IMPORTED_LOCATION ${INSTALL_DIR}/lib/${LIBYAML_FILENAME})
+set_target_properties(lib_yamlcpp PROPERTIES IMPORTED_LOCATION ${INSTALL_DIR}/lib/${LIBYAML_FILENAME})
 target_include_directories(lib_yamlcpp INTERFACE ${INSTALL_DIR}/include)
 add_dependencies(lib_yamlcpp proj_yamlcpp)
 set_target_properties(lib_yamlcpp proj_yamlcpp PROPERTIES EXCLUDE_FROM_ALL TRUE)
