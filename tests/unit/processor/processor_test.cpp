@@ -84,6 +84,63 @@ TEST(TestProcessor, SingleMappingOutputNoEvalUnconditional)
     ddwaf_object_free(&output_map);
 }
 
+// Two output-only processors writing the same attribute: the output of the
+// second one is rejected by the collector and must not be leaked.
+TEST(TestProcessor, DuplicateOutputNoEvalUnconditional)
+{
+    ddwaf_object first_output;
+    ddwaf_object_string(&first_output, "first_output");
+
+    ddwaf_object second_output;
+    ddwaf_object_string(&second_output, "second_output");
+
+    ddwaf_object input;
+    ddwaf_object_string(&input, "input_string");
+
+    ddwaf_object input_map;
+    ddwaf_object_map(&input_map);
+    ddwaf_object_map_add(&input_map, "input_address", &input);
+
+    object_store store;
+    store.insert(input_map);
+
+    auto make_mappings = [] {
+        return std::vector<processor_mapping>{
+            {.inputs = {{{{.index = get_target_index("input_address"),
+                 .name = "input_address",
+                 .key_path = {}}}}},
+                .output = {.index = get_target_index("output_address"),
+                    .name = "output_address",
+                    .key_path = {}}}};
+    };
+
+    mock::processor first{"first", std::make_shared<expression>(), make_mappings(), false, true};
+    EXPECT_CALL(first, eval_impl(_, _, _))
+        .WillOnce(Return(std::pair<ddwaf_object, object_store::attribute>{
+            first_output, object_store::attribute::none}));
+
+    mock::processor second{"second", std::make_shared<expression>(), make_mappings(), false, true};
+    EXPECT_CALL(second, eval_impl(_, _, _))
+        .WillOnce(Return(std::pair<ddwaf_object, object_store::attribute>{
+            second_output, object_store::attribute::none}));
+
+    processor_cache first_cache;
+    processor_cache second_cache;
+    timer deadline{2s};
+
+    attribute_collector collector;
+    first.eval(store, collector, first_cache, {}, deadline);
+    second.eval(store, collector, second_cache, {}, deadline);
+
+    auto output_map = collector.get_available_attributes_and_reset();
+    EXPECT_EQ(ddwaf_object_size(&output_map), 1);
+    const auto *obtained = ddwaf_object_get_index(&output_map, 0);
+    EXPECT_STREQ(obtained->parameterName, "output_address");
+    EXPECT_STREQ(obtained->stringValue, "first_output");
+
+    ddwaf_object_free(&output_map);
+}
+
 TEST(TestProcessor, MultiMappingOutputNoEvalUnconditional)
 {
     ddwaf_object first_output;

@@ -21,6 +21,12 @@ namespace ddwaf {
 bool attribute_collector::insert(std::string_view key, const ddwaf_object &value, bool copy)
 {
     if (inserted_or_pending_attributes_.contains(key)) {
+        DDWAF_DEBUG("Not inserting duplicate attribute: {}", key);
+        if (!copy) {
+            // The collector owns the object, so it must be freed if rejected
+            auto object = value;
+            ddwaf_object_free(&object);
+        }
         return false;
     }
 
@@ -98,9 +104,8 @@ bool attribute_collector::insert_helper(std::string_view key, const ddwaf_object
     auto object = copy ? object::clone(&value) : value;
     auto res = ddwaf_object_map_addl(&attributes_, key.data(), key.size(), &object);
     if (!res) {
-        if (copy) {
-            ddwaf_object_free(&object);
-        }
+        // Either a copy or owned by the collector, so it must be freed
+        ddwaf_object_free(&object);
     } else {
         DDWAF_DEBUG("Collected attribute: {}", key);
         inserted_or_pending_attributes_.insert(key);

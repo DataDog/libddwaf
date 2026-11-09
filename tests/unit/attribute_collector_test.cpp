@@ -9,6 +9,7 @@
 #include "common/gtest_utils.hpp"
 
 using namespace ddwaf;
+using namespace std::literals;
 
 namespace {
 
@@ -84,6 +85,44 @@ TEST(TestAttributeCollector, InsertDuplicate)
     EXPECT_STREQ(obtained->stringValue, expected.stringValue);
 
     ddwaf_object_free(&expected);
+    ddwaf_object_free(&attributes);
+}
+
+// When not copying, the collector takes ownership of the object even if the
+// insertion is rejected, so the duplicate must be freed by the collector.
+TEST(TestAttributeCollector, InsertDuplicateNoCopy)
+{
+    ddwaf_object first;
+    ddwaf_object_string(&first, "first");
+
+    ddwaf_object duplicate;
+    ddwaf_object_string(&duplicate, "duplicate");
+
+    attribute_collector collector;
+    EXPECT_TRUE(collector.insert("address", first, false));
+    EXPECT_FALSE(collector.insert("address", duplicate, false));
+
+    auto attributes = collector.get_available_attributes_and_reset();
+    EXPECT_EQ(ddwaf_object_size(&attributes), 1);
+
+    const auto *obtained = ddwaf_object_get_index(&attributes, 0);
+    EXPECT_STREQ(obtained->stringValue, "first");
+
+    ddwaf_object_free(&attributes);
+}
+
+TEST(TestAttributeCollector, InsertDuplicateString)
+{
+    attribute_collector collector;
+    EXPECT_TRUE(collector.insert("address", "first"sv));
+    EXPECT_FALSE(collector.insert("address", "duplicate"sv));
+
+    auto attributes = collector.get_available_attributes_and_reset();
+    EXPECT_EQ(ddwaf_object_size(&attributes), 1);
+
+    const auto *obtained = ddwaf_object_get_index(&attributes, 0);
+    EXPECT_STREQ(obtained->stringValue, "first");
+
     ddwaf_object_free(&attributes);
 }
 
