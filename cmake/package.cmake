@@ -9,6 +9,10 @@ else()
     set(LIBDDWAF_PACKAGE_PROCESSOR ${CMAKE_SYSTEM_PROCESSOR} CACHE STRING "Alternative processor for packaging purposes")
 endif()
 
+if (MSVC)
+    string(REPLACE "\\" "/" CPACK_PACKAGE_DIRECTORY "${CPACK_PACKAGE_DIRECTORY}")
+endif()
+
 set(CPACK_PACKAGE_VENDOR "libddwaf")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "DataDog WAF Library")
 set(CPACK_RESOURCE_FILE_README "${libddwaf_SOURCE_DIR}/README.md")
