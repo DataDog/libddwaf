@@ -4,41 +4,38 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/).
 // Copyright 2026 Datadog, Inc.
 
-#define _GNU_SOURCE
-#include <dlfcn.h>
 #include <errno.h>
 #include <limits.h>
 #include <stdint.h>
 #include <stdlib.h>
 
-typedef void *(*aligned_alloc_fn)(size_t, size_t);
+// The statically bundled C++ runtime calls aligned_alloc, which glibc < 2.16
+// lacks. Its references are redirected here, following the linker's --wrap
+// convention: references to aligned_alloc become __wrap_aligned_alloc, and
+// __real_aligned_alloc becomes the real aligned_alloc. libddwaf.so is linked
+// with -Wl,--wrap=aligned_alloc; for the bundled libddwaf.a, the release
+// packaging applies the same renaming with objcopy.
+//
+// libddwaf must not define aligned_alloc itself: in a static link, that
+// definition would take the place of libc's for the whole program, and libc's
+// posix_memalign (which musl implements with aligned_alloc) would then recurse
+// into the polyfill below.
+
+// Weak, so that libddwaf links and loads where libc lacks aligned_alloc: the
+// reference then resolves to NULL. Otherwise it resolves like any ordinary
+// call, so it pairs with the free() libddwaf binds to (e.g. an LD_PRELOADed
+// allocator's).
+extern void *__real_aligned_alloc(size_t alignment, size_t size) __attribute__((weak));
 
 static void *aligned_alloc_polyfill(size_t alignment, size_t size);
 
-// The implementation in use, resolved on first call. Concurrent first calls
-// resolve and store the same value, so relaxed ordering suffices.
-static aligned_alloc_fn aligned_alloc_impl;
-
-// Hidden: this only serves references from libddwaf's own code (the bundled
-// libc++/libc++abi), even when libddwaf.a is linked into another binary. It
-// is never exported, so it neither replaces aligned_alloc for the rest of the
-// process nor can be returned by the dlsym lookup below.
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-__attribute__((visibility("hidden"))) void *aligned_alloc(size_t alignment, size_t size)
+__attribute__((visibility("hidden"))) void *__wrap_aligned_alloc(size_t alignment, size_t size)
 {
-    aligned_alloc_fn impl = __atomic_load_n(&aligned_alloc_impl, __ATOMIC_RELAXED);
-    if (impl == NULL) {
-        // Resolve as an ordinary call would, so the result pairs with the
-        // free() this code binds to (e.g. an LD_PRELOADed allocator).
-        // RTLD_NEXT would skip allocators loaded before us. NULL means the
-        // libc predates aligned_alloc (glibc < 2.16).
-        impl = (aligned_alloc_fn)dlsym(RTLD_DEFAULT, "aligned_alloc");
-        if (impl == NULL) {
-            impl = aligned_alloc_polyfill;
-        }
-        __atomic_store_n(&aligned_alloc_impl, impl, __ATOMIC_RELAXED);
+    if (__real_aligned_alloc != NULL) {
+        return __real_aligned_alloc(alignment, size);
     }
-    return impl(alignment, size);
+    return aligned_alloc_polyfill(alignment, size);
 }
 
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)

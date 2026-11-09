@@ -121,7 +121,7 @@ set(LIBDDWAF_SOURCE
 )
 
 if(LINUX)
-    list(APPEND LIBDDWAF_SOURCE ${libddwaf_SOURCE_DIR}/src/glibc_compat.c)
+    list(APPEND LIBDDWAF_SOURCE ${libddwaf_SOURCE_DIR}/src/compat/aligned_alloc.c)
 endif()
 
 set(LIBDDWAF_PUBLIC_INCLUDES ${libddwaf_SOURCE_DIR}/include)
