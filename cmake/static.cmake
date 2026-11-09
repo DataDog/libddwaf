@@ -1,6 +1,12 @@
 add_library(libddwaf_static STATIC $<TARGET_OBJECTS:libddwaf_static_objects>)
+if(LINUX AND LIBDDWAF_BUNDLE_LIBM_IN_STATIC)
+    # Static library consumers may link it into a shared library
+    target_sources(libddwaf_static PRIVATE
+        ${libddwaf_SOURCE_DIR}/src/compat/ceilf.c)
+    set_target_properties(libddwaf_static PROPERTIES POSITION_INDEPENDENT_CODE 1)
+endif()
 
-target_link_libraries(libddwaf_static INTERFACE ${LIBDDWAF_INTERFACE_LIBRARIES})
+target_link_libraries(libddwaf_static INTERFACE ${LIBDDWAF_STATIC_INTERFACE_LIBRARIES})
 if (NOT MSVC)
     set_target_properties(libddwaf_static PROPERTIES OUTPUT_NAME ddwaf)
 else()

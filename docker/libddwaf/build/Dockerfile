@@ -12,6 +12,7 @@ RUN cmake -S /libddwaf -B /build \
     -DCMAKE_BUILD_TYPE=RelWithDebInfo \
     -DCMAKE_TOOLCHAIN_FILE=/usr/local/share/musl/Toolchain.cmake \
     -DLIBDDWAF_BUNDLE_LIBM_IN_DSO=ON \
+    -DLIBDDWAF_BUNDLE_LIBM_IN_STATIC=ON \
     -DLIBDDWAF_ENABLE_LTO=ON
 
 RUN cmake --build /build --verbose --parallel $(nproc) \
