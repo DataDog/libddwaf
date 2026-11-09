@@ -120,6 +120,10 @@ set(LIBDDWAF_SOURCE
     ${libddwaf_SOURCE_DIR}/src/vendor/re2/util/strutil.cc
 )
 
+if(LINUX)
+    list(APPEND LIBDDWAF_SOURCE ${libddwaf_SOURCE_DIR}/src/glibc_compat.c)
+endif()
+
 set(LIBDDWAF_PUBLIC_INCLUDES ${libddwaf_SOURCE_DIR}/include)
 
 set(LIBDDWAF_PRIVATE_INCLUDES
