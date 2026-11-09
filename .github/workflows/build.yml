@@ -2,7 +2,7 @@ name: Build
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, v1 ]
     tags:
       - "*"
   pull_request:
@@ -57,7 +57,7 @@ jobs:
         working-directory: ${{ github.workspace }}/packages
         run: for file in *.tar.gz; do sha256sum "$file" > "$file.sha256"; done
         shell: bash
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: libddwaf-windows-${{ matrix.arch }}
           path: |
@@ -96,7 +96,7 @@ jobs:
       - name: Generate Package sha256
         working-directory: ${{ github.workspace }}/packages
         run: for file in *.tar.gz; do shasum -a 256 "$file" > "$file.sha256"; done
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: libddwaf-macos-${{ matrix.arch }}
           path: |
@@ -167,7 +167,7 @@ jobs:
           brew install coreutils
           for file in *.tar.gz; do shasum -a 256 "$file" > "$file.sha256"; done
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: libddwaf-macos-universal
           path: |
@@ -231,7 +231,7 @@ jobs:
       - name: Generate Package sha256
         working-directory: packages
         run: for file in *.tar.gz; do sha256sum "$file" > "$file.sha256"; done
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: libddwaf-${{ matrix.target.arch }}-linux-musl
           path: |
@@ -290,7 +290,7 @@ jobs:
         working-directory: ${{ github.workspace }}/output-packages
         run: for file in *.nupkg; do sha256sum "$file" > "$file.sha256"; done
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: nuget
           path: ${{ github.workspace }}/output-packages

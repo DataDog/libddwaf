@@ -2,7 +2,7 @@ name: Test
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, v1 ]
     tags:
       - "*"
   pull_request:
@@ -27,7 +27,7 @@ jobs:
           - arm64
     runs-on: ${{  matrix.arch == 'amd64' && 'ubuntu-24.04' || 'ubuntu-24.04-arm' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           submodules: recursive
 
@@ -81,7 +81,7 @@ jobs:
     runs-on: ${{  matrix.arch == 'amd64' && 'ubuntu-24.04' || 'ubuntu-24.04-arm' }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           submodules: recursive
 
@@ -126,7 +126,7 @@ jobs:
     runs-on: ${{  matrix.arch == 'amd64' && 'ubuntu-24.04' || 'ubuntu-24.04-arm' }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           submodules: recursive
 
@@ -203,7 +203,7 @@ jobs:
           gcovr --gcov-executable gcov-12 --exclude-throw-branches -v -f '.*src.*' -e ".*src/vendor/.*" --json  -o coverage-${{ matrix.suffix }}-${{ matrix.arch }}.json
         working-directory: Debug
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: coverage_${{ matrix.suffix }}_${{ matrix.arch }}
           path: ${{ github.workspace }}/Debug/coverage-${{ matrix.suffix }}-${{ matrix.arch }}.json
@@ -212,11 +212,11 @@ jobs:
     needs: [ coverage ]
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           submodules: recursive
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           path: artifacts
 
@@ -232,17 +232,9 @@ jobs:
         run: |
           source .venv/bin/activate
           gcovr --version
-          gcovr --merge-mode-functions merge-use-line-0 --json-add-tracefile "artifacts/*/coverage-*.json" -x coverage.xml
           mkdir -p coverage
           gcovr --merge-mode-functions merge-use-line-0 --json-add-tracefile "artifacts/*/coverage-*.json" --html-details coverage/coverage.html
-      - name: Submit coverage
-        uses: codecov/codecov-action@v4
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          flags: waf_test
-          verbose: true
-          files: coverage.xml
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: coverage
           path: ${{ github.workspace }}/coverage/
@@ -250,7 +242,7 @@ jobs:
   lint:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           submodules: recursive
 
@@ -289,7 +281,7 @@ jobs:
     strategy:
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           submodules: recursive
 
