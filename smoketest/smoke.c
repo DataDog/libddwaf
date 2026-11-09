@@ -64,6 +64,36 @@ static ddwaf_object prepare_rule(ddwaf_allocator alloc) {
     return ret;
 }
 
+// Loads a ruleset whose only rule is not a map. libddwaf reports this through
+// a C++ exception, and the bundled libc++abi allocates every exception with
+// aligned_alloc, which glibc < 2.16 (e.g. RHEL 6) lacks. This makes sure the
+// library's replacement for it actually runs.
+static bool check_parse_error(ddwaf_allocator alloc) {
+    ddwaf_object ruleset;
+    ddwaf_object_set_map(&ruleset, 2, alloc);
+
+    ddwaf_object_set_string_literal(
+        ddwaf_object_insert_key(&ruleset, STRL("version"), alloc), STRL("2.1"));
+
+    ddwaf_object *rules = ddwaf_object_insert_key(&ruleset, STRL("rules"), alloc);
+    ddwaf_object_set_array(rules, 1, alloc);
+    ddwaf_object_set_string_literal(ddwaf_object_insert(rules, alloc), STRL("not a map"));
+
+    ddwaf_object diagnostics;
+    ddwaf_handle handle = ddwaf_init(&ruleset, &diagnostics);
+    if (handle) {
+        ddwaf_destroy(handle);
+    }
+
+    const ddwaf_object *rules_diag = ddwaf_object_find(&diagnostics, STRL("rules"));
+    const ddwaf_object *failed = ddwaf_object_find(rules_diag, STRL("failed"));
+    bool reported = ddwaf_object_get_size(failed) == 1;
+
+    ddwaf_object_destroy(&diagnostics, alloc);
+    ddwaf_object_destroy(&ruleset, alloc);
+    return reported;
+}
+
 typedef struct {
     char *buffer;
     size_t capacity;
@@ -227,6 +257,12 @@ int main() {
     ddwaf_set_log_cb(log_cb, DDWAF_LOG_DEBUG);
 
     ddwaf_allocator alloc = ddwaf_get_default_allocator();
+
+    if (!check_parse_error(alloc)) {
+        puts("invalid rule was not reported");
+        return 1;
+    }
+    puts("invalid rule is reported");
 
     ddwaf_object rule = prepare_rule(alloc);
     dump(&rule);

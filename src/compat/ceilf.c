@@ -51,9 +51,7 @@ static float ceilf_local(float x)
 static float ceilf_local_sse41(float x)
 {
     float result;
-    __asm__("roundss $0x0A, %[x], %[result]"
-        : [result] "=x"(result)
-        : [x] "x"(x));
+    __asm__("roundss $0x0A, %[x], %[result]" : [result] "=x"(result) : [x] "x"(x));
     return result;
 }
 
@@ -128,8 +126,7 @@ typedef float (*ceilf_t)(float);
 __attribute__((weak)) float ceilf(float x)
 {
     static _Atomic(ceilf_t) ceilf_global_;
-    ceilf_t ceilf_global =
-        atomic_load_explicit(&ceilf_global_, memory_order_relaxed);
+    ceilf_t ceilf_global = atomic_load_explicit(&ceilf_global_, memory_order_relaxed);
 
     if (unlikely(ceilf_global == NULL)) {
         void *ceilf_sym = dlsym(RTLD_DEFAULT, "ceilf");
@@ -146,8 +143,7 @@ __attribute__((weak)) float ceilf(float x)
         } else {
             ceilf_global = (ceilf_t)ceilf_sym;
         }
-        atomic_store_explicit(
-            &ceilf_global_, ceilf_global, memory_order_relaxed);
+        atomic_store_explicit(&ceilf_global_, ceilf_global, memory_order_relaxed);
     }
     return ceilf_global(x);
 }
