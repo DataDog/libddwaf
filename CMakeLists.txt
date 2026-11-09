@@ -57,6 +57,13 @@ else()
     add_compile_definitions(-D_CRT_SECURE_NO_WARNINGS=1 -Dstrdup=_strdup -Dputenv=_putenv)
 endif()
 
+# The vendored fmt 10.1 compile-time format string checks are rejected by
+# newer clang releases (e.g. 21, used by the musl build environment). Fall back
+# to runtime checks there; other compilers still validate them at build time.
+if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 20)
+    add_compile_definitions(FMT_CONSTEVAL=)
+endif()
+
 include(GNUInstallDirs)
 
 add_library(glibc_compat_time64 OBJECT ${libddwaf_SOURCE_DIR}/src/glibc-compat/time64.c)
