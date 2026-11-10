@@ -1,5 +1,25 @@
 # libddwaf release
 
+## v1.30.2 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
+
+This patch release fixes a false negative in the SSRF RASP operator and a native memory leak, and moves the Linux build to the shared musl build environment also used by v2.
+
+> [!NOTE]
+> Linux packages are now only built for x86_64 and aarch64, as in v2: the i386 and armv7 packages are no longer provided. glibc 2.12 and later remain supported, and the static library still does not require linking against libm.
+
+### Release changelog
+#### Fixes
+- Fix a false negative in the SSRF RASP operator when an authority injection overlaps the scheme ([#522](https://github.com/DataDog/libddwaf/pull/522))
+- Fix a native memory leak when two processors write the same attribute in the same evaluation ([#526](https://github.com/DataDog/libddwaf/pull/526))
+
+#### Miscellaneous
+- Use the shared musl build environment, keeping support for glibc < 2.16 ([#515](https://github.com/DataDog/libddwaf/pull/515), [#528](https://github.com/DataDog/libddwaf/pull/528))
+- Bundle the required libm symbols in the shared and static libraries ([#518](https://github.com/DataDog/libddwaf/pull/518), [#526](https://github.com/DataDog/libddwaf/pull/526))
+- Stop trusting compromised eMudhra roots in build and smoketest images ([#520](https://github.com/DataDog/libddwaf/pull/520))
+- Upload ELF debug symbols on release ([#509](https://github.com/DataDog/libddwaf/pull/509))
+- Pin GitHub Actions to full-length commit SHAs ([#489](https://github.com/DataDog/libddwaf/pull/489), [#526](https://github.com/DataDog/libddwaf/pull/526))
+- Update CI runners and drop the mingw64 build ([#524](https://github.com/DataDog/libddwaf/pull/524), [#526](https://github.com/DataDog/libddwaf/pull/526))
+
 ## v1.30.1 ([unstable](https://github.com/DataDog/libddwaf/blob/master/README.md#versioning-semantics))
 
 ### Release changelog
