@@ -1,6 +1,6 @@
 ---
 name: release-prep
-description: Prepare releases from this repository checkout. Use when the agent needs to inspect release readiness, compare commits since the previous release tag, summarize merged GitHub PRs, validate GitHub release/tag state, create or update a local release version branch, bump the repository version file, draft/update release changelog files, or produce safe next-step commands for opening the release PR and tagging after merge.
+description: Prepare releases from this repository checkout. Use when the agent needs to inspect release readiness, compare commits since the previous release tag, summarize merged GitHub PRs, validate GitHub release/tag state, create or update a local release version branch, bump the package version in `Cargo.toml`, draft/update release changelog files, or produce safe next-step commands for opening the release PR and tagging after merge.
 ---
 
 # Release Prep
@@ -32,7 +32,7 @@ Prepare a release locally only after the target version is known:
 uv run .agents/skills/release-prep/scripts/prepare_release.py prepare 2.0.1
 ```
 
-The script creates or switches to `release/<version>` from `origin/master`, updates the top-level `version` file, and prints the PR/commit context again for reference. It deliberately does not write the changelog — write that yourself (see below) so entries are real summaries, not placeholders.
+The script creates or switches to `release/<version>` from `origin/master` (without tracking it), sets the `[package]` `version` in `Cargo.toml`, and prints the PR/commit context again for reference. It deliberately does not write the changelog — write that yourself (see below) so entries are real summaries, not placeholders.
 
 IMPORTANT: Do not push branches, push tags, publish GitHub releases, or mark draft releases as published unless the user explicitly confirms.
 
@@ -90,18 +90,18 @@ Expected standard release shape:
 - Branch: `release/<version>` without a leading `v`.
 - Base branch: `master`.
 - PR title: `Release v<version>`.
-- Release commit: update `version`, `docs/changelog`, and — only when the API/ABI changed — `docs/upgrading`.
+- Release commit: update the `Cargo.toml` package version, `docs/changelog`, and — only when the API/ABI changed — `docs/upgrading`.
 
 Commands to open the release PR, once the changelog (and upgrading guide, if needed) are written:
 
 ```bash
-git add version docs/changelog/ docs/upgrading/
+git add Cargo.toml docs/changelog/ docs/upgrading/
 git commit -m 'Release v<version>' -S
 git push origin release/<version>:release/<version>
 gh pr create --repo DataDog/libddwaf --base master --head release/<version> --title 'Release v<version>'
 ```
 
-Use the explicit `local:remote` refspec for the push, not a bare branch name — the release branch is created from `origin/master`, so it tracks `master` as its upstream, and with `push.default=upstream` a bare `git push origin release/<version>` silently pushes to `master` instead of creating the release branch.
+Use the explicit `local:remote` refspec for the push, not a bare branch name. The script creates the branch with `--no-track`, but a release branch created by hand from `origin/master` tracks `master` as its upstream, and with `push.default=upstream` a bare `git push origin release/<version>` silently pushes to `master` instead of creating the release branch.
 
 After the release PR merges and the user explicitly approves publishing steps, tag the merge commit with the raw version string, not `v<version>`:
 
@@ -112,4 +112,4 @@ git tag <version>
 git push origin <version>
 ```
 
-GitHub Actions creates a draft release named `v<tag>` from any pushed tag and uses `docs/changelog/CHANGELOG-latest.md` as the release body.
+GitHub Actions creates a draft release named `v<tag>` from any pushed tag and uses `docs/changelog/CHANGELOG-latest.md` as the release body. Publishing that release triggers `.github/workflows/publish.yml`, which fails unless the tag matches the `Cargo.toml` version, then publishes the `libddwaf-src` crate.

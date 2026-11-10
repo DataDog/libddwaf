@@ -16,7 +16,9 @@ from typing import Any
 SEMVER_RE = re.compile(r"^\d+\.\d+\.\d+(?:-(?:alpha|beta)\d*)?$")
 PR_RE = re.compile(r"\(#(\d+)\)")
 REPO = "DataDog/libddwaf"
-REQUIRED_FILES = [".git", "version", "CMakeLists.txt", ".github/workflows/build.yml"]
+REQUIRED_FILES = [".git", "Cargo.toml", "CMakeLists.txt", ".github/workflows/build.yml"]
+# Mirrors cmake/version.cmake: the `version = "..."` line of the [package] table.
+PACKAGE_VERSION_RE = re.compile(r'^(version[ \t]*=[ \t]*")([^"]+)("[ \t]*)$')
 
 
 def main() -> None:
@@ -69,11 +71,11 @@ def prepare_release(repo: Path, args: argparse.Namespace) -> None:
 
     branch = args.branch or f"release/{args.version}"
     create_or_switch_branch(repo, branch, args.base)
-    (repo / "version").write_text(args.version, encoding="utf-8")
+    set_cargo_version(repo, args.version)
 
     print(render_inspect(repo, args.base, previous, commits, prs, args.version))
     print(f"\n## Branch: {branch}")
-    print("`version` bumped. Write the changelog and next commands per SKILL.md.")
+    print("`Cargo.toml` version bumped. Write the changelog and next commands per SKILL.md.")
 
 
 def release_context(repo: Path, args: argparse.Namespace) -> tuple[str, list[dict[str, str]], list[dict[str, Any]]]:
@@ -103,7 +105,7 @@ def render_inspect(
         f"- Repo: `{repo}`",
         f"- Branch: `{branch}`",
         f"- Base: `{base}`",
-        f"- Current `version`: `{version_file(repo)}`",
+        f"- Current `Cargo.toml` version: `{cargo_version(repo)}`",
         f"- Previous tag: `{previous}`",
     ]
     if ahead is not None and behind is not None:
@@ -157,11 +159,39 @@ def create_or_switch_branch(repo: Path, branch: str, base: str) -> None:
     if git(repo, "rev-parse", "--verify", branch, check=False).returncode == 0:
         git(repo, "switch", branch)
     else:
-        git(repo, "switch", "-c", branch, base)
+        # --no-track: tracking the base would make a bare `git push` with
+        # push.default=upstream push the release commit to master.
+        git(repo, "switch", "--no-track", "-c", branch, base)
 
 
-def version_file(repo: Path) -> str:
-    return (repo / "version").read_text(encoding="utf-8").strip()
+def cargo_version(repo: Path) -> str:
+    lines, index = package_version_line(repo)
+    return PACKAGE_VERSION_RE.match(lines[index].rstrip("\r\n")).group(2)
+
+
+def set_cargo_version(repo: Path, version: str) -> None:
+    lines, index = package_version_line(repo)
+    line = lines[index].rstrip("\r\n")
+    ending = lines[index][len(line):]
+    lines[index] = PACKAGE_VERSION_RE.sub(rf"\g<1>{version}\g<3>", line) + ending
+    (repo / "Cargo.toml").write_text("".join(lines), encoding="utf-8")
+
+
+def package_version_line(repo: Path) -> tuple[list[str], int]:
+    # Edit the line in place rather than round-tripping through a TOML
+    # library, which would not preserve the file's formatting.
+    lines = (repo / "Cargo.toml").read_text(encoding="utf-8").splitlines(keepends=True)
+    in_package = False
+    matches = []
+    for index, line in enumerate(lines):
+        stripped = line.rstrip("\r\n")
+        if stripped.startswith("["):
+            in_package = stripped.rstrip() == "[package]"
+        elif in_package and PACKAGE_VERSION_RE.match(stripped):
+            matches.append(index)
+    if len(matches) != 1:
+        raise SystemExit("expected exactly one version in the [package] table of Cargo.toml")
+    return lines, matches[0]
 
 
 def latest_tag(repo: Path, base: str, override: str | None) -> str:
