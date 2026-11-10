@@ -18,6 +18,7 @@
 #### Miscellaneous
 
 - Use new images to build binaries (upgrade to Clang 21.1; link to libm now needed)
+- Increase the minimum supported glibc version to 2.16 for prebuilt Linux libraries used on glibc-based systems ([#515](https://github.com/DataDog/libddwaf/pull/515)).
 - Drop support for i386 and armv7
 - Upload ELF debug symbols on release ([#509](https://github.com/DataDog/libddwaf/pull/509)).
 - Publish source as [crate](https://crates.io/crates/libddwaf-src)
