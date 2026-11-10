@@ -26,6 +26,14 @@ RUN cd /build && \
     printf "create libddwaf-combined.a\naddlib libddwaf.a\naddlib libc++.a\naddlib libc++abi.a\naddlib libunwind.a\nsave\nend" | llvm-ar -M && \
     mv libddwaf-combined.a libddwaf.a
 
+# Redirect the bundled C++ runtime's aligned_alloc calls to
+# src/compat/aligned_alloc.c, as -Wl,--wrap=aligned_alloc does for the shared
+# library. objcopy renames by original name, so the two renamings don't chain.
+RUN llvm-objcopy \
+    --redefine-sym aligned_alloc=__wrap_aligned_alloc \
+    --redefine-sym __real_aligned_alloc=aligned_alloc \
+    /build/libddwaf.a
+
 # Strip archive
 RUN strip -x -S /build/libddwaf.a -o /build/libddwaf.a.stripped
 

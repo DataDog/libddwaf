@@ -221,13 +221,13 @@ jobs:
           timeout_minutes: 10
           max_attempts: 3
           command: docker build --progress=plain --platform ${{ matrix.target.platform }} --build-arg "ARCH=${{ matrix.target.arch }}" -f docker/libddwaf/smoketest/gnu/Dockerfile  .
-      - name: Smoketest gnu rhel 7 (gcc)
+      - name: Smoketest gnu rhel 6 (gcc)
         if: matrix.target.arch == 'x86_64'
         uses: nick-fields/retry@7152eba30c6575329ac0576536151aca5a72780e # v3
         with:
           timeout_minutes: 10
           max_attempts: 3
-          command: docker build --progress=plain --platform ${{ matrix.target.platform }} --build-arg "ARCH=${{ matrix.target.arch }}" -f docker/libddwaf/smoketest/gnu_rhel7/Dockerfile  .
+          command: docker build --ulimit nofile=1024:1024 --progress=plain --platform ${{ matrix.target.platform }} --build-arg "ARCH=${{ matrix.target.arch }}" -f docker/libddwaf/smoketest/gnu_rhel6/Dockerfile  .
       - name: Generate Package sha256
         working-directory: packages
         run: for file in *.tar.gz; do sha256sum "$file" > "$file.sha256"; done
