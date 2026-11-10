@@ -483,4 +483,120 @@ TEST(TestRuleDataParser, ParseMissingData)
     EXPECT_TRUE(cfg.rule_overrides_by_tags.empty());
 }
 
+TEST(TestRuleDataParser, ParseEmptyIPData)
+{
+    auto object =
+        yaml_to_object<owned_object>(R"([{id: data_id, type: ip_with_expiration, data: []}])");
+    auto input = static_cast<raw_configuration::vector>(raw_configuration(object));
+
+    configuration_spec cfg;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
+    ruleset_info::section_info section;
+    parse_rule_data(input, collector, section);
+
+    {
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
+
+        auto root_map = static_cast<raw_configuration::map>(root);
+
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 1);
+        EXPECT_NE(loaded.find("data_id"), loaded.end());
+
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 0);
+
+        auto errors = at<raw_configuration::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 0);
+    }
+
+    EXPECT_FALSE(change.empty());
+    EXPECT_EQ(change.rule_data.size(), 1);
+
+    ASSERT_EQ(cfg.rule_data.size(), 1);
+    auto it = cfg.rule_data.find("data_id");
+    ASSERT_NE(it, cfg.rule_data.end());
+    EXPECT_EQ(it->second.type, data_type::ip_with_expiration);
+    EXPECT_TRUE(it->second.values.empty());
+    EXPECT_EQ(it->second.values.size(), 0);
+    EXPECT_EQ(it->second.values.begin(), it->second.values.end());
+}
+
+TEST(TestRuleDataParser, ParseEmptyStringData)
+{
+    auto object =
+        yaml_to_object<owned_object>(R"([{id: data_id, type: data_with_expiration, data: []}])");
+    auto input = static_cast<raw_configuration::vector>(raw_configuration(object));
+
+    configuration_spec cfg;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
+    ruleset_info::section_info section;
+    parse_rule_data(input, collector, section);
+
+    {
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
+
+        auto root_map = static_cast<raw_configuration::map>(root);
+
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 1);
+        EXPECT_NE(loaded.find("data_id"), loaded.end());
+
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 0);
+
+        auto errors = at<raw_configuration::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 0);
+    }
+
+    EXPECT_FALSE(change.empty());
+    EXPECT_EQ(change.rule_data.size(), 1);
+
+    ASSERT_EQ(cfg.rule_data.size(), 1);
+    auto it = cfg.rule_data.find("data_id");
+    ASSERT_NE(it, cfg.rule_data.end());
+    EXPECT_EQ(it->second.type, data_type::data_with_expiration);
+    EXPECT_TRUE(it->second.values.empty());
+    EXPECT_EQ(it->second.values.size(), 0);
+    EXPECT_EQ(it->second.values.begin(), it->second.values.end());
+}
+
+TEST(TestRuleDataParser, ParseNullData)
+{
+    auto object =
+        yaml_to_object<owned_object>(R"([{id: data_id, type: ip_with_expiration, data: null}])");
+    auto input = static_cast<raw_configuration::vector>(raw_configuration(object));
+
+    configuration_spec cfg;
+    configuration_change_spec change;
+    configuration_collector collector{change, cfg};
+    ruleset_info::section_info section;
+    parse_rule_data(input, collector, section);
+
+    {
+        auto diagnostics = section.to_object();
+        raw_configuration root{diagnostics};
+
+        auto root_map = static_cast<raw_configuration::map>(root);
+
+        auto loaded = at<raw_configuration::string_set>(root_map, "loaded");
+        EXPECT_EQ(loaded.size(), 0);
+
+        auto failed = at<raw_configuration::string_set>(root_map, "failed");
+        EXPECT_EQ(failed.size(), 1);
+        EXPECT_NE(failed.find("data_id"), failed.end());
+
+        auto errors = at<raw_configuration::map>(root_map, "errors");
+        EXPECT_EQ(errors.size(), 1);
+    }
+
+    EXPECT_TRUE(change.empty());
+    EXPECT_TRUE(change.rule_data.empty());
+    EXPECT_TRUE(cfg.rule_data.empty());
+}
+
 } // namespace
