@@ -22,6 +22,12 @@ public:
     indexed_multivector() = default;
     void emplace(Key key, std::vector<T> element)
     {
+        // Empty vectors are not stored: the iterator requires every vector in
+        // data_ to contain at least one element.
+        if (element.empty()) {
+            return;
+        }
+
         total_size_ += element.size();
         data_.emplace(std::move(key), std::move(element));
     }

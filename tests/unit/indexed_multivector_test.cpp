@@ -108,4 +108,26 @@ TEST(TestIndexedMultivector, MultipleElements)
     ASSERT_TRUE(ivec.empty());
 }
 
+TEST(TestIndexedMultivector, EmptyVector)
+{
+    indexed_multivector<std::string, std::string> ivec;
+
+    ivec.emplace("empty1", {});
+    ASSERT_TRUE(ivec.empty());
+    EXPECT_EQ(ivec.size(), 0);
+    ASSERT_EQ(ivec.begin(), ivec.end());
+
+    ivec.emplace("vec1", {"a", "b"});
+    ivec.emplace("empty2", {});
+    ASSERT_FALSE(ivec.empty());
+    EXPECT_EQ(ivec.size(), 2);
+
+    std::unordered_set<std::string> all_items{"a", "b"};
+    for (const auto &v : ivec) {
+        EXPECT_TRUE(all_items.contains(v));
+        all_items.erase(v);
+    }
+    EXPECT_EQ(all_items.size(), 0);
+}
+
 } // namespace

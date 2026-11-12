@@ -529,4 +529,48 @@ TEST(TestEngineBuilderFunctional, RejectedConfigWithLoadedItems)
     ddwaf_builder_destroy(builder);
 }
 
+TEST(TestEngineBuilderFunctional, EmptyIpDataWithRule)
+{
+    auto *alloc = ddwaf_get_default_allocator();
+
+    auto config = yaml_to_object<ddwaf_object>(R"(
+version: '2.1'
+rules:
+  - id: 1
+    name: rule1
+    tags: {type: type1, category: category}
+    conditions:
+      - operator: ip_match
+        parameters:
+          inputs: [{address: http.client_ip}]
+          data: blocked_ips
+rules_data:
+  - {id: blocked_ips, type: ip_with_expiration, data: []}
+)");
+    ASSERT_NE(config.type, DDWAF_OBJ_INVALID);
+
+    ddwaf_builder builder = ddwaf_builder_init();
+    ASSERT_NE(builder, nullptr);
+
+    ASSERT_TRUE(ddwaf_builder_add_or_update_config(builder, LSTRARG("rules"), &config, nullptr));
+    ddwaf_object_destroy(&config, alloc);
+
+    // An empty data list used to crash the build
+    ddwaf_handle handle = ddwaf_builder_build_instance(builder);
+    ASSERT_NE(handle, nullptr);
+
+    ddwaf_context context = ddwaf_context_init(handle, alloc);
+    ASSERT_NE(context, nullptr);
+
+    ddwaf_object root;
+    ddwaf_object_set_map(&root, 1, alloc);
+    ddwaf_object_set_string(
+        ddwaf_object_insert_key(&root, STRL("http.client_ip"), alloc), STRL("1.2.3.4"), alloc);
+    EXPECT_EQ(ddwaf_context_eval(context, &root, alloc, nullptr, LONG_TIME), DDWAF_OK);
+
+    ddwaf_context_destroy(context);
+    ddwaf_destroy(handle);
+    ddwaf_builder_destroy(builder);
+}
+
 } // namespace
