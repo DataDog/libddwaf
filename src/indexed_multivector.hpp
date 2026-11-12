@@ -7,7 +7,6 @@
 #pragma once
 
 #include <cstddef>
-#include <iterator>
 #include <unordered_map>
 #include <vector>
 
@@ -23,8 +22,8 @@ public:
     indexed_multivector() = default;
     void emplace(Key key, std::vector<T> element)
     {
-        // An empty vector adds no items, so it isn't stored. This keeps the
-        // index free of empty vectors, which the iterator can't dereference.
+        // Empty vectors are not stored: the iterator requires every vector in
+        // data_ to contain at least one element.
         if (element.empty()) {
             return;
         }
@@ -59,7 +58,7 @@ public:
         {
             ++item_it_;
             if (item_it_ == index_it_->second.end()) {
-                index_it_ = skip_empty(std::next(index_it_), end_index_it_);
+                ++index_it_;
                 if (index_it_ != end_index_it_) {
                     item_it_ = index_it_->second.begin();
                 } else {
@@ -78,14 +77,6 @@ public:
 
         const T &operator*() const { return *item_it_; }
 
-        // Moves the index iterator forward until it reaches a non-empty vector
-        // or the end of the index.
-        static index_iterator_type skip_empty(index_iterator_type it, index_iterator_type end)
-        {
-            while (it != end && it->second.empty()) { ++it; }
-            return it;
-        }
-
     protected:
         index_iterator_type index_it_;
         index_iterator_type end_index_it_;
@@ -94,12 +85,14 @@ public:
 
     const_iterator begin() const
     {
-        auto index_it = const_iterator::skip_empty(data_.begin(), data_.end());
-        if (index_it == data_.end()) {
+        if (data_.empty()) {
             return end();
         }
 
-        return {index_it, data_.end(), index_it->second.begin()};
+        auto index_it = data_.begin();
+        auto item_it = index_it->second.begin();
+
+        return {index_it, data_.end(), item_it};
     }
 
     const_iterator end() const { return {data_.end(), data_.end(), {}}; }

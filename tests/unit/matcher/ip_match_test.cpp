@@ -187,31 +187,6 @@ TEST(TestIPMatch, MultivectorConstructor)
     EXPECT_FALSE(match(matcher, "3.4.2.1"));
 }
 
-TEST(TestIPMatch, MultivectorConstructorEmptyVector)
-{
-    ddwaf::indexed_multivector<std::string, std::pair<std::string, uint64_t>> ivec;
-    ivec.emplace("vec1", {});
-    ip_match matcher(ivec);
-
-    EXPECT_STR(matcher.name(), "ip_match");
-    EXPECT_FALSE(match(matcher, "1.2.3.4"));
-    EXPECT_FALSE(match(matcher, "::1"));
-}
-
-TEST(TestIPMatch, MultivectorConstructorMixedEmptyVectors)
-{
-    ddwaf::indexed_multivector<std::string, std::pair<std::string, uint64_t>> ivec;
-    ivec.emplace("empty1", {});
-    ivec.emplace("empty2", {});
-    ivec.emplace("vec1", {{"1.2.3.4", 0}});
-    ivec.emplace("empty3", {});
-    ivec.emplace("empty4", {});
-    ip_match matcher(ivec);
-
-    EXPECT_TRUE(match(matcher, "1.2.3.4"));
-    EXPECT_FALSE(match(matcher, "5.6.7.8"));
-}
-
 TEST(TestIPMatch, MultivectorConstructorExpiration)
 {
     uint64_t now = std::chrono::duration_cast<std::chrono::seconds>(

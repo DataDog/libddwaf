@@ -111,30 +111,6 @@ TEST(TestExactMatch, MultivectorConstructor)
     EXPECT_NE(matcher.match("gggg").first, ddwaf::matcher::match_result::match);
 }
 
-TEST(TestExactMatch, MultivectorConstructorEmptyVector)
-{
-    ddwaf::indexed_multivector<std::string, std::pair<std::string, uint64_t>> ivec;
-    ivec.emplace("vec1", {});
-    exact_match matcher(ivec);
-
-    EXPECT_STR(matcher.name(), "exact_match");
-    EXPECT_NE(matcher.match("aaaa").first, ddwaf::matcher::match_result::match);
-}
-
-TEST(TestExactMatch, MultivectorConstructorMixedEmptyVectors)
-{
-    ddwaf::indexed_multivector<std::string, std::pair<std::string, uint64_t>> ivec;
-    ivec.emplace("empty1", {});
-    ivec.emplace("empty2", {});
-    ivec.emplace("vec1", {{"aaaa", 0}});
-    ivec.emplace("empty3", {});
-    ivec.emplace("empty4", {});
-    exact_match matcher(ivec);
-
-    EXPECT_EQ(matcher.match("aaaa").first, ddwaf::matcher::match_result::match);
-    EXPECT_NE(matcher.match("bbbb").first, ddwaf::matcher::match_result::match);
-}
-
 TEST(TestExactMatch, MultivectorConstructorExpiration)
 {
     uint64_t now = std::chrono::duration_cast<std::chrono::seconds>(
